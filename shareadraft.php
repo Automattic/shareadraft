@@ -433,7 +433,7 @@ endif;
 		function the_posts_intercept( $posts, $query ) {
 			if ( empty( $posts ) && ! is_null( $this->shared_post ) ) {
 				// Only inject shared post if query is for a supported post type
-				// This prevents injecting blog posts into template-part or other queries
+				// This prevents injecting blog posts into template part or other queries
 				$query_post_type = $query->query_vars['post_type'] ?? '';
 
 				// Only validate if a specific post type is set (not 'any' or empty)

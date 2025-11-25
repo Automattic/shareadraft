@@ -297,7 +297,7 @@ foreach ( $s as $share ) :
 	$p = get_post( $share['id'] );
 
 	// Build URL based on post type
-	$base_url = get_bloginfo( 'url' );
+	$base_url = home_url();
 	if ( 'page' === $p->post_type ) {
 		$url = $base_url . '/?page_id=' . $p->ID . '&shareadraft=' . $share['key'];
 	} elseif ( 'post' === $p->post_type ) {

@@ -2,8 +2,8 @@
 Contributors: nbachiyski, automattic
 Tags: post, draft, drafts, share, sharing
 Requires at least: 4.0
-Tested up to: 5.8
-Stable tag: 1.5
+Tested up to: 7.0
+Stable tag: 1.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,6 +34,13 @@ e.g.
 
 
 == Changelog ==
+
+= 1.6 =
+* Fixed PHP 8.x deprecation notices for undeclared class properties
+* Shares whose post has since been deleted no longer emit warnings, and can now be removed
+* Expiry times no longer read "14 days, 0 hours, 0 minutes"
+* Fixed a post ID comparison that could cause a valid share link to 404
+* Tested with WordPress 7.0 and PHP 8.4
 
 = 1.5 =
 * Test with newest WordPress versions

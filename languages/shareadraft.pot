@@ -1,161 +1,168 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR Nikolay Bachiyski
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
+# Copyright (C) 2026 Nikolay Bachiyski, Automattic
+# This file is distributed under the same license as the Share a Draft plugin.
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
-"Report-Msgid-Bugs-To: http://wordpress.org/tag/shareadraft\n"
-"POT-Creation-Date: 2009-02-05 10:12+0000\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Project-Id-Version: Share a Draft 1.6\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/shareadraft\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"POT-Creation-Date: 2026-07-23T15:41:54+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: shareadraft\n"
 
-#. Plugin Name of an extension
-#: shareadraft.php:77 shareadraft.php:204 shareadraft.php:257
+#. Plugin Name of the plugin
+#: shareadraft.php
+#: shareadraft.php:83
+#: shareadraft.php:250
+#: shareadraft.php:332
 msgid "Share a Draft"
 msgstr ""
 
-#: shareadraft.php:98
+#. Plugin URI of the plugin
+#: shareadraft.php
+msgid "http://wordpress.org/plugins/shareadraft/"
+msgstr ""
+
+#. Description of the plugin
+#: shareadraft.php
+msgid "Share private preview links to your drafts"
+msgstr ""
+
+#. Author of the plugin
+#: shareadraft.php
+msgid "Nikolay Bachiyski, Automattic"
+msgstr ""
+
+#. Author URI of the plugin
+#: shareadraft.php
+msgid "https://extrapolate.me/"
+msgstr ""
+
+#: shareadraft.php:110
 msgid "There is no such post!"
 msgstr ""
 
-#: shareadraft.php:101
+#: shareadraft.php:113
 msgid "The post is published!"
 msgstr ""
 
-#: shareadraft.php:145
-msgid "Your Drafts:"
+#: shareadraft.php:116
+#: shareadraft.php:137
+#: shareadraft.php:157
+msgid "Sorry, you are not allowed to share posts you can’t edit."
 msgstr ""
 
-#: shareadraft.php:150
-msgid "Pending Review:"
+#: shareadraft.php:185
+msgid "My unpublished posts:"
 msgstr ""
 
-#: shareadraft.php:155
-msgid "Others&#8217; Drafts:"
+#: shareadraft.php:189
+msgid "Others’ unpubilshed posts:"
 msgstr ""
 
-#: shareadraft.php:187
-#, php-format
-msgid "%d second"
-msgid_plural "%d seconds"
-msgstr[0] ""
-msgstr[1] ""
-
-#: shareadraft.php:188
+#: shareadraft.php:221
 #, php-format
 msgid "%d minute"
 msgid_plural "%d minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: shareadraft.php:189
+#: shareadraft.php:224
 #, php-format
 msgid "%d hour"
 msgid_plural "%d hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: shareadraft.php:190
+#: shareadraft.php:227
 #, php-format
 msgid "%d day"
 msgid_plural "%d days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: shareadraft.php:208
+#: shareadraft.php:230
+msgid "less than a minute"
+msgstr ""
+
+#: shareadraft.php:254
 msgid "Currently shared drafts"
 msgstr ""
 
-#: shareadraft.php:212
+#: shareadraft.php:258
 msgid "ID"
 msgstr ""
 
-#: shareadraft.php:213
+#: shareadraft.php:259
 msgid "Title"
 msgstr ""
 
-#: shareadraft.php:214
+#: shareadraft.php:260
 msgid "Link"
 msgstr ""
 
-#: shareadraft.php:215
+#: shareadraft.php:261
 msgid "Expires after"
 msgstr ""
 
-#: shareadraft.php:216
+#: shareadraft.php:262
 msgid "Actions"
 msgstr ""
 
-#: shareadraft.php:232 shareadraft.php:236
-msgid "Extend"
-msgstr ""
-
-#: shareadraft.php:237
-msgid "by"
-msgstr ""
-
-#: shareadraft.php:239
-msgid "Cancel"
-msgstr ""
-
-#: shareadraft.php:243
-msgid "Delete"
-msgstr ""
-
-#: shareadraft.php:250
-msgid "No shared drafts!"
-msgstr ""
-
-#: shareadraft.php:261
-msgid "Choose a draft"
+#: shareadraft.php:280
+msgid "This post no longer exists."
 msgstr ""
 
 #: shareadraft.php:282
+#: shareadraft.php:317
+msgid "Delete"
+msgstr ""
+
+#: shareadraft.php:299
+#: shareadraft.php:306
+msgid "Extend"
+msgstr ""
+
+#: shareadraft.php:307
+msgid "by"
+msgstr ""
+
+#: shareadraft.php:311
+msgid "Cancel"
+msgstr ""
+
+#: shareadraft.php:325
+msgid "No shared drafts!"
+msgstr ""
+
+#: shareadraft.php:336
+msgid "Choose a draft"
+msgstr ""
+
+#: shareadraft.php:359
 msgid "Share it"
 msgstr ""
 
-#: shareadraft.php:283
+#: shareadraft.php:360
 msgid "for"
 msgstr ""
 
-#: shareadraft.php:327
-msgid "seconds"
-msgstr ""
-
-#: shareadraft.php:328
+#: shareadraft.php:411
 msgid "minutes"
 msgstr ""
 
-#: shareadraft.php:329
+#: shareadraft.php:412
 msgid "hours"
 msgstr ""
 
-#: shareadraft.php:330
+#: shareadraft.php:413
 msgid "days"
 msgstr ""
 
-#. Plugin URI of an extension
-msgid "http://wordpress.org/extend/plugins/shareadraft/"
-msgstr ""
-
-#. Description of an extension
-msgid ""
-"Let your friends preview one of your drafts, without giving them permissions "
-"to edit posts in your blog."
-msgstr ""
-
-#. Author of an extension
-msgid "Nikolay Bachiyski"
-msgstr ""
-
-#. Author URI of an extension
-msgid "http://nikolay.bg/"
+#: shareadraft.php:414
+msgid "weeks"
 msgstr ""

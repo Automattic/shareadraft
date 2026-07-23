@@ -4,7 +4,7 @@ Plugin Name: Share a Draft
 Plugin URI: http://wordpress.org/plugins/shareadraft/
 Description: Share private preview links to your drafts
 Author: Nikolay Bachiyski, Automattic
-Version: 1.5
+Version: 1.6
 Author URI: https://extrapolate.me/
 Text Domain: shareadraft
 Domain Path: /languages

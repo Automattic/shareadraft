@@ -14,6 +14,8 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 	class Share_a_Draft {
 		var $admin_options_name = 'ShareADraft_options';
 		var $shared_post = null;
+		var $admin_options = array();
+		var $user_options = array();
 
 		function __construct() {
 			add_action( 'init', array( $this, 'init' ) );
@@ -214,14 +216,18 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 				$res = array( $free_m, $free_h, $d );
 			}
 			$names = array();
-			if ( isset( $res[0] ) ) {
+			// Skip zero-valued units, so we get "1 day" rather than "1 day, 0 hours, 0 minutes".
+			if ( ! empty( $res[0] ) ) {
 				$names[] = sprintf( _n( '%d minute', '%d minutes', $res[0], 'shareadraft' ), $res[0] );
 			}
-			if ( isset( $res[1] ) ) {
+			if ( ! empty( $res[1] ) ) {
 				$names[] = sprintf( _n( '%d hour', '%d hours', $res[1], 'shareadraft' ), $res[1] );
 			}
-			if ( isset( $res[2] ) ) {
+			if ( ! empty( $res[2] ) ) {
 				$names[] = sprintf( _n( '%d day', '%d days', $res[2], 'shareadraft' ), $res[2] );
+			}
+			if ( empty( $names ) ) {
+				return __( 'less than a minute', 'shareadraft' );
 			}
 			return implode( ', ', array_reverse( $names ) );
 		}
@@ -261,9 +267,25 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 		$s = $this->get_shared();
 foreach ( $s as $share ) :
 	$p = get_post( $share['id'] );
-	$url = get_bloginfo( 'url' ) . '/?p=' . $p->ID . '&shareadraft=' . $share['key'];
 	$friendly_delta = $this->friendly_delta( $share['expires'] - time() );
 	$iso_expires = date_i18n( 'c', $share['expires'] );
+	$delete_url = 'edit.php?page=' . plugin_basename( __FILE__ ) . '&action=delete&key=' . $share['key'];
+	$nonced_delete_url = wp_nonce_url( $delete_url, 'shareadraft-delete' );
+	// The shared post may have been deleted since it was shared. Still render a
+	// row, so the stale share can be removed.
+	if ( ! $p ) :
+?>
+<tr>
+<td><?php echo esc_html( $share['id'] ); ?></td>
+<td colspan="3"><em><?php _e( 'This post no longer exists.', 'shareadraft' ); ?></em></td>
+<td class="actions" colspan="2">
+	<a class="delete" href="<?php echo esc_url( $nonced_delete_url ); ?>"><?php _e( 'Delete', 'shareadraft' ); ?></a>
+</td>
+</tr>
+<?php
+		continue;
+	endif;
+	$url = get_bloginfo( 'url' ) . '/?p=' . $p->ID . '&shareadraft=' . $share['key'];
 ?>
 <tr>
 <td><?php echo $p->ID; ?></td>
@@ -292,10 +314,6 @@ foreach ( $s as $share ) :
 	</form>
 </td>
 <td class="actions">
-<?php
-	$delete_url = 'edit.php?page=' . plugin_basename( __FILE__ ) . '&action=delete&key=' . $share['key'];
-	$nonced_delete_url = wp_nonce_url( $delete_url, 'shareadraft-delete' );
-?>
 	<a class="delete" href="<?php echo esc_url( $nonced_delete_url ); ?>"><?php _e( 'Delete', 'shareadraft' ); ?></a>
 </td>
 </tr>
@@ -358,7 +376,9 @@ endif;
 				}
 				$shares = $option['shared'];
 				foreach ( $shares as $share ) {
-					if ( $share['id'] === $post_id && $share['key'] === $_GET['shareadraft'] ) {
+					// Cast both sides: stored ids and ids coming back from the query
+					// are not guaranteed to agree on int vs. string.
+					if ( (int) $share['id'] === (int) $post_id && $share['key'] === $_GET['shareadraft'] ) {
 						return true;
 					}
 				}

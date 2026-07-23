@@ -1,9 +1,11 @@
 === Share a Draft ===
 Contributors: nbachiyski, automattic
-Tags: post, post, draft, posts, drafts, share, sharing
+Tags: post, draft, drafts, share, sharing
 Requires at least: 4.0
 Tested up to: 5.8
 Stable tag: 1.5
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Share private preview links to your drafts
 

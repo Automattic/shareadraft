@@ -332,17 +332,17 @@ foreach ( $s as $share ) :
 	$url = get_bloginfo( 'url' ) . '/?p=' . $p->ID . '&shareadraft=' . $share['key'];
 ?>
 <tr>
-<td><?php echo $p->ID; ?></td>
-<td><?php echo esc_html( $p->post_title ); ?></td>
-<td>
+<td data-colname="<?php echo esc_attr__( 'Post ID', 'shareadraft' ); ?>"><?php echo $p->ID; ?></td>
+<td data-colname="<?php echo esc_attr__( 'Title', 'shareadraft' ); ?>"><?php echo esc_html( $p->post_title ); ?></td>
+<td data-colname="<?php echo esc_attr__( 'Link', 'shareadraft' ); ?>">
 	<a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $url ); ?></a>
 	<a href="#" class="shareadraft-copy" data-shareadraft-url="<?php echo esc_url( $url ); ?>"
 		title="<?php echo esc_attr__( 'Copy link to clipboard', 'shareadraft' ); ?>"
 		aria-label="<?php echo esc_attr__( 'Copy link to clipboard', 'shareadraft' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></a>
 	<span class="shareadraft-copied"><?php esc_html_e( 'Copied!', 'shareadraft' ); ?></span>
 </td>
-<td><time title="<?php echo $iso_expires; ?>" datetime="<?php echo $iso_expires; ?>"><?php echo $friendly_delta; ?></time></td>
-<td class="actions">
+<td data-colname="<?php echo esc_attr__( 'Expires in', 'shareadraft' ); ?>"><time title="<?php echo $iso_expires; ?>" datetime="<?php echo $iso_expires; ?>"><?php echo $friendly_delta; ?></time></td>
+<td class="actions" data-colname="<?php echo esc_attr__( 'Actions', 'shareadraft' ); ?>">
 	<a class="shareadraft-extend edit" id="shareadraft-extend-link-<?php echo $share['key']; ?>"
 		href="javascript:shareadraft.toggle_extend( '<?php echo $share['key']; ?>' );">
 			<?php _e( 'Extend', 'shareadraft' ); ?>
@@ -452,6 +452,23 @@ SELECT;
 		span.shareadraft-copied { margin-left: 6px; font-size: 11px; color: #268e26; visibility: hidden; }
 		span.shareadraft-copied.is-visible { visibility: visible; }
 		#shareadraft-share input, #shareadraft-share select { vertical-align: middle; }
+		@media screen and (max-width: 782px) {
+			/* Stack the shared-drafts table into labelled cards on small screens. */
+			table.widefat thead { display: none; }
+			table.widefat tr { display: block; margin-bottom: 1em; border: 1px solid #c3c4c7; background: #fff; }
+			table.widefat td { display: block; width: auto; text-align: left; border: none; border-bottom: 1px solid #f0f0f1; padding: 8px 10px; }
+			table.widefat tr td:last-child { border-bottom: none; }
+			table.widefat td.actions { text-align: left; }
+			table.widefat td[data-colname]::before {
+				content: attr(data-colname);
+				display: block;
+				font-weight: 600;
+				margin-bottom: 2px;
+			}
+			table.widefat td a[href^="http"] { word-break: break-all; }
+			a.shareadraft-copy { margin-left: 0; }
+			form.shareadraft-extend { white-space: normal; }
+		}
 	</style>
 	<?php
 		}

@@ -3,7 +3,7 @@ Contributors: nbachiyski, automattic
 Tags: post, draft, drafts, share, sharing
 Requires at least: 4.0
 Tested up to: 7.0
-Stable tag: 1.6
+Stable tag: 1.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -34,6 +34,15 @@ e.g.
 
 
 == Changelog ==
+
+= 1.7 =
+* Fixed shared draft previews breaking the header and other template parts on block themes (e.g. Twenty Twenty-Five)
+* Added a one-click button to copy a shared draft's link to the clipboard
+* Redesigned the Share a Draft screen: the new-share form is now a collapsible "Add draft link" panel, with clearer column labels and a mobile-friendly layout
+* The "Extend" action now opens in a roomy inline row instead of a cramped cell
+* Shared draft titles are now escaped on output
+* Shares whose post has been deleted are now cleaned up automatically
+* Internal code cleanup
 
 = 1.6 =
 * Fixed PHP 8.x deprecation notices for undeclared class properties

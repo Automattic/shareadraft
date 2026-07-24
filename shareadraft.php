@@ -289,7 +289,7 @@ foreach ( $s as $share ) :
 ?>
 <tr>
 <td><?php echo $p->ID; ?></td>
-<td><?php echo $p->post_title; ?></td>
+<td><?php echo esc_html( $p->post_title ); ?></td>
 <!-- TODO: make the draft link selecatble -->
 <td><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $url ); ?></a></td>
 <td><time title="<?php echo $iso_expires; ?>" datetime="<?php echo $iso_expires; ?>"><?php echo $friendly_delta; ?></time></td>

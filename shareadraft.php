@@ -347,23 +347,26 @@ foreach ( $s as $share ) :
 		href="javascript:shareadraft.toggle_extend( '<?php echo $share['key']; ?>' );">
 			<?php _e( 'Extend', 'shareadraft' ); ?>
 	</a>
-	<form class="shareadraft-extend" id="shareadraft-extend-form-<?php echo $share['key']; ?>"
-		action="" method="post">
+</td>
+<td class="actions">
+	<a class="delete" href="<?php echo esc_url( $nonced_delete_url ); ?>"><?php _e( 'Delete', 'shareadraft' ); ?></a>
+</td>
+</tr>
+<tr class="shareadraft-extend-row" id="shareadraft-extend-form-<?php echo $share['key']; ?>">
+<td colspan="6">
+	<form class="shareadraft-extend" action="" method="post">
 		<input type="hidden" name="action" value="extend" />
 		<input type="hidden" name="key" value="<?php echo $share['key']; ?>" />
-		<input type="submit" class="button" name="shareadraft_extend_submit"
-			value="<?php echo esc_attr__( 'Extend', 'shareadraft' ); ?>"/>
-<?php _e( 'by', 'shareadraft' );?>
-<?php echo $this->tmpl_measure_select(); ?>
+		<label for="shareadraft-extend-expires-<?php echo $share['key']; ?>"><?php _e( 'Extend by', 'shareadraft' ); ?></label>
+		<?php echo $this->tmpl_measure_select( 'shareadraft-extend-expires-' . $share['key'] ); ?>
+		<input type="submit" class="button button-primary" name="shareadraft_extend_submit"
+			value="<?php echo esc_attr__( 'Extend', 'shareadraft' ); ?>" />
 		<a class="shareadraft-extend-cancel"
 			href="javascript:shareadraft.cancel_extend( '<?php echo $share['key']; ?>' );">
 			<?php _e( 'Cancel', 'shareadraft' ); ?>
 		</a>
 		<?php wp_nonce_field( 'shareadraft-extend' ); ?>
 	</form>
-</td>
-<td class="actions">
-	<a class="delete" href="<?php echo esc_url( $nonced_delete_url ); ?>"><?php _e( 'Delete', 'shareadraft' ); ?></a>
 </td>
 </tr>
 <?php
@@ -423,13 +426,14 @@ if ( empty( $s ) ) :
 			}
 		}
 
-		function tmpl_measure_select() {
+		function tmpl_measure_select( $expires_id = '' ) {
 			$mins = __( 'minutes', 'shareadraft' );
 			$hours = __( 'hours', 'shareadraft' );
 			$days = __( 'days', 'shareadraft' );
 			$weeks = __( 'weeks', 'shareadraft' );
+			$id_attr = $expires_id ? ' id="' . esc_attr( $expires_id ) . '"' : '';
 			return <<<SELECT
-			<input name="expires" type="text" value="2" size="4"/>
+			<input name="expires"$id_attr type="text" value="2" size="4"/>
 			<select name="measure">
 				<option value="m">$mins</option>
 				<option value="h">$hours</option>
@@ -443,8 +447,11 @@ SELECT;
 	?>
 	<style type="text/css">
 		a.shareadraft-extend, a.shareadraft-extend-cancel { display: none; }
-		form.shareadraft-extend { white-space: nowrap; }
-		form.shareadraft-extend, form.shareadraft-extend input, form.shareadraft-extend select { font-size: 11px; }
+		tr.shareadraft-extend-row { display: none; }
+		tr.shareadraft-extend-row.is-open { display: table-row; }
+		tr.shareadraft-extend-row td { background: #f6f7f7; padding: 12px 10px; }
+		form.shareadraft-extend { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+		form.shareadraft-extend label { font-weight: 600; }
 		th.actions, td.actions { text-align: center; }
 		table.widefat td a { padding: 2px; }
 		a.shareadraft-copy { text-decoration: none; vertical-align: middle; margin-left: 6px; }
@@ -454,6 +461,7 @@ SELECT;
 		#shareadraft-share input, #shareadraft-share select { vertical-align: middle; }
 		@media screen and (max-width: 782px) {
 			/* Stack the shared-drafts table into labelled cards on small screens. */
+			table.widefat { border: none; box-shadow: none; background: transparent; }
 			table.widefat thead { display: none; }
 			table.widefat tr { display: block; margin-bottom: 1em; border: 1px solid #c3c4c7; background: #fff; }
 			table.widefat td { display: block; width: auto; text-align: left; border: none; border-bottom: 1px solid #f0f0f1; padding: 8px 10px; }
@@ -467,7 +475,10 @@ SELECT;
 			}
 			table.widefat td a[href^="http"] { word-break: break-all; }
 			a.shareadraft-copy { margin-left: 0; }
-			form.shareadraft-extend { white-space: normal; }
+			/* Higher specificity than 'table.widefat tr { display: block }' above,
+			   so the extend row stays collapsed until toggled open. */
+			table.widefat tr.shareadraft-extend-row { display: none; }
+			table.widefat tr.shareadraft-extend-row.is-open { display: block; }
 		}
 	</style>
 	<?php
@@ -479,7 +490,6 @@ SELECT;
 	//<![CDATA[
 	( function( $ ) {
 		$( function() {
-			$( 'form.shareadraft-extend' ).hide();
 			$( 'a.shareadraft-extend' ).show();
 			$( 'a.shareadraft-extend-cancel' ).show();
 			$( 'a.shareadraft-extend-cancel' ).css( 'display', 'inline' );
@@ -522,12 +532,12 @@ SELECT;
 		} );
 		window.shareadraft = {
 			toggle_extend: function( key ) {
-				$( '#shareadraft-extend-form-'+key ).show();
+				$( '#shareadraft-extend-form-'+key ).addClass( 'is-open' );
 				$( '#shareadraft-extend-link-'+key ).hide();
 				$( '#shareadraft-extend-form-'+key+' input[name="expires"]' ).focus();
 			},
 			cancel_extend: function( key ) {
-				$( '#shareadraft-extend-form-'+key ).hide();
+				$( '#shareadraft-extend-form-'+key ).removeClass( 'is-open' );
 				$( '#shareadraft-extend-link-'+key ).show();
 			}
 		};

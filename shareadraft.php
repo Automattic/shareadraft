@@ -328,7 +328,7 @@ foreach ( $s as $share ) :
 if ( empty( $s ) ) :
 ?>
 <tr>
-<td colspan="5"><?php _e( 'No shared drafts!', 'shareadraft' ); ?></td>
+<td colspan="6"><?php _e( 'No shared drafts!', 'shareadraft' ); ?></td>
 </tr>
 <?php
 		endif;

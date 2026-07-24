@@ -308,7 +308,7 @@ foreach ( $draft_group['posts'] as $draft ) :
 		<table class="widefat">
 			<thead>
 			<tr>
-				<th><?php _e( 'ID', 'shareadraft' ); ?></th>
+				<th><?php _e( 'Post ID', 'shareadraft' ); ?></th>
 				<th><?php _e( 'Title', 'shareadraft' ); ?></th>
 				<th><?php _e( 'Link', 'shareadraft' ); ?></th>
 				<th><?php _e( 'Expires in', 'shareadraft' ); ?></th>

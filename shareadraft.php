@@ -43,6 +43,7 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 
 		function admin_page_init() {
 			wp_enqueue_script( 'jquery' );
+			wp_enqueue_script( 'wp-a11y' );
 			add_action( 'admin_head', array( $this, 'print_admin_css' ) );
 			add_action( 'admin_head', array( $this, 'print_admin_js' ) );
 		}
@@ -290,8 +291,13 @@ foreach ( $s as $share ) :
 <tr>
 <td><?php echo $p->ID; ?></td>
 <td><?php echo esc_html( $p->post_title ); ?></td>
-<!-- TODO: make the draft link selecatble -->
-<td><a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $url ); ?></a></td>
+<td>
+	<a href="<?php echo esc_url( $url ); ?>"><?php echo esc_html( $url ); ?></a>
+	<a href="#" class="shareadraft-copy" data-shareadraft-url="<?php echo esc_url( $url ); ?>"
+		title="<?php echo esc_attr__( 'Copy link to clipboard', 'shareadraft' ); ?>"
+		aria-label="<?php echo esc_attr__( 'Copy link to clipboard', 'shareadraft' ); ?>"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg></a>
+	<span class="shareadraft-copied"><?php esc_html_e( 'Copied!', 'shareadraft' ); ?></span>
+</td>
 <td><time title="<?php echo $iso_expires; ?>" datetime="<?php echo $iso_expires; ?>"><?php echo $friendly_delta; ?></time></td>
 <td class="actions">
 	<a class="shareadraft-extend edit" id="shareadraft-extend-link-<?php echo $share['key']; ?>"
@@ -430,6 +436,11 @@ SELECT;
 		form.shareadraft-extend { white-space: nowrap; }
 		form.shareadraft-extend, form.shareadraft-extend input, form.shareadraft-extend select { font-size: 11px; }
 		th.actions, td.actions { text-align: center; }
+		table.widefat td a { padding: 2px; }
+		a.shareadraft-copy { text-decoration: none; vertical-align: middle; margin-left: 6px; }
+		a.shareadraft-copy svg { vertical-align: middle; position: relative; top: -2px; }
+		span.shareadraft-copied { margin-left: 6px; font-size: 11px; color: #268e26; visibility: hidden; }
+		span.shareadraft-copied.is-visible { visibility: visible; }
 	</style>
 	<?php
 		}
@@ -444,6 +455,30 @@ SELECT;
 			$( 'a.shareadraft-extend' ).show();
 			$( 'a.shareadraft-extend-cancel' ).show();
 			$( 'a.shareadraft-extend-cancel' ).css( 'display', 'inline' );
+
+			$( document ).on( 'click', 'a.shareadraft-copy', function( e ) {
+				e.preventDefault();
+				var $link = $( this );
+				var url = $link.attr( 'data-shareadraft-url' );
+				var confirm = function() {
+					var $msg = $link.siblings( 'span.shareadraft-copied' );
+					$msg.addClass( 'is-visible' );
+					if ( window.wp && window.wp.a11y && window.wp.a11y.speak ) {
+						window.wp.a11y.speak( '<?php echo esc_js( __( 'Copied!', 'shareadraft' ) ); ?>' );
+					}
+					window.setTimeout( function() { $msg.removeClass( 'is-visible' ); }, 2000 );
+				};
+				if ( window.navigator.clipboard && window.navigator.clipboard.writeText ) {
+					window.navigator.clipboard.writeText( url ).then( confirm );
+				} else {
+					// Fallback for browsers without the async Clipboard API (e.g. non-HTTPS contexts).
+					var $tmp = $( '<textarea>' ).val( url ).css( { position: 'fixed', top: 0, left: '-9999px' } ).appendTo( 'body' );
+					$tmp[0].select();
+					try { document.execCommand( 'copy' ); } catch ( err ) {}
+					$tmp.remove();
+					confirm();
+				}
+			} );
 		} );
 		window.shareadraft = {
 			toggle_extend: function( key ) {

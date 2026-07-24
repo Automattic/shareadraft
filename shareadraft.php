@@ -198,7 +198,22 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 			if ( ! isset( $this->user_options['shared'] ) || ! is_array( $this->user_options['shared'] ) ) {
 				return array();
 			}
-			return $this->user_options['shared'];
+			// Drop shares whose post has since been deleted — the preview link is
+			// dead, so there is nothing useful to show or do with them.
+			$shared = array();
+			$changed = false;
+			foreach ( $this->user_options['shared'] as $share ) {
+				if ( ! get_post( $share['id'] ) ) {
+					$changed = true;
+					continue;
+				}
+				$shared[] = $share;
+			}
+			if ( $changed ) {
+				$this->user_options['shared'] = $shared;
+				$this->save_admin_options();
+			}
+			return $shared;
 		}
 
 		function friendly_delta( $s ) {
@@ -272,20 +287,11 @@ foreach ( $s as $share ) :
 	$iso_expires = date_i18n( 'c', $share['expires'] );
 	$delete_url = 'edit.php?page=' . plugin_basename( __FILE__ ) . '&action=delete&key=' . $share['key'];
 	$nonced_delete_url = wp_nonce_url( $delete_url, 'shareadraft-delete' );
-	// The shared post may have been deleted since it was shared. Still render a
-	// row, so the stale share can be removed.
-	if ( ! $p ) :
-?>
-<tr>
-<td><?php echo esc_html( $share['id'] ); ?></td>
-<td colspan="3"><em><?php _e( 'This post no longer exists.', 'shareadraft' ); ?></em></td>
-<td class="actions" colspan="2">
-	<a class="delete" href="<?php echo esc_url( $nonced_delete_url ); ?>"><?php _e( 'Delete', 'shareadraft' ); ?></a>
-</td>
-</tr>
-<?php
+	// get_shared() has already pruned shares whose post was deleted; this is
+	// just a safety net in case the post vanished mid-request.
+	if ( ! $p ) {
 		continue;
-	endif;
+	}
 	$url = get_bloginfo( 'url' ) . '/?p=' . $p->ID . '&shareadraft=' . $share['key'];
 ?>
 <tr>

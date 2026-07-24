@@ -63,6 +63,10 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 
 		function clear_expired( $all_options ) {
 			$all = array();
+			// Orphan cleanup calls get_post() per share, so only run it in the
+			// admin — not on every front-end request. Expired shares are always
+			// dropped because can_view() relies on it to stop serving lapsed links.
+			$prune_orphans = is_admin();
 			foreach ( $all_options as $user_id => $options ) {
 				$shared = array();
 				if ( ! isset( $options['shared'] ) || ! is_array( $options['shared'] ) ) {
@@ -70,6 +74,10 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 				}
 				foreach ( $options['shared'] as $share ) {
 					if ( $share['expires'] < time() ) {
+						continue;
+					}
+					// Drop shares whose post has since been deleted — a dead link.
+					if ( $prune_orphans && ! get_post( $share['id'] ) ) {
 						continue;
 					}
 					$shared[] = $share;
@@ -198,22 +206,7 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 			if ( ! isset( $this->user_options['shared'] ) || ! is_array( $this->user_options['shared'] ) ) {
 				return array();
 			}
-			// Drop shares whose post has since been deleted — the preview link is
-			// dead, so there is nothing useful to show or do with them.
-			$shared = array();
-			$changed = false;
-			foreach ( $this->user_options['shared'] as $share ) {
-				if ( ! get_post( $share['id'] ) ) {
-					$changed = true;
-					continue;
-				}
-				$shared[] = $share;
-			}
-			if ( $changed ) {
-				$this->user_options['shared'] = $shared;
-				$this->save_admin_options();
-			}
-			return $shared;
+			return $this->user_options['shared'];
 		}
 
 		function friendly_delta( $s ) {

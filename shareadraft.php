@@ -259,7 +259,7 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 				<th><?php _e( 'ID', 'shareadraft' ); ?></th>
 				<th><?php _e( 'Title', 'shareadraft' ); ?></th>
 				<th><?php _e( 'Link', 'shareadraft' ); ?></th>
-				<th><?php _e( 'Expires after', 'shareadraft' ); ?></th>
+				<th><?php _e( 'Expires in', 'shareadraft' ); ?></th>
 				<th colspan="2" class="actions"><?php _e( 'Actions', 'shareadraft' ); ?></th>
 			</tr>
 			</thead>

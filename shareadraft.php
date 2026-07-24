@@ -24,8 +24,8 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 		function init() {
 			global $current_user;
 			add_action( 'admin_menu', array( $this, 'add_admin_pages' ) );
-			add_filter( 'the_posts', array( $this, 'the_posts_intercept' ) );
-			add_filter( 'posts_results', array( $this, 'posts_results_intercept' ) );
+			add_filter( 'the_posts', array( $this, 'the_posts_intercept' ), 10, 2 );
+			add_filter( 'posts_results', array( $this, 'posts_results_intercept' ), 10, 2 );
 
 			$this->admin_options = $this->get_admin_options();
 			$this->admin_options = $this->clear_expired( $this->admin_options );
@@ -398,7 +398,12 @@ if ( empty( $s ) ) :
 			return false;
 		}
 
-		function posts_results_intercept( $posts ) {
+		function posts_results_intercept( $posts, $query = null ) {
+			// Only ever act on the main front-end query. Block themes run many
+			// secondary queries (template parts, patterns) that must be left alone.
+			if ( ! $query || ! $query->is_main_query() ) {
+				return $posts;
+			}
 			if ( 1 !== count( $posts ) ) {
 				return $posts;
 			}
@@ -410,7 +415,12 @@ if ( empty( $s ) ) :
 			return $posts;
 		}
 
-		function the_posts_intercept( $posts ) {
+		function the_posts_intercept( $posts, $query = null ) {
+			// See posts_results_intercept(): never inject into secondary queries,
+			// or the shared post leaks into template-part lookups and breaks them.
+			if ( ! $query || ! $query->is_main_query() ) {
+				return $posts;
+			}
 			if ( empty( $posts ) && ! is_null( $this->shared_post ) ) {
 				return array( $this->shared_post );
 			} else {

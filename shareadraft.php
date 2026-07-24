@@ -263,11 +263,48 @@ if ( ! class_exists( 'Share_a_Draft' ) ) :
 			$draft_groups = $this->get_drafts();
 	?>
 	<div class="wrap">
-		<h2><?php _e( 'Share a Draft', 'shareadraft' ); ?></h2>
+		<h1 class="wp-heading-inline"><?php _e( 'Share a Draft', 'shareadraft' ); ?></h1>
+		<a href="#" id="shareadraft-add-toggle" class="page-title-action" aria-expanded="false" aria-controls="shareadraft-add"><?php _e( 'Add draft link', 'shareadraft' ); ?></a>
+		<hr class="wp-header-end">
 <?php 	if ( $msg ) :?>
 		<div id="message" class="updated fade"><?php echo $msg; ?></div>
 <?php 	endif;?>
-		<h3><?php _e( 'Currently shared drafts', 'shareadraft' ); ?></h3>
+		<div id="shareadraft-add" class="shareadraft-add-section" style="display: none;">
+		<h3><?php _e( 'Add draft link', 'shareadraft' ); ?></h3>
+		<form id="shareadraft-share" action="" method="post">
+		<p>
+			<select id="shareadraft-postid" name="post_id">
+			<option value=""><?php _e( 'Choose a draft', 'shareadraft' ); ?></option>
+<?php
+foreach ( $draft_groups as $draft_group ) :
+	if ( $draft_group['posts'] ) :
+?>
+	<option value="" disabled="disabled"></option>
+	<option value="" disabled="disabled"><?php echo $draft_group['label']; ?></option>
+<?php
+foreach ( $draft_group['posts'] as $draft ) :
+	if ( empty( $draft->post_title ) ) {
+		continue;
+	}
+?>
+<option value="<?php echo $draft->ID?>"><?php echo esc_html( $draft->post_title ); ?></option>
+<?php
+		endforeach;
+	endif;
+		endforeach;
+?>
+			</select>
+		</p>
+		<p>
+			<input type="submit" class="button" name="shareadraft_submit"
+				value="<?php echo esc_attr__( 'Share it', 'shareadraft' ); ?>" />
+			<?php _e( 'for', 'shareadraft' ); ?>
+			<?php echo $this->tmpl_measure_select(); ?>
+		</p>
+		<?php wp_nonce_field( 'shareadraft-new-share' ); ?>
+		</form>
+		</div>
+		<h3><?php _e( 'Shareable drafts', 'shareadraft' ); ?></h3>
 		<table class="widefat">
 			<thead>
 			<tr>
@@ -341,39 +378,6 @@ if ( empty( $s ) ) :
 ?>
 			</tbody>
 		</table>
-		<h3><?php _e( 'Share a Draft', 'shareadraft' ); ?></h3>
-		<form id="shareadraft-share" action="" method="post">
-		<p>
-			<select id="shareadraft-postid" name="post_id">
-			<option value=""><?php _e( 'Choose a draft', 'shareadraft' ); ?></option>
-<?php
-foreach ( $draft_groups as $draft_group ) :
-	if ( $draft_group['posts'] ) :
-?>
-	<option value="" disabled="disabled"></option>
-	<option value="" disabled="disabled"><?php echo $draft_group['label']; ?></option>
-<?php
-foreach ( $draft_group['posts'] as $draft ) :
-	if ( empty( $draft->post_title ) ) {
-		continue;
-	}
-?>
-<option value="<?php echo $draft->ID?>"><?php echo esc_html( $draft->post_title ); ?></option>
-<?php
-		endforeach;
-endif;
-		endforeach;
-?>
-			</select>
-		</p>
-		<p>
-			<input type="submit" class="button" name="shareadraft_submit"
-				value="<?php echo esc_attr__( 'Share it', 'shareadraft' ); ?>" />
-			<?php _e( 'for', 'shareadraft' ); ?>
-			<?php echo $this->tmpl_measure_select(); ?>
-		</p>
-		<?php wp_nonce_field( 'shareadraft-new-share' ); ?>
-		</form>
 		</div>
 <?php
 		}
@@ -447,6 +451,7 @@ SELECT;
 		a.shareadraft-copy svg { vertical-align: middle; position: relative; top: -2px; }
 		span.shareadraft-copied { margin-left: 6px; font-size: 11px; color: #268e26; visibility: hidden; }
 		span.shareadraft-copied.is-visible { visibility: visible; }
+		#shareadraft-share input, #shareadraft-share select { vertical-align: middle; }
 	</style>
 	<?php
 		}
@@ -484,6 +489,18 @@ SELECT;
 					$tmp.remove();
 					confirm();
 				}
+			} );
+
+			$( '#shareadraft-add-toggle' ).on( 'click', function( e ) {
+				e.preventDefault();
+				var $toggle = $( this );
+				var expanded = $toggle.attr( 'aria-expanded' ) === 'true';
+				$toggle.attr( 'aria-expanded', expanded ? 'false' : 'true' );
+				$( '#shareadraft-add' ).slideToggle( 'fast', function() {
+					if ( ! expanded ) {
+						$( '#shareadraft-postid' ).trigger( 'focus' );
+					}
+				} );
 			} );
 		} );
 		window.shareadraft = {

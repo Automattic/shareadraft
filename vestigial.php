@@ -445,7 +445,7 @@ function render_page(): void {
 			esc_html( $url ),
 			esc_html__( 'Copy', 'shareadraft' ),
 			esc_attr( gmdate( 'c', $share['expires'] ) ),
-			/* translators: %s: time until the link expires, e.g. "2 weeks". */
+			/* translators: %s: human-readable duration, e.g. "2 hours" */
 			esc_html( sprintf( __( 'in %s', 'shareadraft' ), human_time_diff( time(), $share['expires'] ) ) ),
 			esc_url( $delete_url ),
 			esc_html__( 'Delete', 'shareadraft' )

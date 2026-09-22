@@ -1,0 +1,165 @@
+<?php
+/**
+ * Supplementary Psalm stubs for symbols the shipped stub packages miss.
+ *
+ * Psalm loads php-stubs/wordpress-stubs and the wordpress-test-library stubs
+ * first (see <stubs> in psalm.xml.dist); this file only fills the gaps. Those
+ * packages are generated from WordPress source, so anything core defines at
+ * runtime — constants set inside wp_initial_constants(), or by wp-config.php —
+ * never reaches them and has to be declared here instead.
+ *
+ * Before adding an entry, check it is genuinely absent from (or wrong in)
+ * vendor/php-stubs/wordpress-stubs/wordpress-stubs.php, and say why it is
+ * needed; anything upstream already covers belongs upstream. Entries whose last
+ * caller has gone should be deleted — Psalm will say so by erroring when a
+ * symbol is truly missing.
+ */
+
+namespace {
+	// Set by wp_initial_constants() at runtime, so absent from the generated stubs.
+	define( 'MINUTE_IN_SECONDS', 60 );
+	define( 'HOUR_IN_SECONDS', 3600 );
+	define( 'DAY_IN_SECONDS', 86400 );
+	define( 'WEEK_IN_SECONDS', 604800 );
+	define( 'MONTH_IN_SECONDS', 2592000 );
+	define( 'YEAR_IN_SECONDS', 31536000 );
+
+	// wpdb output-format constant, also defined at runtime (wp-includes/class-wpdb.php).
+	define( 'ARRAY_A', 'ARRAY_A' );
+
+	// Set by wp-config.php, which the stub generator never sees.
+	define( 'ABSPATH', '/wp' );
+
+	// Defined by the plugin entry file before any inc/ code runs. The entry
+	// file sits behind ABSPATH/already-loaded guards, so Psalm cannot prove
+	// the defines execute; these declarations make the constants always known.
+	define( 'VIP_SHAREADRAFT_LOADED', true );
+	define( 'VIP_SHAREADRAFT_VERSION', '1.0.0' );
+	define( 'VIP_SHAREADRAFT_FILE', '/wp/wp-content/plugins/shareadraft/shareadraft.php' );
+
+	/**
+	 * Psalm merges duplicate class stubs, so only the methods declared here
+	 * override the generated ones; everything else on wpdb keeps its upstream
+	 * signature. These two are overridden because the generated types are too
+	 * loose for errorLevel 1: prepare() comes out as mixed rather than
+	 * string|null, which in turn makes every get_col()/get_results()/get_var()
+	 * call on a prepared query a MixedArgument error.
+	 */
+	class wpdb {
+
+		/**
+		 * @param string|null $query
+		 * @param int         $x
+		 * @return list<string>
+		 */
+		public function get_col( $query = null, $x = 0 ) {}
+
+		/**
+		 * @param string $query
+		 * @param mixed $args
+		 * @return string|null
+		 */
+		public function prepare( $query, ...$args ) {}
+	}
+
+	// The WP-CLI surface the inc/cli/ commands touch. WP-CLI is not part of
+	// WordPress core, so the generated stubs never cover it, and the
+	// php-stubs/wp-cli-stubs package cannot be used yet: releases up to
+	// v2.12.0 pin php-stubs/wordpress-stubs to ^6, which conflicts with this
+	// repo tracking WordPress 7 stubs. The pin is relaxed on its master branch
+	// (php-stubs/wp-cli-stubs#24), so once that ships in a release, adopt the
+	// package and delete everything from here down.
+	class WP_CLI {
+
+		/**
+		 * @param string                 $name
+		 * @param callable|object|string $callable
+		 * @param array<string, mixed>   $args
+		 * @return bool|null
+		 */
+		public static function add_command( $name, $callable, $args = array() ) {}
+
+		/**
+		 * @param string|\WP_Error $message
+		 * @param bool|int         $exit
+		 * @return void
+		 */
+		public static function error( $message, $exit = true ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function success( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function warning( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function log( $message ) {}
+
+		/**
+		 * @param string $message
+		 * @return void
+		 */
+		public static function line( $message = '' ) {}
+
+		/**
+		 * @param string                     $question
+		 * @param array<string, string|bool> $assoc_args
+		 * @return void
+		 */
+		public static function confirm( $question, $assoc_args = array() ) {}
+	}
+}
+
+namespace WP_CLI {
+	class Formatter {
+
+		/**
+		 * @param array<string, string|bool> $assoc_args
+		 * @param list<string>|string|null   $fields
+		 * @param string|false               $prefix
+		 */
+		public function __construct( &$assoc_args, $fields = null, $prefix = false ) {}
+
+		/**
+		 * @param array<int|string, mixed> $items
+		 * @param bool|list<string>        $ascii_pre_colorized
+		 * @return void
+		 */
+		public function display_items( $items, $ascii_pre_colorized = false ) {}
+	}
+}
+
+namespace WP_CLI\Dispatcher {
+	class CommandNamespace {
+	}
+}
+
+namespace WP_CLI\Fetchers {
+	class User {
+
+		/**
+		 * @param string $arg An id, login, or email; errors out when no user matches.
+		 * @return \WP_User
+		 */
+		public function get_check( $arg ) {}
+	}
+}
+
+namespace WP_CLI\Utils {
+	/**
+	 * @param array<string, string|bool> $assoc_args
+	 * @param string                     $flag
+	 * @param mixed                      $default
+	 * @return mixed
+	 */
+	function get_flag_value( $assoc_args, $flag, $default = null ) {}
+}

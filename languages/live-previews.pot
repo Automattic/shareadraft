@@ -1,0 +1,515 @@
+# Copyright (C) 2026 Automattic
+# This file is distributed under the GPLv2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Live Previews 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/Automattic/live-previews/issues\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-09-07T14:33:53+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: live-previews\n"
+
+#. Plugin Name of the plugin
+#: live-previews.php
+#: inc/class-previewabilities.php:58
+#: build/index.js:5
+msgid "Live Previews"
+msgstr ""
+
+#. Plugin URI of the plugin
+#. Author URI of the plugin
+#: live-previews.php
+msgid "https://wpvip.com"
+msgstr ""
+
+#. Description of the plugin
+#: live-previews.php
+msgid "Generate safe-to-share, time- and usage-limited preview links so reviewers without a WordPress account can review a draft. Hardens the existing Preview Links."
+msgstr ""
+
+#. Author of the plugin
+#: live-previews.php
+msgid "Automattic"
+msgstr ""
+
+#: inc/class-previewabilities.php:59
+msgid "Create and manage pre-publish preview links."
+msgstr ""
+
+#: inc/class-previewabilities.php:68
+msgid "Create preview link"
+msgstr ""
+
+#: inc/class-previewabilities.php:69
+msgid "Issues a shareable link that lets a logged-out reviewer view a draft before it is published. Returns the preview URL and the timestamp it expires. The URL contains a secret token, so treat the result as sensitive."
+msgstr ""
+
+#: inc/class-previewabilities.php:77
+msgid "ID of the draft to generate a preview link for."
+msgstr ""
+
+#: inc/class-previewabilities.php:85
+msgid "How long the link stays valid, in seconds."
+msgstr ""
+
+#: inc/class-previewabilities.php:92
+msgid "Maximum number of distinct viewers, or null for unlimited."
+msgstr ""
+
+#: inc/class-previewabilities.php:98
+msgid "IP addresses or CIDR ranges (IPv4 or IPv6) the link may be opened from. Empty means no IP restriction."
+msgstr ""
+
+#: inc/class-previewabilities.php:107
+msgid "The shareable preview URL, carrying the secret token."
+msgstr ""
+
+#: inc/class-previewabilities.php:111
+msgid "Unix timestamp when the link expires."
+msgstr ""
+
+#: inc/class-previewabilities.php:138
+msgid "List preview links"
+msgstr ""
+
+#: inc/class-previewabilities.php:139
+msgid "Lists the active preview links for a post — their usage, expiry, and a short token hint — so an existing link can be reused instead of minting a duplicate. The shareable URL is not returned (only a hint), because the token itself is never stored."
+msgstr ""
+
+#: inc/class-previewabilities.php:147
+msgid "ID of the post whose preview links to list."
+msgstr ""
+
+#: inc/class-previewabilities.php:158
+msgid "Token hash identifying the link."
+msgstr ""
+
+#: inc/class-previewabilities.php:162
+msgid "Last few characters of the token, to recognise the link."
+msgstr ""
+
+#: inc/class-previewabilities.php:172
+msgid "IP ranges the link is restricted to; empty means no per-link restriction."
+msgstr ""
+
+#: inc/class-previewgate.php:194
+msgid "This is a private preview link. Open it in a browser to view the draft."
+msgstr ""
+
+#: inc/class-previewgate.php:195
+msgid "Private preview link"
+msgstr ""
+
+#: inc/class-previewgate.php:200
+msgid "This preview link is no longer available."
+msgstr ""
+
+#: inc/class-previewgate.php:203
+msgid "This preview link has expired."
+msgstr ""
+
+#: inc/class-previewgate.php:204
+msgid "This preview link has been revoked."
+msgstr ""
+
+#: inc/class-previewgate.php:205
+msgid "This preview link has reached its viewing limit."
+msgstr ""
+
+#: inc/class-previewgate.php:234
+msgid "Ask the author to share a new preview link."
+msgstr ""
+
+#: inc/class-previewgate.php:236
+msgid "Preview unavailable"
+msgstr ""
+
+#: inc/class-previewlinkminter.php:45
+msgid "The post could not be found."
+msgstr ""
+
+#. translators: %s: the rejected input, e.g. "203.0.113.0/33"
+#: inc/class-previewlinkminter.php:58
+#, php-format
+msgid "\"%s\" is not a valid IP address or CIDR range."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:68
+#: inc/class-previewlinksadminpage.php:69
+#: inc/class-previewlinksadminpage.php:138
+msgid "Preview Links"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:131
+msgid "You are not allowed to manage preview links."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:217
+msgid "IP ranges set in the VIP Dashboard apply to every link, in addition to any ranges shown per link below:"
+msgstr ""
+
+#. translators: %d: number of preview links revoked
+#: inc/class-previewlinksadminpage.php:236
+#, php-format
+msgid "%d preview link revoked."
+msgid_plural "%d preview links revoked."
+msgstr[0] ""
+msgstr[1] ""
+
+#: inc/class-previewlinksadminpage.php:257
+msgid "Links per page"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:296
+msgid "Overview"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:297
+msgid "This screen lists every preview link across the site, so you can see at a glance which drafts are shared, how far each link has been used, and when it expires. It is read-only apart from revoking, and is shown to editors because they can already view the drafts these links point at."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:301
+msgid "The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:302
+#: inc/class-previewlinkslisttable.php:49
+msgid "Status"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:303
+msgid "Active: the link works."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:304
+msgid "Expired: past its expiry time."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:305
+msgid "Exhausted: reached its limit on distinct viewers."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:306
+msgid "Revoked: switched off by hand."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:307
+msgid "Uses counts distinct viewers against the cap; an infinity sign means no cap."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:308
+msgid "IP ranges shows the addresses a link is restricted to, on top of any ranges configured centrally in the VIP Dashboard. A dash means the link adds no restriction of its own. A link cannot be edited once shared: to change its ranges, revoke it and generate a new one."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:313
+msgid "Reading a row"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:321
+msgid "Revoking"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:322
+msgid "Revoking a link stops it working immediately. For a short period the visitor sees a \"no longer available\" notice, and after that a plain \"not found\" page. Revoking cannot be undone: generate a new link to restore access. Use the row action to revoke one link, or tick several and choose the Revoke bulk action."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:340
+msgid "WordPress VIP documentation"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:341
+msgid "Contact VIP support"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:344
+msgid "Support forum"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:347
+msgid "For more information"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:44
+msgid "Post"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:45
+msgid "Created by"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:46
+msgid "Uses"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:47
+msgid "IP ranges"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:48
+msgid "Expires"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:50
+msgid "Link"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:58
+#: inc/class-previewlinkslisttable.php:230
+#: build/index.js:5
+msgid "Revoke"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:66
+msgid "No preview links have been created yet."
+msgstr ""
+
+#. translators: %d: post ID
+#: inc/class-previewlinkslisttable.php:102
+#, php-format
+msgid "(post #%d)"
+msgstr ""
+
+#. translators: %d: user ID
+#: inc/class-previewlinkslisttable.php:127
+#, php-format
+msgid "User #%d"
+msgstr ""
+
+#. translators: %s: human-readable duration, e.g. "2 hours"
+#: inc/class-previewlinkslisttable.php:171
+#, php-format
+msgid "%s ago"
+msgstr ""
+
+#. translators: %s: human-readable duration, e.g. "2 hours"
+#: inc/class-previewlinkslisttable.php:174
+#, php-format
+msgid "in %s"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:186
+msgid "Revoked"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:188
+msgid "Expired"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:190
+msgid "Exhausted"
+msgstr ""
+
+#: inc/class-previewlinkslisttable.php:192
+msgid "Active"
+msgstr ""
+
+#: inc/class-previewrestcontroller.php:49
+msgid "1 hour"
+msgstr ""
+
+#: inc/class-previewrestcontroller.php:53
+msgid "8 hours"
+msgstr ""
+
+#: inc/class-previewrestcontroller.php:57
+msgid "24 hours"
+msgstr ""
+
+#: inc/class-previewrestcontroller.php:61
+msgid "7 days"
+msgstr ""
+
+#: inc/class-previewrestcontroller.php:181
+msgid "No matching preview link to revoke."
+msgstr ""
+
+#: inc/class-sitehealth.php:55
+msgid "Preview link cleanup"
+msgstr ""
+
+#: inc/class-sitehealth.php:73
+msgid "Expired preview links are not being cleaned up"
+msgstr ""
+
+#: inc/class-sitehealth.php:74
+msgid "The daily sweep that removes expired and revoked preview links is not scheduled, so they will accumulate in the database. Deactivating and reactivating Live Previews will schedule it again."
+msgstr ""
+
+#: inc/class-sitehealth.php:84
+msgid "The preview link cleanup sweep is running late"
+msgstr ""
+
+#. translators: %s: human-readable time difference, e.g. "4 days".
+#: inc/class-sitehealth.php:87
+#, php-format
+msgid "The cleanup sweep was last due %s ago but has not run. Scheduled events on this site may not be firing, which means expired and revoked preview links will accumulate in the database. Preview links themselves are unaffected: expiry is checked when a link is opened, not by this sweep."
+msgstr ""
+
+#: inc/class-sitehealth.php:95
+msgid "Expired preview links are being cleaned up"
+msgstr ""
+
+#. translators: %s: human-readable time difference, e.g. "6 hours".
+#: inc/class-sitehealth.php:99
+#, php-format
+msgid "The daily sweep that removes expired and revoked preview links is scheduled and due to run in %s."
+msgstr ""
+
+#. translators: 1: human-readable time difference since the last run, 2: human-readable time difference until the next run.
+#: inc/class-sitehealth.php:104
+#, php-format
+msgid "The daily sweep that removes expired and revoked preview links last ran %1$s ago, and is due again in %2$s."
+msgstr ""
+
+#: inc/class-sitehealth.php:119
+msgid "Performance"
+msgstr ""
+
+#: build/index.js:1
+msgid "expired"
+msgstr ""
+
+#: build/index.js:1
+msgid "no expiry"
+msgstr ""
+
+#: build/index.js:1
+msgid "day"
+msgstr ""
+
+#: build/index.js:1
+msgid "days"
+msgstr ""
+
+#: build/index.js:1
+msgid "hour"
+msgstr ""
+
+#: build/index.js:1
+msgid "hours"
+msgstr ""
+
+#: build/index.js:1
+msgid "minute"
+msgstr ""
+
+#: build/index.js:1
+msgid "minutes"
+msgstr ""
+
+#: build/index.js:1
+msgid "second"
+msgstr ""
+
+#: build/index.js:1
+msgid "seconds"
+msgstr ""
+
+#. translators: 1: a number, 2: a unit of time such as "hours".
+#: build/index.js:2
+#, js-format
+msgid "expires in %1$d %2$s"
+msgstr ""
+
+#: build/index.js:2
+msgid "expires soon"
+msgstr ""
+
+#. translators: %d: number of times the link has been viewed.
+#: build/index.js:3
+#, js-format
+msgid "%d view · no limit"
+msgid_plural "%d views · no limit"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: 1: views so far, 2: maximum views.
+#: build/index.js:4
+#, js-format
+msgid "%1$d of %2$d views"
+msgstr ""
+
+#: build/index.js:4
+#: build/index.js:5
+msgid "Generate preview link"
+msgstr ""
+
+#: build/index.js:4
+msgid "Anyone with this link will be able to preview the post."
+msgstr ""
+
+#: build/index.js:4
+msgid "Link expiration"
+msgstr ""
+
+#: build/index.js:4
+msgid "Maximum uses"
+msgstr ""
+
+#: build/index.js:4
+msgid "Number of distinct viewers. Leave empty for unlimited."
+msgstr ""
+
+#: build/index.js:4
+msgid "Allowed IP ranges"
+msgstr ""
+
+#: build/index.js:4
+msgid "Comma-separated IPv4/IPv6 addresses or CIDR ranges, added to the ranges already set in the VIP Dashboard. Leave empty to add none."
+msgstr ""
+
+#: build/index.js:4
+msgid "Comma-separated IPv4/IPv6 addresses or CIDR ranges, e.g. 203.0.113.0/24. Limits where the link opens, not who opens it. Leave empty for no IP restriction."
+msgstr ""
+
+#: build/index.js:4
+msgid "Preview link"
+msgstr ""
+
+#: build/index.js:4
+msgid "Copied to clipboard."
+msgstr ""
+
+#: build/index.js:4
+msgid "Copy this link to share it."
+msgstr ""
+
+#: build/index.js:4
+msgid "The preview link could not be generated."
+msgstr ""
+
+#: build/index.js:4
+msgid "Copy Link"
+msgstr ""
+
+#: build/index.js:4
+msgid "Could not load links."
+msgstr ""
+
+#: build/index.js:4
+#: build/index.js:5
+msgid "Manage preview links"
+msgstr ""
+
+#: build/index.js:4
+msgid "IP ranges added in the VIP Dashboard also apply to every link, in addition to any restriction shown per link."
+msgstr ""
+
+#: build/index.js:4
+msgid "No active preview links."
+msgstr ""
+
+#. translators: %s: comma-separated IP ranges.
+#: build/index.js:5
+#, js-format
+msgid "Restricted to %s"
+msgstr ""
+
+#: build/index.js:5
+msgid "Could not revoke the link."
+msgstr ""

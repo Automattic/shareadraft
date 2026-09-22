@@ -36,3 +36,7 @@ register_deactivation_hook( __FILE__, [ LinkGarbageCollector::class, 'unschedule
 register_deactivation_hook( __FILE__, [ BulkLinkRevoker::class, 'unschedule' ] );
 
 Plugin::get_instance()->register();
+
+// Links made with Share a Draft 1.x, until 2.1.0 removes them.
+require_once __DIR__ . '/vestigial.php';
+Automattic\ShareADraft\Vestigial\bootstrap();

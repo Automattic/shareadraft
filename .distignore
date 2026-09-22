@@ -3,7 +3,8 @@
 # rsync patterns: a leading slash anchors to the plugin root, no slash matches
 # at any depth.
 #
-# What ships is deliberately small: shareadraft.php, inc/, build/, languages/,
+# What ships is deliberately small: shareadraft.php, vestigial.php, inc/, build/,
+# languages/,
 # vip-manifest.yaml, README.md and CHANGELOG.md. The plugin has no runtime
 # Composer dependencies — inc/autoload.php resolves its own classes — so no
 # vendor/ directory is needed at runtime.

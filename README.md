@@ -1,10 +1,18 @@
 # Share a Draft
 
-Share a Draft generates safe-to-share, time- and usage-limited preview links so reviewers without a WordPress account can review a draft. It hardens the existing Preview Links.
+Drafts in WordPress are visible only to people who can edit them. When a colleague, client, or reviewer without an account needs to see a draft before it is published, Share a Draft gives you a link for exactly that: safe to share, and limited in time and use. It hardens the existing Preview Links.
 
 Share a Draft is an ordinary WordPress plugin and works on any host, with nothing to configure. It is also packaged as a WordPress VIP integration: on VIP it reads optional settings from a VIP-provided constant, records Tracks telemetry, and is registered with the VIP Integrations Center through the [handoff manifest](/docs/manifest.md). Each of those is gated behind a platform check (`Automattic\ShareADraft\Platform::is_vip()`) or a `class_exists()` guard, so off VIP they are simply absent — no notices, no fatals, and no VIP branding on the site. See [/docs/vip-integration.md](/docs/vip-integration.md) for the operational details, and check conformance with the [`vip-integration`](https://github.com/Automattic/integration) CLI (`npx @automattic/vip-integration validate`).
 
 The repository ships fully configured VIP local and cloud development environments along with unit tests, end-to-end tests, static analysis, and linting.
+
+## Upgrading from Share a Draft 1.x
+
+Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended, and new links are made from the block editor's Share a Draft panel. Support for 1.x links is removed in 2.1.0.
+
+## Changelog
+
+Every release, back to 0.2, is listed in [CHANGELOG.md](https://github.com/Automattic/shareadraft/blob/main/CHANGELOG.md).
 
 ## WP-CLI commands
 

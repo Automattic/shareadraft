@@ -7,11 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-First release of Share a Draft: safe-to-share, time- and usage-limited preview
-links that let a reviewer without a WordPress account view a draft.
+Share a Draft 2.0 is a rewrite, built from the Live Previews plugin: safe-to-share,
+time- and usage-limited preview links that let a reviewer without a WordPress
+account view a draft, created from the block editor and managed from a new
+top-level Preview Links screen.
 
 Requires WordPress 6.9 or later and PHP 8.2 or later. Designed for WordPress VIP
 but runs on any host.
+
+Links made with 1.x keep working until they expire. Their owners can review and
+delete them under Posts → Share a Draft (Old), which only appears while they
+have one; new links are made from the block editor. Support for 1.x links is
+removed in 2.1.0.
 
 ### Added
 
@@ -31,7 +38,17 @@ but runs on any host.
 - Bind a preview link to named reviewers by email. A bound link asks the visitor for their address, emails a six-digit code (only ever to an address the author listed, and rate-limited), and unlocks the draft once the code is entered — so the link works for the people it was issued to, not for anyone it gets forwarded to. Verification is remembered per browser with a signed cookie, and revoking the link or removing a reviewer locks them out immediately. Reviewers are shown in the editor's Manage modal, on the Preview Links screen, and in `wp shareadraft list`; every minting surface can bind them (the Generate modal, REST, the Abilities API, and `wp shareadraft create --recipients`), and the code email is customisable with the `shareadraft_verification_email` filter.
 - Switch either optional restriction off in code — `shareadraft_recipients_enabled` and `shareadraft_ip_allowlist_enabled` filters — for sites that never want them, removing the fields from the editor modals, the Preview Links screen, and the REST/ability schemas. Existing restricted links remain enforced; only minting new ones is stopped.
 - Report whether the cleanup sweep is scheduled and actually running, as a Site Health check under Tools → Site Health.
-- Ship translatable strings with a bundled POT, so the plugin can be localised without a WordPress.org language pack.
+- Ship translatable strings with a bundled POT; translations are delivered as language packs from [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/shareadraft/).
+
+### Changed
+
+- Creating and managing shared drafts moves from the Posts → Share a Draft screen to the block editor's Share a Draft panel and the Preview Links screen. The 1.x screen remains only for reviewing and deleting 1.x links, as Share a Draft (Old).
+- Links carry their token as `?shareadraft-token=` on WordPress's own preview URL, and last for a chosen lifetime rather than a number of minutes, hours, days, or weeks.
+
+### Removed
+
+- Extending a link's lifetime. Generate a new link instead; the old one can be revoked.
+- The bundled Bulgarian, Danish, French, and Italian translations, whose strings no longer exist. Translations now come from translate.wordpress.org.
 
 ### Security
 
@@ -43,4 +60,157 @@ but runs on any host.
 - Every value in `VIP_SHAREADRAFT_CONFIG` is optional. Defining the constant is what enables the integration; the plugin reads only `dead_link_grace_period` and `ip_allowlist`, and it runs on its built-in defaults without them. ([#35](https://github.com/Automattic/live-previews/pull/35))
 - VIP support links in contextual help appear only on VIP-hosted sites, where VIP support can answer them; elsewhere they point at the plugin's own support channel. ([#35](https://github.com/Automattic/live-previews/pull/35))
 
-[Unreleased]: https://github.com/Automattic/shareadraft/commits/develop
+## [1.7] - 2026-07-24
+
+### Added
+
+- A one-click button to copy a shared draft's link to the clipboard.
+
+### Changed
+
+- Redesigned the Share a Draft screen: the new-share form is now a collapsible "Add draft link" panel, with clearer column labels and a mobile-friendly layout.
+- The "Extend" action opens in a roomy inline row instead of a cramped cell.
+- Shares whose post has been deleted are cleaned up automatically.
+- Internal code cleanup.
+
+### Fixed
+
+- Shared draft previews breaking the header and other template parts on block themes (e.g. Twenty Twenty-Five).
+
+### Security
+
+- Shared draft titles are escaped on output.
+
+## [1.6] - 2026-07-23
+
+### Fixed
+
+- PHP 8.x deprecation notices for undeclared class properties.
+- Warnings from shares whose post has since been deleted; such shares can now be removed.
+- Expiry times reading "14 days, 0 hours, 0 minutes".
+- A post ID comparison that could cause a valid share link to 404.
+
+### Changed
+
+- Tested with WordPress 7.0 and PHP 8.4.
+
+## [1.5] - 2026-07-23
+
+### Changed
+
+- Tested with newer WordPress versions.
+- Updated copy.
+- Light cleanup of the almost 10-year-old code.
+
+### Removed
+
+- Seconds as a granularity level for how long a link lasts.
+
+## [1.4] - 2012-01-01
+
+### Added
+
+- Your own scheduled posts are included in the list of drafts to share.
+- Italian translation, thanks to gidibao's Cafe (http://gidibao.net/).
+- French translation, thanks to Nicolas Brisebois-Tetreault.
+
+### Changed
+
+- The draft link is now a real link.
+- Internal improvements.
+
+### Removed
+
+- PHP 4 support.
+
+## [1.3] - 2010-05-03
+
+### Fixed
+
+- Draft links on installs where the WordPress URL differs from the site URL.
+
+## [1.2] - 2009-02-05
+
+### Added
+
+- Plugin metadata is translatable, through a `Text Domain` header.
+- A new screenshot.
+
+### Changed
+
+- Focus moves to the expiry field when the share form opens.
+- Buttons are styled the WordPress 2.7 way.
+- Updated the POT and the Bulgarian translation.
+- Reindented the code and removed camel case.
+
+## [1.1] - 2008-05-10
+
+### Added
+
+- Danish translation.
+
+## [1.0] - 2008-05-10
+
+### Changed
+
+- Actions are split into separate columns, with their styling fixed for WordPress 2.3.x.
+
+### Fixed
+
+- The plugin URL.
+
+## [0.7] - 2008-05-10
+
+### Changed
+
+- Consistent "Share a Draft" naming in strings.
+
+## [0.6] - 2008-05-10
+
+### Added
+
+- An "Extend" action for shared drafts.
+
+## [0.5] - 2008-05-10
+
+### Added
+
+- The "Delete" action is translatable.
+
+## [0.4] - 2008-05-09
+
+### Changed
+
+- Language files moved to the `languages/` directory.
+
+### Fixed
+
+- Internationalisation issues.
+
+## [0.3] - 2008-03-11
+
+### Changed
+
+- Readme update.
+
+## [0.2] - 2008-03-10
+
+### Added
+
+- First public release: share a time-limited link to a draft with anyone, with internationalisation support.
+
+[Unreleased]: https://github.com/Automattic/shareadraft/compare/1.7...develop
+[1.7]: https://github.com/Automattic/shareadraft/compare/1.6...1.7
+[1.6]: https://github.com/Automattic/shareadraft/compare/1.5...1.6
+[1.5]: https://github.com/Automattic/shareadraft/compare/1.4...1.5
+[1.4]: https://github.com/Automattic/shareadraft/compare/1.3...1.4
+[1.3]: https://github.com/Automattic/shareadraft/compare/1.2...1.3
+[1.2]: https://github.com/Automattic/shareadraft/compare/1.1...1.2
+[1.1]: https://github.com/Automattic/shareadraft/compare/1.0...1.1
+[1.0]: https://github.com/Automattic/shareadraft/compare/0.7...1.0
+[0.7]: https://github.com/Automattic/shareadraft/compare/0.6...0.7
+[0.6]: https://github.com/Automattic/shareadraft/compare/0.5...0.6
+[0.5]: https://github.com/Automattic/shareadraft/compare/0.4...0.5
+[0.4]: https://github.com/Automattic/shareadraft/compare/0.3...0.4
+[0.3]: https://github.com/Automattic/shareadraft/compare/0.2...0.3
+[0.2]: https://github.com/Automattic/shareadraft/releases/tag/0.2

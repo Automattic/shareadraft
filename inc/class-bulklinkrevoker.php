@@ -14,7 +14,7 @@ namespace Automattic\ShareADraft;
  * A sweep reuses the garbage collector's post-ID cursor: bounded batches, and a
  * scheduled continuation when a site overflows one run. While a sweep runs,
  * links on not-yet-swept posts still work for a short window — an accepted
- * trade (see VIPPROD-1128) rather than an oversight.
+ * trade rather than an oversight.
  *
  * Offboarding is default-on for hard deletion only (`deleted_user`). Role
  * changes are deliberately not automatic — demoting an editor should not

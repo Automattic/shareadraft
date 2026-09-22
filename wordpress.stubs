@@ -34,7 +34,7 @@ namespace {
 	// file sits behind ABSPATH/already-loaded guards, so Psalm cannot prove
 	// the defines execute; these declarations make the constants always known.
 	define( 'VIP_SHAREADRAFT_LOADED', true );
-	define( 'VIP_SHAREADRAFT_VERSION', '1.0.0' );
+	define( 'VIP_SHAREADRAFT_VERSION', '2.0.0-alpha' );
 	define( 'VIP_SHAREADRAFT_FILE', '/wp/wp-content/plugins/shareadraft/shareadraft.php' );
 
 	/**

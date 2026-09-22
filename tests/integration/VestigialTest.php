@@ -87,7 +87,7 @@ class VestigialTest extends WP_UnitTestCase {
 		update_option(
 			OPTION,
 			[
-				$this->author => [
+				$this->author     => [
 					'shared' => [
 						[ 'id' => 5 ],
 						'not a share',
@@ -98,7 +98,7 @@ class VestigialTest extends WP_UnitTestCase {
 						],
 					],
 				],
-				9             => 'junk',
+				$this->author + 1 => 'junk',
 			]
 		);
 

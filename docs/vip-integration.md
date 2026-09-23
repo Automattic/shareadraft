@@ -175,6 +175,15 @@ so internal test builds can be cut from a `release/*` branch without touching
 5. Push the branch, then tag its head: `git tag -s 1.0.0-RC1 -m "1.0.0-RC1"`
    and `git push origin 1.0.0-RC1`.
 
+The same tag also triggers `.github/workflows/deploy.yml`, which pushes the
+plugin to WordPress.org SVN as `shareadraft`, with `.wordpress-org/` going to
+the SVN `assets/` directory. Pre-release tags are skipped, and the deploy fails
+unless the plugin header, the version constant and the `Stable tag` in
+`README.md` all match the tag, so bump `Stable tag` in step 3 for a final
+release. It needs the `SVN_USERNAME` and `SVN_PASSWORD` repository secrets. To
+dry-run against SVN, or to deploy a tag cut before the workflow existed, run it
+by hand from the Actions tab.
+
 What ends up in the ZIP is controlled by `.distignore`: `shareadraft.php`,
 `inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`, `README.md`,
 and `CHANGELOG.md`, unpacked under a single `shareadraft/` directory. There is no

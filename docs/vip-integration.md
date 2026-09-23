@@ -119,8 +119,9 @@ Telemetry uses the helper in `inc/class-telemetry.php`, which wraps the VIP
 Telemetry API (Tracks events only, no Stats) behind a `class_exists` guard so
 environments without VIP MU plugins no-op. Event names are prefixed with
 `shareadraft_` — a single word with no underscores, because the leading token is
-the Tracks *source* and must be whitelisted in nosara (an underscore there would
-divert events to `prod_rejects`). Never include secrets, raw content, email
+the Tracks *source*, which must be a registered source for events to be accepted
+(an underscore there would change the source, and the events would be
+discarded). Never include secrets, raw content, email
 addresses, or customer credentials in event properties.
 
 | Name                            | Type   | Trigger                              | Properties                                             | Notes                                             |

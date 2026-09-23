@@ -50,8 +50,8 @@ validate with `vip-integration validate` before shipping.
   (`Automattic\ShareADraft`), and constant (`VIP_SHAREADRAFT_*`) are one
   consistent set. Keep them in sync if you rename anything. The telemetry prefix
   `shareadraft_` must stay a single word before its trailing underscore, because
-  the leading token is the Tracks *source* and must be whitelisted in nosara — do
-  not "expand" it to `share_a_draft_`.
+  the leading token is the Tracks *source*, which must be a registered source for
+  events to be accepted — do not "expand" it to `share_a_draft_`.
 
 ## Conventions
 

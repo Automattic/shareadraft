@@ -63,7 +63,7 @@ CI runs on every push and pull request:
 | `fixtures/` | Mock VIP configurations for local development and tests (see [/fixtures/README.md](/fixtures/README.md)). |
 | `docs/` | User and developer documentation, indexed in [/docs/README.md](/docs/README.md). |
 | `vip-manifest.yaml`, `vip-manifest.schema.json` | The handoff manifest VIP registers the integration from, and the schema it is validated against. |
-| `.wordpress-org/` | WordPress.org directory assets: screenshots, and later the banner and icon. |
+| `.wordpress-org/` | WordPress.org directory assets: screenshots, banners and icons. |
 | `.wpvip/`, `.devcontainer/` | The VIP local development environment and GitHub Codespaces configuration. |
 | `.github/workflows/` | CI, and the release build for tagged versions. |
 | `.distignore`, `.gitattributes` | Everything that stays out of the release ZIP, and out of GitHub's source archives. Keep the two in step. |

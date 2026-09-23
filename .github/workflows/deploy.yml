@@ -132,7 +132,7 @@ jobs:
           SLUG: shareadraft
           VERSION: ${{ steps.gate.outputs.version }}
           # Exclusions come from .distignore, the same list release.yml builds
-          # the ZIP from; screenshots (and later banners and icons) come from
+          # the ZIP from; screenshots, banners and icons come from
           # .wordpress-org/. Both rsyncs run with --delete, so anything missing
           # locally is removed from SVN.
           ASSETS_DIR: .wordpress-org

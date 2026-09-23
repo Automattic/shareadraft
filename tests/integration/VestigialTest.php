@@ -3,7 +3,9 @@ declare(strict_types = 1);
 
 namespace Automattic\ShareADraft\Vestigial;
 
+use WP_Query;
 use WP_UnitTestCase;
+use WP_User;
 use WPDieException;
 
 /**
@@ -32,7 +34,9 @@ class VestigialTest extends WP_UnitTestCase {
 		remove_filter( 'posts_results', __NAMESPACE__ . '\\unlock_shared_draft' );
 		remove_filter( 'the_posts', __NAMESPACE__ . '\\restore_shared_draft' );
 		shared_draft( null );
-		unset( $GLOBALS['submenu']['edit.php'] );
+		if ( isset( $GLOBALS['submenu'] ) && is_array( $GLOBALS['submenu'] ) ) {
+			unset( $GLOBALS['submenu']['edit.php'] );
+		}
 		parent::tear_down();
 	}
 
@@ -132,11 +136,11 @@ class VestigialTest extends WP_UnitTestCase {
 		$this->go_to( home_url( "/?p={$post_id}&shareadraft=baba_live" ) );
 
 		static::assertTrue( is_single( $post_id ) );
-		static::assertSame( [ $post_id ], wp_list_pluck( $GLOBALS['wp_query']->posts, 'ID' ) );
+		static::assertSame( [ $post_id ], wp_list_pluck( self::main_query_posts(), 'ID' ) );
 
 		// The draft keeps its real status, so WordPress does not redirect the
 		// visitor to a permalink the draft does not have yet.
-		static::assertSame( 'draft', get_post_status( $GLOBALS['wp_query']->posts[0] ) );
+		static::assertSame( 'draft', get_post_status( self::main_query_posts()[0] ?? null ) );
 		static::assertNull( redirect_canonical( home_url( "/?p={$post_id}&shareadraft=baba_live" ), false ) );
 	}
 
@@ -158,7 +162,7 @@ class VestigialTest extends WP_UnitTestCase {
 
 		$this->go_to( home_url( "/?p={$post_id}&shareadraft={$key}" ) );
 
-		static::assertSame( [], $GLOBALS['wp_query']->posts );
+		static::assertSame( [], self::main_query_posts() );
 	}
 
 	/**
@@ -187,7 +191,7 @@ class VestigialTest extends WP_UnitTestCase {
 
 		$this->go_to( home_url( "/?p={$other}&shareadraft=baba_live" ) );
 
-		static::assertSame( [], $GLOBALS['wp_query']->posts );
+		static::assertSame( [], self::main_query_posts() );
 	}
 
 	public function test_expired_shares_are_pruned_and_the_option_goes_with_the_last(): void {
@@ -260,11 +264,11 @@ class VestigialTest extends WP_UnitTestCase {
 
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
 		register_page();
-		static::assertNotContains( PAGE, wp_list_pluck( $GLOBALS['submenu']['edit.php'] ?? [], 2 ) );
+		static::assertNotContains( PAGE, self::posts_submenu_slugs() );
 
 		wp_set_current_user( $this->author );
 		register_page();
-		static::assertContains( PAGE, wp_list_pluck( $GLOBALS['submenu']['edit.php'] ?? [], 2 ) );
+		static::assertContains( PAGE, self::posts_submenu_slugs() );
 	}
 
 	public function test_deleting_a_link_removes_only_that_link(): void {
@@ -334,11 +338,35 @@ class VestigialTest extends WP_UnitTestCase {
 			]
 		);
 		$demoted = get_userdata( $this->author );
+		static::assertInstanceOf( WP_User::class, $demoted );
 		$demoted->set_role( 'subscriber' );
 		wp_set_current_user( $this->author );
 
 		$this->expectException( WPDieException::class );
 
 		delete_share( 'baba_locked' );
+	}
+
+	/**
+	 * @return array<int|\WP_Post>
+	 */
+	private static function main_query_posts(): array {
+		$query = $GLOBALS['wp_query'] ?? null;
+		static::assertInstanceOf( WP_Query::class, $query );
+
+		return $query->posts ?? [];
+	}
+
+	/**
+	 * @return array<mixed>
+	 */
+	private static function posts_submenu_slugs(): array {
+		$submenu = $GLOBALS['submenu'] ?? [];
+		static::assertIsArray( $submenu );
+
+		$items = $submenu['edit.php'] ?? [];
+		static::assertIsArray( $items );
+
+		return wp_list_pluck( $items, 2 );
 	}
 }

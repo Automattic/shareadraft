@@ -77,13 +77,16 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		);
 
 		static::assertIsArray( $result );
-		static::assertStringContainsString( 'preview=true', (string) $result['url'] );
-		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=', (string) $result['url'] );
-		static::assertGreaterThan( time(), (int) $result['expires_at'] );
+
+		$url = $result['url'] ?? null;
+		static::assertIsString( $url );
+		static::assertStringContainsString( 'preview=true', $url );
+		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=', $url );
+		static::assertGreaterThan( time(), $result['expires_at'] ?? null );
 	}
 
 	public function test_executing_the_ability_tags_telemetry_with_the_ability_channel(): void {
-		VIP_Telemetry::$events = [];
+		VIP_Telemetry::reset();
 
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
@@ -129,7 +132,7 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		$meta = $ability->get_meta();
 		static::assertTrue( $meta['show_in_rest'] );
 		// Read-only so MCP clients can run it without a confirmation prompt.
-		static::assertTrue( $meta['annotations']['readonly'] );
+		static::assertTrue( self::annotation( $ability, 'readonly' ) );
 	}
 
 	public function test_an_editor_lists_a_posts_live_links(): void {
@@ -153,10 +156,13 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 
 		static::assertIsArray( $result );
 		static::assertCount( 1, $result );
-		static::assertSame( 5, $result[0]['max_uses'] );
-		static::assertArrayHasKey( 'token_hint', $result[0] );
+
+		$link = $result[0] ?? null;
+		static::assertIsArray( $link );
+		static::assertSame( 5, $link['max_uses'] ?? null );
+		static::assertArrayHasKey( 'token_hint', $link );
 		// A hint, never the shareable URL or the token itself.
-		static::assertArrayNotHasKey( 'url', $result[0] );
+		static::assertArrayNotHasKey( 'url', $link );
 	}
 
 	public function test_listing_is_denied_without_edit_rights(): void {
@@ -216,7 +222,7 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		$meta = $ability->get_meta();
 		static::assertTrue( $meta['show_in_rest'] );
 		// Destructive, so MCP clients confirm before killing a working link.
-		static::assertTrue( $meta['annotations']['destructive'] );
+		static::assertTrue( self::annotation( $ability, 'destructive' ) );
 	}
 
 	public function test_an_editor_revokes_a_link_by_its_token_hint(): void {
@@ -234,10 +240,13 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		$links = $list->execute( [ 'post_id' => $post_id ] );
 		static::assertIsArray( $links );
 
+		$link = $links[0] ?? null;
+		static::assertIsArray( $link );
+
 		$result = $revoke->execute(
 			[
 				'post_id' => $post_id,
-				'link'    => $links[0]['token_hint'],
+				'link'    => $link['token_hint'] ?? null,
 			]
 		);
 
@@ -333,7 +342,9 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 
 		$list = wp_get_ability( PreviewAbilities::LIST_LINKS );
 		static::assertInstanceOf( WP_Ability::class, $list );
-		static::assertCount( 1, $list->execute( [ 'post_id' => $post_id ] ) );
+		$links = $list->execute( [ 'post_id' => $post_id ] );
+		static::assertIsArray( $links );
+		static::assertCount( 1, $links );
 	}
 
 	public function test_an_administrator_revokes_every_link_on_the_site(): void {
@@ -420,7 +431,9 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		wp_set_current_user( $victim );
 		$list = wp_get_ability( PreviewAbilities::LIST_LINKS );
 		static::assertInstanceOf( WP_Ability::class, $list );
-		static::assertCount( 1, $list->execute( [ 'post_id' => $their ] ) );
+		$links = $list->execute( [ 'post_id' => $their ] );
+		static::assertIsArray( $links );
+		static::assertCount( 1, $links );
 	}
 
 	public function test_revoking_is_denied_without_edit_rights(): void {
@@ -536,7 +549,9 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		$list = wp_get_ability( PreviewAbilities::LIST_LINKS );
 		static::assertInstanceOf( WP_Ability::class, $list );
 
-		static::assertCount( 1, $list->execute( [ 'created_by' => $author ] ) );
+		$links = $list->execute( [ 'created_by' => $author ] );
+		static::assertIsArray( $links );
+		static::assertCount( 1, $links );
 
 		// The filter belongs to the site-wide listing, as in the admin table.
 		$conflicting = $list->execute(
@@ -555,8 +570,7 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		$ability = wp_get_ability( PreviewAbilities::GET_STATUS );
 		static::assertInstanceOf( WP_Ability::class, $ability );
 
-		$meta = $ability->get_meta();
-		static::assertTrue( $meta['annotations']['readonly'] );
+		static::assertTrue( self::annotation( $ability, 'readonly' ) );
 
 		static::assertSame(
 			[
@@ -598,5 +612,17 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 
 		static::assertInstanceOf( WP_Error::class, $result );
 		static::assertSame( 'ability_invalid_permissions', $result->get_error_code() );
+	}
+
+	/**
+	 * One of an ability's MCP annotations.
+	 *
+	 * @return mixed
+	 */
+	private static function annotation( WP_Ability $ability, string $name ) {
+		$annotations = $ability->get_meta()['annotations'] ?? null;
+		static::assertIsArray( $annotations );
+
+		return $annotations[ $name ] ?? null;
 	}
 }

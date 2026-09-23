@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Automattic\ShareADraft;
 
+use MockPHPMailer;
 use WP_UnitTestCase;
 
 /**
@@ -91,11 +92,11 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		// Nothing may go out while the visitor could still be timing the
 		// response: the whole point of queueing is that a listed and an
 		// unlisted address answer the form in the same time.
-		static::assertSame( [], tests_retrieve_phpmailer_instance()->mock_sent );
+		static::assertSame( [], self::mailer()->mock_sent );
 
 		do_action( 'shutdown' );
 
-		static::assertCount( 1, tests_retrieve_phpmailer_instance()->mock_sent );
+		static::assertCount( 1, self::mailer()->mock_sent );
 		static::assertTrue(
 			$this->verifier->verify_code( $this->token, self::EMAIL, $this->sent_code() ),
 			'The deferred send produces a redeemable challenge.'
@@ -105,7 +106,7 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 	public function test_the_email_names_the_site_and_warns_against_sharing(): void {
 		$this->verifier->send_code( $this->token, self::EMAIL );
 
-		$body = tests_retrieve_phpmailer_instance()->get_sent()->body;
+		$body = self::sent_email()->body;
 
 		// The two checks a reviewer can hold a phishing imitation against.
 		static::assertStringContainsString( (string) wp_parse_url( home_url(), PHP_URL_HOST ), $body );
@@ -115,12 +116,12 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 	public function test_the_email_never_contains_the_preview_url(): void {
 		$this->verifier->send_code( $this->token, self::EMAIL );
 
-		$mailer = tests_retrieve_phpmailer_instance();
+		$email = self::sent_email();
 
 		// The email is only a code: if it carried the link too, a forwarded or
 		// scanned email would hand over both factors at once.
-		static::assertStringNotContainsString( $this->token->value(), $mailer->get_sent()->body );
-		static::assertStringNotContainsString( $this->token->value(), $mailer->get_sent()->subject );
+		static::assertStringNotContainsString( $this->token->value(), $email->body );
+		static::assertStringNotContainsString( $this->token->value(), $email->subject );
 	}
 
 	public function test_the_verification_cookie_round_trips(): void {
@@ -153,7 +154,10 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		// Swap the proven address for another and keep the rest: the HMAC no
 		// longer covers the bytes presented, so the cookie is worthless.
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated -- Reading back a value the test itself just set.
-		$parts    = explode( '.', (string) $_COOKIE[ $name ] );
+		$cookie = $_COOKIE[ $name ] ?? null;
+		static::assertIsString( $cookie );
+
+		$parts    = explode( '.', $cookie );
 		$parts[1] = rtrim( strtr( base64_encode( 'attacker@example.com' ), '+/', '-_' ), '=' );
 
 		$_COOKIE[ $name ] = implode( '.', $parts );
@@ -165,11 +169,27 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 	 * The code from the most recently sent email, as a reviewer would read it.
 	 */
 	private function sent_code(): string {
-		$mailer = tests_retrieve_phpmailer_instance();
-		$body   = $mailer->get_sent( count( $mailer->mock_sent ) - 1 )->body;
+		$body = self::sent_email( count( self::mailer()->mock_sent ) - 1 )->body;
 
 		static::assertSame( 1, preg_match( '/\b([0-9]{6})\b/', $body, $matches ), 'The email carries a six-digit code.' );
 
 		return $matches[1];
+	}
+
+	private static function mailer(): MockPHPMailer {
+		$mailer = tests_retrieve_phpmailer_instance();
+		static::assertInstanceOf( MockPHPMailer::class, $mailer );
+
+		return $mailer;
+	}
+
+	/**
+	 * @return object{subject: string, body: string}
+	 */
+	private static function sent_email( int $index = 0 ): object {
+		$email = self::mailer()->get_sent( $index );
+		static::assertNotFalse( $email, 'An email was sent.' );
+
+		return $email;
 	}
 }

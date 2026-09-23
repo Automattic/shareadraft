@@ -14,6 +14,14 @@ class Telemetry {
 	private string $prefix;
 
 	/**
+	 * Forget recorded events. A method rather than a bare assignment in each
+	 * test, so static analysis does not carry "empty" past the code under test.
+	 */
+	public static function reset(): void {
+		self::$events = [];
+	}
+
+	/**
 	 * @param array<string, mixed> $global_properties
 	 */
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- signature mirrors the real VIP Telemetry API.

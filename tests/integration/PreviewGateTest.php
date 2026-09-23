@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace Automattic\ShareADraft;
 
+use WP_Post;
 use WP_Query;
 use WP_UnitTestCase;
 
@@ -59,7 +60,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$posts = ( new PreviewGate( $this->service, new RecipientVerifier() ) )
 			->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() );
 
-		static::assertSame( 'draft', $posts[0]->post_status );
+		static::assertSame( 'draft', self::first_status( $posts ) );
 	}
 
 	public function test_non_preview_requests_are_untouched(): void {
@@ -73,7 +74,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$posts             = ( new PreviewGate( $this->service, new RecipientVerifier() ) )
 			->unlock_valid_previews( [ get_post( $post_id ) ], $query );
 
-		static::assertSame( 'draft', $posts[0]->post_status );
+		static::assertSame( 'draft', self::first_status( $posts ) );
 	}
 
 	public function test_a_capped_link_exhausts_after_distinct_viewers(): void {
@@ -119,7 +120,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 
 		$cookie = 'shareadraft_viewer_' . substr( $token->hash(), 0, 20 );
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Reading back the value the gate itself just set, in a test.
-		$issued = isset( $_COOKIE[ $cookie ] ) ? (string) $_COOKIE[ $cookie ] : '';
+		$issued = isset( $_COOKIE[ $cookie ] ) && is_string( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : '';
 
 		static::assertNotSame( '', $issued, 'A slot ID should have been issued.' );
 		static::assertNotSame( '1', $issued );
@@ -233,8 +234,9 @@ class PreviewGateTest extends WP_UnitTestCase {
 		// draft (or the link) exists to someone outside the allowlist.
 		$gate = $this->denied_main_query( $post_id, $token );
 
+		// No notice page, and no wp_die(), which would have thrown.
+		$this->expectOutputString( '' );
 		$gate->maybe_render_notice();
-		static::assertTrue( true, 'No wp_die was triggered for a blocked IP.' );
 	}
 
 	public function test_a_blocked_ip_spends_no_slot(): void {
@@ -330,8 +332,9 @@ class PreviewGateTest extends WP_UnitTestCase {
 		// A garbage token must 404 like a missing post, not reveal the draft exists.
 		$gate = $this->denied_main_query( $post_id, Token::from_string( 'not-a-real-token' ) );
 
+		// No notice page, and no wp_die(), which would have thrown.
+		$this->expectOutputString( '' );
 		$gate->maybe_render_notice();
-		static::assertTrue( true, 'No wp_die was triggered for an unknown token.' );
 	}
 
 	public function test_an_editor_is_not_blocked_by_a_dead_link(): void {
@@ -346,8 +349,9 @@ class PreviewGateTest extends WP_UnitTestCase {
 		// intercept them with the notice.
 		$gate = $this->denied_main_query( $post_id, $token );
 
+		// No notice page, and no wp_die(), which would have thrown.
+		$this->expectOutputString( '' );
 		$gate->maybe_render_notice();
-		static::assertTrue( true, 'No wp_die was triggered for a user who can edit the post.' );
 	}
 
 	public function test_a_recipient_bound_link_stays_locked_for_an_unverified_visitor(): void {
@@ -436,7 +440,21 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$posts = ( new PreviewGate( $this->service, new RecipientVerifier() ) )
 			->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() );
 
-		return (string) $posts[0]->post_status;
+		return self::first_status( $posts );
+	}
+
+	/**
+	 * The status of the first post the_posts filter handed back.
+	 *
+	 * @param mixed $posts The filter's return value.
+	 */
+	private static function first_status( $posts ): string {
+		static::assertIsArray( $posts );
+
+		$first = $posts[0] ?? null;
+		static::assertInstanceOf( WP_Post::class, $first );
+
+		return $first->post_status;
 	}
 
 	private function preview_query(): WP_Query {

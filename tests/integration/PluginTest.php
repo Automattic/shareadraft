@@ -48,7 +48,9 @@ class PluginTest extends WP_UnitTestCase {
 	 * of ours interrupts an admin screen it does not own.
 	 */
 	public function test_it_renders_nothing_outside_its_own_screens(): void {
+		// @phpstan-ignore function.impossibleType (A regression guard: the hook was removed on purpose.)
 		static::assertFalse( method_exists( Plugin::class, 'wp_footer' ) );
+		// @phpstan-ignore function.impossibleType (A regression guard: the notice was removed on purpose.)
 		static::assertFalse( method_exists( Plugin::class, 'render_config_notice' ) );
 	}
 }

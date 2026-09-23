@@ -131,7 +131,7 @@ final class PreviewLinksAdminPage {
 			return;
 		}
 
-		/** @var list<string> $dependencies */
+		/** @var list<non-empty-string> $dependencies */
 		$dependencies = isset( $asset['dependencies'] ) && is_array( $asset['dependencies'] )
 			? $asset['dependencies']
 			: [];

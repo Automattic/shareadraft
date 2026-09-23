@@ -43,9 +43,19 @@ namespace {
 	 * signature. These two are overridden because the generated types are too
 	 * loose for errorLevel 1: prepare() comes out as mixed rather than
 	 * string|null, which in turn makes every get_col()/get_results()/get_var()
-	 * call on a prepared query a MixedArgument error.
+	 * call on a prepared query a MixedArgument error. get_results() is
+	 * overridden because since wordpress-stubs 7.1.0 its return type is
+	 * conditional on $query being a non-falsy-string, which the string|null
+	 * from prepare() never satisfies, so Psalm narrows every result to null.
 	 */
 	class wpdb {
+
+		/**
+		 * @param string|null $query
+		 * @param string      $output
+		 * @psalm-return null|($output is 'ARRAY_A' ? list<array<array-key, mixed>> : ($output is 'ARRAY_N' ? list<list<mixed>> : ($output is 'OBJECT_K' ? array<array-key, \stdClass> : list<\stdClass>)))
+		 */
+		public function get_results( $query = null, $output = 'OBJECT' ) {}
 
 		/**
 		 * @param string|null $query
@@ -61,6 +71,20 @@ namespace {
 		 */
 		public function prepare( $query, ...$args ) {}
 	}
+
+	/**
+	 * Since wordpress-stubs 7.1.0 the upstream return type is a PHPStan
+	 * conditional built on key-of<T>/value-of<T>, which Psalm cannot resolve,
+	 * so every wp_unslash() call came out as mixed and tripped MixedArgument on
+	 * the sanitize_*() call wrapped round it. Psalm annotations take precedence
+	 * over the PHPStan ones, and this restores the pre-7.1 "same type as
+	 * supplied" contract that the function's own docblock promises.
+	 *
+	 * @psalm-template T
+	 * @psalm-param T $value
+	 * @psalm-return T
+	 */
+	function wp_unslash( $value ) {}
 
 	// The WP-CLI surface the inc/cli/ commands touch. WP-CLI is not part of
 	// WordPress core, so the generated stubs never cover it, and the

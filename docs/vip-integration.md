@@ -66,19 +66,25 @@ Optional values:
 Example valid config:
 
 ```php
-define( 'VIP_SHAREADRAFT_CONFIG', [
-	'dead_link_grace_period' => 604800, // 7 days.
-	'ip_allowlist'           => '203.0.113.0/24, 2001:db8::/32',
-] );
+define(
+	'VIP_SHAREADRAFT_CONFIG',
+	array(
+		'dead_link_grace_period' => 604800, // 7 days.
+		'ip_allowlist'           => '203.0.113.0/24, 2001:db8::/32',
+	)
+);
 ```
 
 Example incomplete config (setup in progress — the customer has opened the field
 but not filled it in, so it arrives blank):
 
 ```php
-define( 'VIP_SHAREADRAFT_CONFIG', [
-	'dead_link_grace_period' => '',
-] );
+define(
+	'VIP_SHAREADRAFT_CONFIG',
+	array(
+		'dead_link_grace_period' => '',
+	)
+);
 ```
 
 A blank or nonsensical value **must not be taken at face value**: the retention

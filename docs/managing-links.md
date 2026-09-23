@@ -31,28 +31,6 @@ Bulk revoking works through links in batches. On a site with a very large number
 
 When a user account is deleted, every link that person created is revoked automatically.
 
-Changing someone's role deliberately does not revoke their links: moving an editor to author should not necessarily cut off reviews already under way. If your process should revoke links on other events, trigger the `shareadraft_revoke_user_links` action from them:
-
-```php
-// Revoke a user's preview links when they lose edit access.
-add_action( 'set_user_role', function ( int $user_id, string $role ): void {
-	if ( ! in_array( $role, [ 'administrator', 'editor', 'author' ], true ) ) {
-		do_action( 'shareadraft_revoke_user_links', $user_id );
-	}
-}, 10, 2 );
-
-// Multisite: revoke when a user is removed from this site.
-add_action( 'remove_user_from_blog', function ( int $user_id ): void {
-	do_action( 'shareadraft_revoke_user_links', $user_id );
-} );
-```
-
-Once all of a user's links have been revoked, however that was triggered, the `shareadraft_revoked_user_links` action runs with the user's ID, how many links were revoked, and the ID of the user who started it (0 when it happened automatically). Use it to record offboarding in an audit log:
-
-```php
-add_action( 'shareadraft_revoked_user_links', function ( int $user_id, int $count, int $actor ): void {
-	// For example, send to your audit log.
-}, 10, 3 );
-```
+Changing someone's role deliberately does not revoke their links: moving an editor to author should not necessarily cut off reviews already under way. If your process should revoke links on other events, such as a role change or a user being removed from a site on a multisite network, a few lines of code can [revoke a person's links on other events](customizing.md#revoke-a-persons-links-on-other-events). Another hook lets you [record when a person's links are revoked](customizing.md#record-when-a-persons-links-are-revoked), for example in an audit log.
 
 For other ways to adjust how links behave, see [customizing Share a Draft](customizing.md).

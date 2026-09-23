@@ -22,7 +22,7 @@ A link can optionally be bound to named reviewers. The first time a reviewer ope
 
 Those emails are sent through `wp_mail()`, so your site must be able to deliver mail reliably. If it does not already, an SMTP plugin or a transactional email service is strongly recommended; otherwise reviewers will wait for a code that never arrives.
 
-You can [change the wording of the email](customizing.md#change-the-verification-email), or [turn off named reviewers](customizing.md#turn-off-named-reviewers-or-ip-restrictions) entirely if you would rather not depend on email.
+You can [change the wording of the email](customizing.md#change-the-verification-email), or [turn off named reviewers](customizing.md#turn-off-named-reviewer-or-ip-restriction-features) entirely if you would rather not depend on email.
 
 ## Scheduled events must run
 

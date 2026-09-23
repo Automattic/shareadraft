@@ -14,6 +14,8 @@
 | `vip-manifest.schema.json` | JSON Schema the manifest is validated against.                                                |
 | `docs/`                    | Operational docs, including the required `vip-integration.md` and `manifest.md`.              |
 | `AGENTS.md`                | Orientation for AI coding agents working in this repo.                                        |
+| `CONTRIBUTING.md`          | Tooling, tests, and local environments for contributors.                                      |
+| `.wordpress-org/`          | WordPress.org plugin directory assets: screenshots, and later the banner and icon.            |
 | `.wpvip/`                  | VIP local development environment config and plugin loader.                                   |
 | `.devcontainer/`           | GitHub Codespaces configuration.                                                              |
 | `.github/workflows/`       | CI: unit tests, integration tests, e2e, linting, static analysis, CodeQL, dependency review, and the tagged release build. |

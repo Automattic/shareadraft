@@ -3,11 +3,11 @@
 # rsync patterns: a leading slash anchors to the plugin root, no slash matches
 # at any depth.
 #
-# What ships is deliberately small: shareadraft.php, vestigial.php, inc/, build/,
-# languages/,
-# vip-manifest.yaml, README.md and CHANGELOG.md. The plugin has no runtime
-# Composer dependencies — inc/autoload.php resolves its own classes — so no
-# vendor/ directory is needed at runtime.
+# What ships is deliberately small: shareadraft.php, vestigial.php, inc/,
+# build/, languages/, vip-manifest.yaml, README.md and CHANGELOG.md. The plugin
+# has no runtime Composer dependencies — inc/autoload.php resolves its own
+# classes — so no vendor/ directory is needed at runtime. WordPress.org assets
+# live in .wordpress-org/ and are deployed separately, not inside the ZIP.
 #
 # Adding a new development-only file? Add it here too, or it ends up in the ZIP.
 
@@ -23,6 +23,7 @@
 /.wp-env.json
 /.wpvip
 /.context
+/.wordpress-org
 
 # Sources and fixtures that are compiled or dev-only
 /src
@@ -51,6 +52,7 @@
 /playwright.config.ts
 /AGENTS.md
 /CLAUDE.md
+/CONTRIBUTING.md
 
 # Build and test artefacts
 /dist

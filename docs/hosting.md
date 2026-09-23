@@ -1,29 +1,31 @@
 # Hosting requirements
 
-The plugin itself needs nothing beyond WordPress 6.9 and PHP 8.2, and runs on any host. A few things about the hosting environment are worth checking.
+Share a Draft needs WordPress 6.9 or later and PHP 8.2 or later, and has nothing to configure. Most hosts need nothing more, but four things about the hosting environment are worth checking, particularly if you rely on the optional restrictions.
 
 ## Preview requests must not be served from a page cache
 
-A preview link carries its token in the query string (`?p=13&preview=true&shareadraft-token=…`), and the gate sends `nocache_headers()`, `X-Robots-Tag: noindex`, and `Referrer-Policy: no-referrer` before rendering an unlocked draft. Any full-page cache in front of WordPress — Varnish, nginx FastCGI cache, LiteSpeed, a caching plugin, or a CDN — must respect those headers and must not serve a cached response for a URL carrying `shareadraft-token`.
+A preview link carries its token in the URL (`?p=13&preview=true&shareadraft-token=…`). When Share a Draft opens a draft for someone holding a valid link, it tells caches not to store the response (`nocache_headers()`), asks search engines not to index it (`X-Robots-Tag: noindex`), and stops the URL leaking to other sites (`Referrer-Policy: no-referrer`). Any full-page cache in front of WordPress, whether Varnish, nginx FastCGI cache, LiteSpeed, a caching plugin, or a CDN, must respect those headers and must never serve a cached response for a URL carrying `shareadraft-token`.
 
-Practically every cache already bypasses on `preview=true` and on unrecognised query strings, and VIP guarantees it. If a cache is misconfigured, the visible symptom is that per-viewer limits stop counting correctly, because the gate reads and sets a per-viewer cookie. The worse and quieter failure is a cached copy of an unlocked draft being served to somebody with no token at all, so it is worth confirming rather than assuming.
+Almost every cache already skips requests with `preview=true` or an unrecognized query string. If yours does not, the first sign is usually that "how many people can open this link" limits stop counting properly, because each visitor is recognized by a cookie that a cached response never sets. The worse and quieter failure is a cached copy of a draft being served to somebody with no link at all, so it is worth confirming rather than assuming.
 
-## IP allowlists need the true client IP
+## IP restrictions need the visitor's real IP address
 
-A preview link can optionally be restricted to IP ranges (set per link when generating it, plus an optional central baseline on VIP). The gate reads the visitor's address from `REMOTE_ADDR`, which is correct on WordPress VIP — the edge rewrites it to the true client IP — and on any host where PHP talks directly to the client. Behind another reverse proxy, `REMOTE_ADDR` is the proxy's address, so every visitor would fail the check (the gate fails closed rather than trusting a spoofable `X-Forwarded-For`). Such hosts should return the address from their proxy's trusted header via the `shareadraft_client_ip` filter. Links without IP ranges are unaffected either way.
+A link can optionally be restricted to certain IP addresses or ranges. Share a Draft reads the visitor's address from `REMOTE_ADDR`, which is correct on any host where PHP talks directly to the visitor, and on hosts whose edge network already rewrites it to the visitor's address.
 
-Note that IP allowlisting constrains *where* a link can be opened from, not *who* opens it — VPNs, mobile networks, and carrier-grade NAT all blur it — so it layers on top of the token controls rather than replacing them.
+Behind any other reverse proxy or CDN, `REMOTE_ADDR` is the proxy's address, so every visitor would fail the check. Share a Draft deliberately refuses in that case, rather than trusting an `X-Forwarded-For` header that visitors can forge. If your site is behind a proxy, [tell Share a Draft the visitor's real address](customizing.md#behind-a-reverse-proxy-tell-share-a-draft-the-visitors-real-ip-address). Links without IP restrictions are unaffected either way.
 
-## Recipient-bound links need working outgoing email
+An IP restriction limits *where* a link can be opened from, not *who* opens it: VPNs, mobile networks, and shared connections all blur it. It adds to the protection of the link itself, rather than replacing it.
 
-A preview link can optionally be bound to named reviewers. Each reviewer proves control of their email address once per browser: the gate shows a short form, emails a six-digit code to the address (only if it is on the link's list), and sets a signed cookie when the code is entered. Those code emails go through `wp_mail()`, so the host must be able to deliver mail reliably — on VIP that is the platform's managed mail path; elsewhere, an SMTP plugin or transactional mail service is strongly recommended. The `shareadraft_verification_email` filter customises the subject and body.
+## Links for named reviewers need working outgoing email
 
-The verification steps — and the expired/revoked/exhausted notices — render as a standalone card carrying the site's icon and name, in the wp-login.php spirit: it belongs to the site without depending on the theme (which cannot be rendered safely on these pages). The `shareadraft_notice_content` filter adjusts the card's body; a site wanting a wholly different page can hook `wp_die_handler`.
+A link can optionally be bound to named reviewers. The first time a reviewer opens it in a browser, they enter their email address, Share a Draft emails them a six-digit code (only if their address is on the link's list), and the draft opens once they enter it.
 
-Sites that want neither of the optional restrictions can switch them off in code — `add_filter( 'shareadraft_recipients_enabled', '__return_false' )` and/or `add_filter( 'shareadraft_ip_allowlist_enabled', '__return_false' )` — which removes the fields from the Generate modal, the Manage modal, the Preview Links screen, and the REST/ability schemas. Links that already carry a restriction remain enforced; disabling a feature only stops new links being minted with it.
+Those emails are sent through `wp_mail()`, so your site must be able to deliver mail reliably. If it does not already, an SMTP plugin or a transactional email service is strongly recommended; otherwise reviewers will wait for a code that never arrives.
+
+You can [change the wording of the email](customizing.md#change-the-verification-email), or [turn off named reviewers](customizing.md#turn-off-named-reviewers-or-ip-restrictions) entirely if you would rather not depend on email.
 
 ## Scheduled events must run
 
-Expired and revoked links are kept for a grace period so the gate can tell a visitor *why* their link stopped working, then removed by a daily `shareadraft_prune_links` event. If scheduled events never fire, nothing breaks for visitors — expiry is checked when a link is opened, not by the sweep — but the rows accumulate indefinitely.
+When a link expires or is revoked, Share a Draft keeps a record of it for a while (21 days by default), so a reviewer who comes back to it is told why it stopped working rather than seeing "not found". A daily scheduled event then deletes those records.
 
-There is a **Preview link cleanup** check under Tools → Site Health that reports whether the sweep is scheduled and whether it has actually run recently, so a stalled sweep is visible rather than silent.
+If scheduled events never run, nothing breaks for reviewers, because expiry is checked whenever a link is opened, but the old records pile up. **Tools → Site Health** includes a *Preview link cleanup* check that reports whether the cleanup is scheduled and has run recently, so a stalled cleanup is visible rather than silent. You can also [change how long records are kept](customizing.md#keep-expired-and-revoked-links-for-more-or-less-time), or delete them on demand with [`wp shareadraft prune`](wp-cli.md).

@@ -1,13 +1,37 @@
-# Disabling links, bulk revocation, and offboarding
+# Managing preview links
 
-Beyond revoking a single link, the Preview Links screen offers a site-wide switch and two bulk actions, and a hook wires revocation into user offboarding.
+Every preview link can be revoked on its own, and administrators can also pause every link on the site at once, revoke links in bulk, and make sure links do not outlive the people who created them. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
 
-- **Disable all preview links (reversible pause).** Administrators (`manage_options`) can temporarily disable every preview link with the toggle next to the table's bulk actions. Nothing is revoked: each link keeps its own expiry and usage, no link works while disabled, and links that are still valid resume working when re-enabled. This is the first response to a *suspected* leak — free to flip on suspicion and free to flip back on a false alarm, where revoking everything would force re-minting and re-sharing every in-flight link. While disabled, the Preview Links screen shows a banner recording who disabled links and when, and the editor's Generate and Manage modals warn that links (including newly generated ones) will not work until re-enabled. Visitors see a "temporarily disabled" notice, subject to the same `shareadraft_disclose_denial_reason` filter as other reasons.
-- **Revoke in bulk, by creator or site-wide.** Tick the header checkbox to select the page; if more links exist than the page shows, a "Select all" offer extends the selection across every page — the whole site, or one person's links if you first clicked their name in the **Created by** column (useful when someone leaves). The ordinary Revoke bulk action then covers the whole selection. Site-wide select-all — the break-glass "revoke everything" for a confirmed leak — is limited to administrators.
+## Revoking a link
 
-Both act in bounded batches; on a site with a very large number of shared posts the sweep finishes in the background within a few minutes, and links on not-yet-swept posts keep working until their batch is reached.
+A revoked link stops working immediately. There are two places to do it:
 
-**When a user account is deleted** (`deleted_user`), their links are revoked automatically. Role changes deliberately do not revoke automatically — demoting an editor to author should not necessarily kill in-flight reviews — but you can wire any hook to the supported `shareadraft_revoke_user_links` action:
+- **In the block editor.** Choose **Manage preview links** in the draft's Share a Draft panel to see each of its links, with how often it has been used and when it expires, and revoke any of them.
+- **On the Preview Links screen.** Every link on the site is listed under **Preview Links** in the admin menu, with the post it belongs to, who created it, its usage, reviewers, IP restrictions, and expiry. Revoke a link from its row, or select several and use the **Revoke** bulk action.
+
+A reviewer who opens a revoked link is told it has been revoked, rather than seeing a bare "not found". Links are also discarded automatically when their draft is published or moved to the trash.
+
+## Pausing every link
+
+If you suspect a link has leaked but do not know which one, an administrator can switch off every preview link on the site at once, with the toggle at the top of the Preview Links screen.
+
+Pausing does not change any link. While links are paused, none of them work, and new links cannot be used either. When you switch them back on, each link works exactly as it did before: its expiry, its usage limit, and its reviewers are untouched, and links that expired in the meantime stay expired. That makes pausing safe to use on suspicion, and safe to undo after a false alarm, unlike revoking everything, which would mean creating and resending every link people are still using.
+
+While links are paused, the Preview Links screen shows who paused them and when, the block editor warns anyone creating or managing links that they will not work, and reviewers who open a link are told that preview links are temporarily disabled on the site.
+
+## Revoking in bulk
+
+To revoke more than one page of links at once, select the checkbox at the top of the table to select the page. If there are more links than the page shows, a **Select all** option extends the selection across every page. Choose **Revoke** from the bulk actions to revoke the whole selection.
+
+To revoke everything one person created, click their name in the **Created by** column first, so the table shows only their links, then select all. Revoking every link on the whole site, for a confirmed leak, is limited to administrators.
+
+Bulk revoking works through links in batches. On a site with a very large number of shared posts, the remainder is finished in the background within a few minutes, and links not yet reached keep working until then.
+
+## When someone leaves
+
+When a user account is deleted, every link that person created is revoked automatically.
+
+Changing someone's role deliberately does not revoke their links: moving an editor to author should not necessarily cut off reviews already under way. If your process should revoke links on other events, trigger the `shareadraft_revoke_user_links` action from them:
 
 ```php
 // Revoke a user's preview links when they lose edit access.
@@ -23,10 +47,12 @@ add_action( 'remove_user_from_blog', function ( int $user_id ): void {
 } );
 ```
 
-After a user's links have all been revoked, `shareadraft_revoked_user_links` fires with the user's ID, how many links were revoked, and who initiated it (0 when system-initiated), so you can log offboarding for audit purposes:
+Once all of a user's links have been revoked, however that was triggered, the `shareadraft_revoked_user_links` action runs with the user's ID, how many links were revoked, and the ID of the user who started it (0 when it happened automatically). Use it to record offboarding in an audit log:
 
 ```php
 add_action( 'shareadraft_revoked_user_links', function ( int $user_id, int $count, int $actor ): void {
-	// e.g. send to your audit log.
+	// For example, send to your audit log.
 }, 10, 3 );
 ```
+
+For other ways to adjust how links behave, see [customizing Share a Draft](customizing.md).

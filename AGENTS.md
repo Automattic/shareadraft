@@ -35,8 +35,8 @@ validate with `vip-integration validate` before shipping.
 
 ## Non-negotiables
 
-- **Do not delete the app folders.** Every top-level directory is part of a
-  complete VIP application (`docs/directories.md`). Removing them breaks the plugin.
+- **Do not delete the top-level folders.** Each one is part of the plugin, its
+  tests, or its tooling (see "Repository structure" in `CONTRIBUTING.md`).
 - **One config constant.** All runtime config comes from a single VIP-defined
   constant read through `inc/class-config.php`. Never read `$_ENV`, hardcode
   secrets, or add a second config source.

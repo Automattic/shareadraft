@@ -48,7 +48,26 @@ CI runs on every push and pull request:
 
 ## Repository structure
 
-⚠️ The repository contains several folders that together constitute a complete WordPress VIP application; they should not be removed. A brief description of each is available in [/docs/directories.md](/docs/directories.md).
+| Path | What lives here |
+| ---- | --------------- |
+| `shareadraft.php` | Plugin entry file: header, constants, autoloader, and start-up. Kept small. |
+| `vestigial.php` | Support for links made with Share a Draft 1.x. Self-contained, so it can be removed in 2.1.0 by deleting it and the two lines in `shareadraft.php` that load it. |
+| `inc/` | Runtime code, autoloaded by `inc/autoload.php`. |
+| `inc/cli/` | The `wp shareadraft` WP-CLI commands, one class per subcommand, loaded only under WP-CLI. |
+| `src/` | Block editor JavaScript, compiled into `build/` by `npm run build`. `build/` is not committed. |
+| `languages/` | The translation template (POT). Regenerate it with `composer i18n`. |
+| `tests/unit/` | Fast PHPUnit tests: pure PHP, no WordPress. |
+| `tests/integration/` | PHPUnit tests that boot WordPress. |
+| `tests/e2e/` | Playwright end-to-end tests, run against a `vip dev-env`. |
+| `features/`, `tests/behat/` | Behat feature files for the WP-CLI commands, and their context class. |
+| `fixtures/` | Mock VIP configurations for local development and tests (see [/fixtures/README.md](/fixtures/README.md)). |
+| `docs/` | User and developer documentation, indexed in [/docs/README.md](/docs/README.md). |
+| `vip-manifest.yaml`, `vip-manifest.schema.json` | The handoff manifest VIP registers the integration from, and the schema it is validated against. |
+| `.wordpress-org/` | WordPress.org directory assets: screenshots, and later the banner and icon. |
+| `.wpvip/`, `.devcontainer/` | The VIP local development environment and GitHub Codespaces configuration. |
+| `.github/workflows/` | CI, and the release build for tagged versions. |
+| `.distignore` | Everything that stays out of the release ZIP. |
+| `AGENTS.md` | Orientation for AI coding agents working in this repository. |
 
 ## Local installation and development
 

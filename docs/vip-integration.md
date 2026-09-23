@@ -176,8 +176,10 @@ so internal test builds can be cut from a `release/*` branch without touching
    and `git push origin 1.0.0-RC1`.
 
 What ends up in the ZIP is controlled by `.distignore`: `shareadraft.php`,
-`inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`, `README.md`,
-and `CHANGELOG.md`, unpacked under a single `shareadraft/` directory. There is no
-`vendor/` — `inc/autoload.php` resolves the plugin's own classes, and there are
-no runtime Composer dependencies. **Add a new development-only file to
-`.distignore` when you add it to the repo**, or it ships.
+`vestigial.php`, `inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`
+and `README.md`, unpacked under a single `shareadraft/` directory. `CHANGELOG.md`
+stays on GitHub, where the README links to it. There is no `vendor/` —
+`inc/autoload.php` resolves the plugin's own classes, and there are no runtime
+Composer dependencies. `.gitattributes` keeps the same files out of GitHub's
+"Source code" archives. **Add a new development-only file to both `.distignore`
+and `.gitattributes` when you add it to the repo**, or it ships.

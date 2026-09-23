@@ -66,7 +66,7 @@ CI runs on every push and pull request:
 | `.wordpress-org/` | WordPress.org directory assets: screenshots, and later the banner and icon. |
 | `.wpvip/`, `.devcontainer/` | The VIP local development environment and GitHub Codespaces configuration. |
 | `.github/workflows/` | CI, and the release build for tagged versions. |
-| `.distignore` | Everything that stays out of the release ZIP. |
+| `.distignore`, `.gitattributes` | Everything that stays out of the release ZIP, and out of GitHub's source archives. Keep the two in step. |
 | `AGENTS.md` | Orientation for AI coding agents working in this repository. |
 
 ## Local installation and development

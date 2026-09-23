@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-22T17:21:43+00:00\n"
+"POT-Creation-Date: 2026-09-23T23:32:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -22,9 +22,8 @@ msgid "Share a Draft"
 msgstr ""
 
 #. Plugin URI of the plugin
-#. Author URI of the plugin
 #: shareadraft.php
-msgid "https://wpvip.com"
+msgid "https://wordpress.org/plugins/shareadraft/"
 msgstr ""
 
 #. Description of the plugin
@@ -35,6 +34,11 @@ msgstr ""
 #. Author of the plugin
 #: shareadraft.php
 msgid "Automattic"
+msgstr ""
+
+#. Author URI of the plugin
+#: shareadraft.php
+msgid "https://wpvip.com"
 msgstr ""
 
 #: inc/class-buildnotice.php:33
@@ -300,26 +304,30 @@ msgstr ""
 msgid "Verify"
 msgstr ""
 
-#: inc/class-previewlinkminter.php:50
+#: inc/class-previewlinkminter.php:53
 msgid "The post could not be found."
 msgstr ""
 
 #: inc/class-previewlinkminter.php:64
+msgid "Preview links are only available for content that can be viewed on the site."
+msgstr ""
+
+#: inc/class-previewlinkminter.php:78
 msgid "Per-link IP allowlists are disabled on this site."
 msgstr ""
 
-#: inc/class-previewlinkminter.php:72
+#: inc/class-previewlinkminter.php:86
 msgid "Recipient-bound preview links are disabled on this site."
 msgstr ""
 
 #. translators: %s: the rejected input, e.g. "203.0.113.0/33"
-#: inc/class-previewlinkminter.php:83
+#: inc/class-previewlinkminter.php:97
 #, php-format
 msgid "\"%s\" is not a valid IP address or CIDR range."
 msgstr ""
 
 #. translators: %s: the rejected input.
-#: inc/class-previewlinkminter.php:97
+#: inc/class-previewlinkminter.php:111
 #, php-format
 msgid "\"%s\" is not a valid email address."
 msgstr ""

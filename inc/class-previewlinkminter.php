@@ -39,16 +39,30 @@ final class PreviewLinkMinter {
 	 *                                  to, or empty for a bearer link. Validated
 	 *                                  here for the same reason as the ranges.
 	 * @return array{url: string, expires_at: int}|WP_Error A WP_Error when the
-	 *                                  post does not exist, a range or address is
+	 *                                  post does not exist or its type has no
+	 *                                  front-end view, a range or address is
 	 *                                  invalid, or the restriction is disabled on
 	 *                                  this site.
 	 */
 	public function mint( int $post_id, int $expiration, ?int $max_uses, string $channel, array $allowed_ips = [], array $recipients = [] ) {
-		if ( ! get_post( $post_id ) instanceof WP_Post ) {
+		$post = get_post( $post_id );
+
+		if ( ! $post instanceof WP_Post ) {
 			return new WP_Error(
 				'shareadraft_invalid_post',
 				__( 'The post could not be found.', 'shareadraft' ),
 				[ 'status' => 404 ]
+			);
+		}
+
+		// A type with no front-end view has nothing to preview: the link would
+		// only ever 404. `is_post_type_viewable` is itself filterable, so a site
+		// that wants a different rule changes it there, not here.
+		if ( ! is_post_type_viewable( $post->post_type ) ) {
+			return new WP_Error(
+				'shareadraft_post_type_not_viewable',
+				__( 'Preview links are only available for content that can be viewed on the site.', 'shareadraft' ),
+				[ 'status' => 400 ]
 			);
 		}
 

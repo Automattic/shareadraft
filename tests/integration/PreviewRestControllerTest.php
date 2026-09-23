@@ -120,6 +120,29 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		static::assertSame( 400, $this->create_link( $post_id, 42 )->get_status() );
 	}
 
+	public function test_a_post_type_with_no_front_end_view_is_refused(): void {
+		register_post_type( 'sad_internal', [
+			'public'  => false,
+			'show_ui' => true,
+		] );
+
+		try {
+			$post_id = self::factory()->post->create( [
+				'post_type'   => 'sad_internal',
+				'post_status' => 'draft',
+			] );
+			wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+			$response = $this->create_link( $post_id, 8 * HOUR_IN_SECONDS );
+		} finally {
+			unregister_post_type( 'sad_internal' );
+		}
+
+		static::assertSame( 400, $response->get_status() );
+		static::assertSame( 'shareadraft_post_type_not_viewable', ( (array) $response->get_data() )['code'] );
+		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
+	}
+
 	public function test_a_capped_link_is_accepted(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );

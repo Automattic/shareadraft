@@ -14,6 +14,15 @@ Feature: Preview links can be created from the command line
 			Error: The post could not be found.
 			"""
 
+	Scenario: Error when the post type has no front-end view
+		When I run `wp post create --post_type=wp_block --post_status=draft --post_title="A pattern" --porcelain`
+		And save STDOUT as {POST_ID}
+		When I try `wp shareadraft create {POST_ID}`
+		Then STDERR should be:
+			"""
+			Error: Preview links are only available for content that can be viewed on the site.
+			"""
+
 	Scenario: Create a link for a draft with the default lifetime
 		When I run `wp post create --post_status=draft --post_title="A draft" --porcelain`
 		And save STDOUT as {POST_ID}

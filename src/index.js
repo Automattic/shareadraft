@@ -11,6 +11,7 @@ import {
 	PluginDocumentSettingPanel,
 	store as editorStore,
 } from '@wordpress/editor';
+import { store as coreStore } from '@wordpress/core-data';
 import { useSelect } from '@wordpress/data';
 import { useEffect, useState } from '@wordpress/element';
 import {
@@ -534,20 +535,27 @@ const panelButtonStyle = {
 };
 
 function ShareADraftPanel() {
-	const { postId, status } = useSelect( ( select ) => {
+	const { postId, status, isViewable } = useSelect( ( select ) => {
 		const editor = select( editorStore );
 		return {
 			postId: editor.getCurrentPostId(),
 			status: editor.getEditedPostAttribute( 'status' ),
+			isViewable: !! select( coreStore ).getPostType(
+				editor.getCurrentPostType()
+			)?.viewable,
 		};
 	}, [] );
+
+	// Neither a published post (already public) nor a type with no front-end
+	// view (the link would 404) has anything to preview.
+	const isShareable = isViewable && 'publish' !== status;
 
 	const [ openModal, setOpenModal ] = useState( '' );
 	const [ hasLinks, setHasLinks ] = useState( false );
 
 	// Check once on load; the modals report changes as they happen.
 	useEffect( () => {
-		if ( ! postId || 'publish' === status ) {
+		if ( ! postId || ! isShareable ) {
 			return;
 		}
 
@@ -555,10 +563,9 @@ function ShareADraftPanel() {
 			.then( ( links ) => setHasLinks( links.length > 0 ) )
 			// Leave Manage usable so its modal can surface the error.
 			.catch( () => setHasLinks( true ) );
-	}, [ postId, status ] );
+	}, [ postId, isShareable ] );
 
-	// A published post is already public, so a preview link is meaningless.
-	if ( 'publish' === status ) {
+	if ( ! isShareable ) {
 		return null;
 	}
 

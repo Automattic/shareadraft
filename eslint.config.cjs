@@ -16,6 +16,7 @@ module.exports = [
 			'import/core-modules': [
 				'@wordpress/api-fetch',
 				'@wordpress/components',
+				'@wordpress/core-data',
 				'@wordpress/data',
 				'@wordpress/editor',
 				'@wordpress/element',

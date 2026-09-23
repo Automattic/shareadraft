@@ -45,8 +45,29 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 
 		set_current_screen( 'front' );
 		BulkLinkRevoker::unschedule();
+		wp_dequeue_script( 'shareadraft-admin' );
+		wp_deregister_script( 'shareadraft-admin' );
 
 		parent::tear_down();
+	}
+
+	public function test_the_script_is_enqueued_with_its_built_dependencies(): void {
+		$this->page->enqueue_assets( PreviewLinksAdminPage::SCREEN_ID );
+
+		static::assertTrue( wp_script_is( 'shareadraft-admin' ) );
+
+		/** @var array{dependencies: list<string>, version: string} $asset */
+		$asset  = require dirname( __DIR__, 2 ) . '/build/admin.asset.php';
+		$script = wp_scripts()->registered['shareadraft-admin'];
+
+		static::assertSame( $asset['dependencies'], $script->deps );
+		static::assertSame( $asset['version'], $script->ver );
+	}
+
+	public function test_the_script_stays_off_other_screens(): void {
+		$this->page->enqueue_assets( 'edit.php' );
+
+		static::assertFalse( wp_script_is( 'shareadraft-admin' ) );
 	}
 
 	public function test_an_ordinary_view_carries_no_revoke(): void {

@@ -17,11 +17,10 @@ final class Telemetry {
 	 * Tracks source prefix for every event this plugin records.
 	 *
 	 * The leading token (`shareadraft`) is the Tracks "source" and MUST be a
-	 * single lowercase word with no underscores, and MUST be whitelisted in
-	 * Automattic/nosara's `tracks_events_whitelist.config`. Events from a
-	 * non-whitelisted source are silently diverted to `prod_rejects` and never
-	 * appear in the Tracks tools — so do not change this to a value that isn't
-	 * on that whitelist.
+	 * single lowercase word with no underscores, and MUST be a source Tracks is
+	 * registered to accept. Events from any other source are silently
+	 * discarded and never appear in the Tracks tools, so do not change this
+	 * without registering the new source first.
 	 */
 	public const EVENT_PREFIX = 'shareadraft_';
 

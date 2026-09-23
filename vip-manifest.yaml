@@ -21,7 +21,7 @@ integration:
     support_contact: support@wpvip.com
 
 documentation:
-  public_url: https://wpvip.com/features/live-previews/
+  public_url: https://github.com/Automattic/shareadraft/blob/main/docs/README.md
   support_url: https://wpvip.com/support/
 
 runtime:
@@ -61,8 +61,8 @@ runtime_config:
         restrictions limit where a link opens from, not who opens it.
 
 telemetry:
-  # Single word, no underscores: the leading token is the Tracks source and must
-  # be whitelisted in nosara. `share_a_draft_` would divert events to prod_rejects.
+  # Single word, no underscores: the leading token is the Tracks source, which
+  # must be registered for events to be accepted. `share_a_draft_` would not be.
   prefix: shareadraft_
   default_properties:
     - plugin_version
@@ -72,6 +72,7 @@ telemetry:
       trigger: A preview link is minted, via REST, WP-CLI, or the Abilities API.
       properties:
         - expiration
+        - is_capped
         - max_uses
         - channel
         - has_ip_allowlist

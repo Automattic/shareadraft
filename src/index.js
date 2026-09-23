@@ -205,11 +205,11 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 						? __(
 								'Only the listed reviewers will be able to open this link, after verifying their email address.',
 								'shareadraft'
-						  )
+							)
 						: __(
 								'Anyone with this link will be able to preview the post.',
 								'shareadraft'
-						  ) }
+							) }
 				</Notice>
 
 				<SelectControl
@@ -266,11 +266,11 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 								? __(
 										'Comma-separated IPv4/IPv6 addresses or CIDR ranges, added to the ranges already set in the VIP Dashboard. Leave empty to add none.',
 										'shareadraft'
-								  )
+									)
 								: __(
 										'Comma-separated IPv4/IPv6 addresses or CIDR ranges, e.g. 203.0.113.0/24. Limits where the link opens, not who opens it. Leave empty for no IP restriction.',
 										'shareadraft'
-								  )
+									)
 						}
 						value={ allowedIps }
 						onChange={ setAllowedIps }
@@ -300,7 +300,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 								: __(
 										'Copy this link to share it.',
 										'shareadraft'
-								  )
+									)
 						}
 						__nextHasNoMarginBottom
 					/>
@@ -513,7 +513,7 @@ function ManageModal( { postId, onLinksChange, onClose } ) {
 													'shareadraft'
 												),
 												link.token_hint
-										  )
+											)
 										: undefined
 								}
 							>

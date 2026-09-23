@@ -13,9 +13,13 @@
     "johnpbloch/wordpress-core": "^6.9 || ^7.0",
     "php-stubs/wordpress-stubs": "^6.9 || ^7.0",
     "phpcompatibility/phpcompatibility-wp": "^2",
+    "phpstan/extension-installer": "^1.4",
+    "phpstan/phpstan": "^2.2",
+    "phpstan/phpstan-phpunit": "^2.0",
+    "phpstan/phpstan-strict-rules": "^2.0",
     "phpunit/phpunit": "^9.6",
-    "psalm/plugin-phpunit": "^0.19.0",
-    "vimeo/psalm": "^5.21.1",
+    "shipmonk/dead-code-detector": "^1.4",
+    "szepeviktor/phpstan-wordpress": "^2.0",
     "wildwolf/wordpress-test-library-stubs": "^6.2",
     "wp-phpunit/wp-phpunit": "^6.9 || ^7.0",
     "yoast/phpunit-polyfills": "^4.0"
@@ -27,12 +31,14 @@
   },
   "autoload-dev": {
     "psr-4": {
-      "Automattic\\ShareADraft\\Tests\\Behat\\": "tests/behat/"
+      "Automattic\\ShareADraft\\Tests\\Behat\\": "tests/behat/",
+      "Automattic\\ShareADraft\\PHPStan\\": "tests/phpstan/"
     }
   },
   "config": {
     "allow-plugins": {
-      "dealerdirect/phpcodesniffer-composer-installer": true
+      "dealerdirect/phpcodesniffer-composer-installer": true,
+      "phpstan/extension-installer": true
     },
     "platform": {
       "php": "8.2"
@@ -50,8 +56,8 @@
     "i18n:pot": "wp i18n make-pot . languages/shareadraft.pot --slug=shareadraft --exclude=src,tests,fixtures,docs,.wp-env,.wpvip,.devcontainer --headers='{\"Report-Msgid-Bugs-To\":\"https://github.com/Automattic/shareadraft/issues\"}'",
     "phpcbf": "phpcbf",
     "phpcs": "phpcs",
+    "phpstan": "phpstan analyse --memory-limit=2G",
     "prepare-behat-tests": "wp-env start",
-    "psalm": "psalm",
     "test": [
       "@test:unit",
       "@test:integration",
@@ -65,6 +71,7 @@
   "scripts-descriptions": {
     "behat": "Run the WP-CLI Behat feature tests (needs a running wp-env; see prepare-behat-tests)",
     "behat-rerun": "Rerun only the Behat scenarios that failed last time",
+    "phpstan": "Run PHPStan static analysis (level 10, with the WordPress, strict-rules, PHPUnit and dead-code extensions)",
     "prepare-behat-tests": "Start the wp-env environment the Behat tests run against",
     "i18n": "Regenerate the POT file and any JSON catalogues (needs WP-CLI and a current `npm run build`)",
     "i18n:json": "Split translated PO files into the JSON catalogues the editor script loads",

@@ -70,8 +70,10 @@ pattern rather than introducing a new one.
 - **Coding standards:** WordPress VIP rules via PHPCS (`composer phpcs`). Escape
   output, sanitize input, use `wpdb->prepare`, add capability checks on admin
   and REST surfaces. `composer phpcbf` auto-fixes what it can.
-- **Static analysis:** Psalm must stay green (`composer psalm`). Annotate types;
-  the existing classes show the expected docblock style.
+- **Static analysis:** PHPStan must stay green at level 10 (`composer phpstan`).
+  Annotate types; the existing classes show the expected docblock style. Narrow
+  untrusted values (`is_numeric()`, `is_string()`, `instanceof`) rather than
+  casting them, and scope any `@phpstan-ignore` to an identifier with a reason.
 - **No new runtime dependencies** without a strong reason — the plugin ships with
   what VIP already provides.
 
@@ -176,7 +178,7 @@ composer prepare-behat-tests # start the wp-env the Behat suite runs against
 composer behat           # WP-CLI feature tests (needs the wp-env above)
 composer phpcs          # WordPress VIP coding standards
 composer phpcbf         # auto-fix what PHPCS can
-composer psalm          # static analysis
+composer phpstan        # static analysis
 composer i18n           # regenerate languages/ (needs WP-CLI and a current `npm run build`)
 ```
 

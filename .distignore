@@ -34,7 +34,6 @@
 /features
 /fixtures
 /docs
-/wordpress.stubs
 /vip-manifest.schema.json
 
 # Dependency manifests and installed dependencies
@@ -49,9 +48,9 @@
 /behat.yml
 /eslint.config.cjs
 /phpcs.xml.dist
+/phpstan.neon.dist
 /phpunit.xml.dist
 /phpunit-unit.xml.dist
-/psalm.xml.dist
 /playwright.config.ts
 /AGENTS.md
 /CLAUDE.md

@@ -14,7 +14,7 @@ JavaScript in `src/` is linted by [`@wordpress/scripts`](https://developer.wordp
 | -------------------------- | ---------------------------- |
 | Check (PHP)                | `composer phpcs`             |
 | Auto-fix what can be fixed | `composer phpcbf`            |
-| Static analysis (Psalm)    | `composer psalm`             |
+| Static analysis (PHPStan)  | `composer phpstan`           |
 | Check (JavaScript)         | `npm run lint:js`            |
 | Auto-fix JavaScript        | `npm run lint:js -- --fix`   |
 

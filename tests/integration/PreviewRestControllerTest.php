@@ -60,13 +60,16 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 
 		static::assertSame( 200, $response->get_status() );
 		$data = (array) $response->get_data();
-		static::assertStringContainsString( 'preview=true', (string) $data['url'] );
-		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=', (string) $data['url'] );
-		static::assertGreaterThan( time(), (int) $data['expires_at'] );
+
+		$url = $data['url'] ?? null;
+		static::assertIsString( $url );
+		static::assertStringContainsString( 'preview=true', $url );
+		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=', $url );
+		static::assertGreaterThan( time(), $data['expires_at'] ?? null );
 	}
 
 	public function test_minting_records_a_tracks_event(): void {
-		VIP_Telemetry::$events = [];
+		VIP_Telemetry::reset();
 
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
@@ -90,7 +93,7 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 	}
 
 	public function test_minting_an_uncapped_link_reports_a_clean_integer(): void {
-		VIP_Telemetry::$events = [];
+		VIP_Telemetry::reset();
 
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
@@ -166,9 +169,9 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 
 		$request = new WP_REST_Request( 'GET', self::ROUTE );
 		$request->set_query_params( [ 'post_id' => $post_id ] );
-		$data = (array) rest_do_request( $request )->get_data();
+		$link = self::first_link( rest_do_request( $request ) );
 
-		static::assertSame( [ '203.0.113.0/24' ], $data[0]['allowed_ips'] );
+		static::assertSame( [ '203.0.113.0/24' ], $link['allowed_ips'] ?? null );
 	}
 
 	public function test_listing_returns_live_links_only(): void {
@@ -182,12 +185,16 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		$response = rest_do_request( $request );
 
 		static::assertSame( 200, $response->get_status() );
-		$data = (array) $response->get_data();
-		static::assertCount( 1, $data );
-		static::assertSame( 5, $data[0]['max_uses'] );
-		static::assertSame( 0, $data[0]['use_count'] );
-		static::assertArrayHasKey( 'id', $data[0] );
-		static::assertSame( 4, strlen( (string) $data[0]['token_hint'] ), 'A 4-char token hint identifies the link.' );
+		static::assertCount( 1, (array) $response->get_data() );
+
+		$link = self::first_link( $response );
+		static::assertSame( 5, $link['max_uses'] ?? null );
+		static::assertSame( 0, $link['use_count'] ?? null );
+		static::assertArrayHasKey( 'id', $link );
+
+		$hint = $link['token_hint'] ?? null;
+		static::assertIsString( $hint );
+		static::assertSame( 4, strlen( $hint ), 'A 4-char token hint identifies the link.' );
 	}
 
 	public function test_expiration_options_are_filterable(): void {
@@ -252,6 +259,7 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 
 	/**
 	 * @param list<string> $allowed_ips
+	 * @param list<string> $recipients
 	 */
 	private function create_link( int $post_id, int $expiration, ?int $max_uses = null, array $allowed_ips = [], array $recipients = [] ): \WP_REST_Response {
 		$request = new WP_REST_Request( 'POST', self::ROUTE );
@@ -323,5 +331,17 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 
 		static::assertSame( 400, $response->get_status() );
 		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
+	}
+
+	/**
+	 * The first link in a listing response.
+	 *
+	 * @return array<mixed>
+	 */
+	private static function first_link( \WP_REST_Response $response ): array {
+		$link = ( (array) $response->get_data() )[0] ?? null;
+		static::assertIsArray( $link );
+
+		return $link;
 	}
 }

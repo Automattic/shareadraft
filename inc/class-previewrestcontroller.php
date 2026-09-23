@@ -173,13 +173,13 @@ final class PreviewRestController {
 	 * Links may be managed only by someone who can edit the target post.
 	 */
 	public function can_manage_links( WP_REST_Request $request ): bool {
-		return current_user_can( 'edit_post', (int) $request->get_param( 'post_id' ) );
+		return current_user_can( 'edit_post', self::int_value( $request->get_param( 'post_id' ) ) );
 	}
 
 	public function list_links( WP_REST_Request $request ): WP_REST_Response {
 		return rest_ensure_response(
 			PreviewLinkPresenter::present_live_links(
-				$this->service->list_for_post( (int) $request->get_param( 'post_id' ) ),
+				$this->service->list_for_post( self::int_value( $request->get_param( 'post_id' ) ) ),
 				time()
 			)
 		);
@@ -189,8 +189,9 @@ final class PreviewRestController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function revoke_link( WP_REST_Request $request ) {
-		$post_id    = (int) $request->get_param( 'post_id' );
-		$token_hash = (string) $request->get_param( 'id' );
+		$post_id    = self::int_value( $request->get_param( 'post_id' ) );
+		$token_hash = $request->get_param( 'id' );
+		$token_hash = is_string( $token_hash ) ? $token_hash : '';
 
 		if ( ! $this->service->revoke( $post_id, $token_hash ) ) {
 			return new WP_Error(
@@ -207,9 +208,8 @@ final class PreviewRestController {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function create_link( WP_REST_Request $request ) {
-		/** @var mixed $max_uses_param */
 		$max_uses_param = $request->get_param( 'max_uses' );
-		$max_uses       = null === $max_uses_param ? null : (int) $max_uses_param;
+		$max_uses       = null === $max_uses_param ? null : self::int_value( $max_uses_param );
 
 		// A WP_Error from the minter (e.g. a missing post, an invalid IP range
 		// or address, or a disabled restriction) passes straight through:
@@ -217,14 +217,24 @@ final class PreviewRestController {
 		// renders it with its status.
 		return rest_ensure_response(
 			$this->minter->mint(
-				(int) $request->get_param( 'post_id' ),
-				(int) $request->get_param( 'expiration' ),
+				self::int_value( $request->get_param( 'post_id' ) ),
+				self::int_value( $request->get_param( 'expiration' ) ),
 				$max_uses,
 				'rest',
 				self::string_list( $request->get_param( 'allowed_ips' ) ),
 				self::string_list( $request->get_param( 'recipients' ) )
 			)
 		);
+	}
+
+	/**
+	 * The integer in an untyped request value. The schema has already rejected
+	 * anything non-numeric, so the fallback only guards the type.
+	 *
+	 * @param mixed $value The raw parameter value.
+	 */
+	private static function int_value( $value ): int {
+		return is_numeric( $value ) ? (int) $value : 0;
 	}
 
 	/**

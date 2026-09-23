@@ -12,8 +12,6 @@ use WP_List_Table;
  * never show or re-copy its shareable URL — that keeps the "no re-copy by
  * design" hardening intact. Rows come from {@see PreviewLinkService} one page at
  * a time, so a large site is never loaded whole.
- *
- * @psalm-suppress PropertyNotSetInConstructor Parent WP_List_Table initialises $items, $screen and $_args in the constructor we call.
  */
 final class PreviewLinksListTable extends WP_List_Table {
 	/** Ties the bulk-action nonce emitted here to the check in {@see PreviewLinksAdminPage}. */
@@ -137,8 +135,24 @@ final class PreviewLinksListTable extends WP_List_Table {
 		$this->_column_headers = [ $this->get_columns(), get_hidden_columns( $this->screen ), [] ];
 	}
 
+	/**
+	 * The site's date and time formats joined, as the admin screens show them.
+	 */
+	public static function datetime_format(): string {
+		$date = get_option( 'date_format' );
+		$time = get_option( 'time_format' );
+
+		return ( is_string( $date ) ? $date : '' ) . ' ' . ( is_string( $time ) ? $time : '' );
+	}
+
+	/**
+	 * @param array<mixed>|object $item
+	 */
 	public function column_cb( $item ): string {
-		/** @var PreviewLink $item */
+		if ( ! $item instanceof PreviewLink ) {
+			return '';
+		}
+
 		return sprintf(
 			'<input type="checkbox" name="links[]" value="%s" />',
 			esc_attr( $item->post_id() . ':' . $item->token_hash() )
@@ -241,8 +255,7 @@ final class PreviewLinksListTable extends WP_List_Table {
 
 	public function column_expiry( PreviewLink $item ): string {
 		$expires  = $item->expires_at();
-		$format   = (string) get_option( 'date_format' ) . ' ' . (string) get_option( 'time_format' );
-		$absolute = wp_date( $format, $expires );
+		$absolute = wp_date( self::datetime_format(), $expires );
 
 		if ( $item->is_expired( $this->now ) ) {
 			/* translators: %s: human-readable duration, e.g. "2 hours" */

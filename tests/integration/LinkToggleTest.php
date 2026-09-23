@@ -4,6 +4,7 @@ declare(strict_types = 1);
 
 namespace Automattic\ShareADraft;
 
+use WP_Post;
 use WP_Query;
 use WP_UnitTestCase;
 
@@ -100,6 +101,11 @@ class LinkToggleTest extends WP_UnitTestCase {
 		$posts = ( new PreviewGate( $this->service ) )
 			->unlock_valid_previews( [ get_post( $post_id ) ], $query );
 
-		return (string) $posts[0]->post_status;
+		static::assertIsArray( $posts );
+
+		$first = $posts[0] ?? null;
+		static::assertInstanceOf( WP_Post::class, $first );
+
+		return $first->post_status;
 	}
 }

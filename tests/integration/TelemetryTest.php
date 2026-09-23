@@ -11,7 +11,7 @@ use WP_UnitTestCase;
  */
 class TelemetryTest extends WP_UnitTestCase {
 	public function test_record_event_forwards_to_the_vip_client(): void {
-		VIP_Telemetry::$events = [];
+		VIP_Telemetry::reset();
 
 		Telemetry::get_instance()->record_event( 'unit_test_event', [ 'foo' => 'bar' ] );
 
@@ -22,7 +22,7 @@ class TelemetryTest extends WP_UnitTestCase {
 	}
 
 	public function test_recording_is_skipped_when_the_environment_opts_out(): void {
-		VIP_Telemetry::$events = [];
+		VIP_Telemetry::reset();
 
 		// The local dev-env (where the E2E suite runs) opts out via this filter,
 		// so no synthetic events reach production Tracks.
@@ -37,11 +37,12 @@ class TelemetryTest extends WP_UnitTestCase {
 		// The Tracks source (the token before the first underscore) must be a
 		// single lowercase word that Tracks is registered to accept, or events
 		// are silently discarded. Guard the exact value against regressions.
+		// @phpstan-ignore staticMethod.alreadyNarrowedType (Pins the exact value against a rename.)
 		static::assertSame( 'shareadraft_', Telemetry::EVENT_PREFIX );
 
 		$source = strtok( Telemetry::EVENT_PREFIX, '_' );
 		static::assertSame( 'shareadraft', $source );
-		static::assertMatchesRegularExpression( '/^[a-z]+$/', (string) $source, 'The Tracks source must be a single lowercase word with no underscores.' );
+		static::assertMatchesRegularExpression( '/^[a-z]+$/', $source, 'The Tracks source must be a single lowercase word with no underscores.' );
 	}
 
 	public function test_singleton(): void {

@@ -48,7 +48,7 @@ final class Config {
 	private bool $available = false;
 
 	public static function get_instance(): self {
-		if ( ! self::$instance ) {
+		if ( null === self::$instance ) {
 			self::$instance = new self( defined( self::CONSTANT_NAME ) ? constant( self::CONSTANT_NAME ) : null );
 		}
 
@@ -61,7 +61,7 @@ final class Config {
 	 */
 	public function __construct( $raw ) {
 		if ( is_array( $raw ) ) {
-			/** @psalm-var array<string, mixed> $raw */
+			/** @var array<string, mixed> $raw */
 			$this->config    = $raw;
 			$this->available = true;
 		}
@@ -89,7 +89,7 @@ final class Config {
 	public function missing_fields(): array {
 		$missing = [];
 
-		/** @var string $field */
+		// @phpstan-ignore foreach.emptyArray (Empty until a field is required; see REQUIRED_FIELDS.)
 		foreach ( self::REQUIRED_FIELDS as $field ) {
 			if ( ! isset( $this->config[ $field ] )
 				|| ! is_string( $this->config[ $field ] )
@@ -129,6 +129,7 @@ final class Config {
 		$display = [];
 
 		foreach ( array_keys( $this->config ) as $key ) {
+			// @phpstan-ignore function.impossibleType (Empty until a secret is carried; see SENSITIVE_FIELDS.)
 			$display[ $key ] = in_array( $key, self::SENSITIVE_FIELDS, true )
 				? '••••••••'
 				: self::stringify( $this->config[ $key ] );

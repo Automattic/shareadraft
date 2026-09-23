@@ -8,13 +8,12 @@ namespace Automattic\ShareADraft;
  * page ("this link has expired" vs a bare 404).
  */
 final class AccessDecision {
-	public const REASON_ALLOWED        = 'allowed';
-	public const REASON_NOT_FOUND      = 'not_found';
-	public const REASON_TOKEN_MISMATCH = 'token_mismatch';
-	public const REASON_EXPIRED        = 'expired';
-	public const REASON_REVOKED        = 'revoked';
-	public const REASON_EXHAUSTED      = 'exhausted';
-	public const REASON_IP_BLOCKED     = 'ip_blocked';
+	public const REASON_ALLOWED    = 'allowed';
+	public const REASON_NOT_FOUND  = 'not_found';
+	public const REASON_EXPIRED    = 'expired';
+	public const REASON_REVOKED    = 'revoked';
+	public const REASON_EXHAUSTED  = 'exhausted';
+	public const REASON_IP_BLOCKED = 'ip_blocked';
 
 	/**
 	 * The link is bound to named recipients and this visitor has not proved

@@ -26,7 +26,7 @@ Each `wp shareadraft` command is pinned by a [Behat](https://behat.org/) feature
 
 ### Static analysis
 
-[Psalm](https://psalm.dev/) is a free & open-source static analysis tool that helps identify problems in the code. For it to work properly you will need to annotate the PHP code; see [/inc](/inc) for examples.
+[PHPStan](https://phpstan.org/) runs at level 10 with the [WordPress](https://github.com/szepeviktor/phpstan-wordpress), strict-rules, PHPUnit and [dead-code](https://github.com/shipmonk-rnd/dead-code-detector) extensions. Run it with `composer phpstan`. For it to work properly you will need to annotate the PHP code; see [/inc](/inc) for examples. Stubs for symbols the shipped stub packages miss (the WP-CLI surface, and a few test-library types) live in [/tests/phpstan](/tests/phpstan).
 
 ### Linting and coding standards
 
@@ -43,7 +43,7 @@ CI runs on every push and pull request:
 | `e2e.yml`                              | Playwright end-to-end tests against a real `vip dev-env` (WordPress 6.9 and 7.1).                           |
 | `behat.yml`                            | Behat feature tests for the `wp shareadraft` WP-CLI commands, against a real wp-env.                      |
 | `lint.yml`                             | PHPCS with the WordPress VIP rulesets.                                                                      |
-| `static-code-analysis.yml`             | Psalm static analysis.                                                                                      |
+| `static-code-analysis.yml`             | PHPStan static analysis.                                                                                    |
 | `codeql.yml` / `dependency-review.yml` | Security scanning of code and dependency changes.                                                           |
 
 ## Repository structure

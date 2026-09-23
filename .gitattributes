@@ -34,12 +34,11 @@
 /package.json                    export-ignore
 /package-lock.json               export-ignore
 /phpcs.xml.dist                  export-ignore
+/phpstan.neon.dist               export-ignore
 /phpunit.xml.dist                export-ignore
 /phpunit-unit.xml.dist           export-ignore
 /playwright.config.ts            export-ignore
-/psalm.xml.dist                  export-ignore
 /vip-manifest.schema.json        export-ignore
-/wordpress.stubs                 export-ignore
 
 # Auto detect text files and perform LF normalization
 # https://pablorsk.medium.com/be-a-git-ninja-the-gitattributes-file-e58c07c9e915

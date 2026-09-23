@@ -111,7 +111,7 @@ final class CreateCommand {
 		if ( isset( $assoc_args['allowed-ips'] ) && is_string( $assoc_args['allowed-ips'] ) ) {
 			// The minter validates each range; splitting is all that happens here.
 			$allowed_ips = array_values(
-				array_filter( array_map( 'trim', explode( ',', $assoc_args['allowed-ips'] ) ) )
+				array_filter( array_map( 'trim', explode( ',', $assoc_args['allowed-ips'] ) ), static fn( string $range ): bool => '' !== $range )
 			);
 		}
 
@@ -121,7 +121,7 @@ final class CreateCommand {
 			// Likewise: address validity (and whether the feature is enabled on
 			// this site) is the minter's call, shared with every other channel.
 			$recipients = array_values(
-				array_filter( array_map( 'trim', explode( ',', $assoc_args['recipients'] ) ) )
+				array_filter( array_map( 'trim', explode( ',', $assoc_args['recipients'] ) ), static fn( string $email ): bool => '' !== $email )
 			);
 		}
 
@@ -141,7 +141,7 @@ final class CreateCommand {
 
 		WP_CLI::line( $result['url'] );
 
-		if ( ! \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false ) ) {
+		if ( ! (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'porcelain', false ) ) {
 			WP_CLI::success( sprintf( 'Link expires %s UTC.', gmdate( 'Y-m-d H:i:s', $result['expires_at'] ) ) );
 		}
 	}

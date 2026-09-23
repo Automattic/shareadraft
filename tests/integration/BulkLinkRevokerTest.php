@@ -130,11 +130,13 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 			$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
 		}
 
-		$received = null;
+		// An object, not a by-reference array: static analysis cannot see a
+		// closure write back through a reference.
+		$received = new \ArrayObject();
 		add_action(
 			BulkLinkRevoker::REVOKED_USER_ACTION,
-			static function ( int $user_id, int $count ) use ( &$received ): void {
-				$received = [ $user_id, $count ];
+			static function ( int $user_id, int $count ) use ( $received ): void {
+				$received->exchangeArray( [ $user_id, $count ] );
 			},
 			10,
 			2
@@ -144,11 +146,11 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		static::assertTrue( $this->revoker->has_pending_work() );
 		static::assertNotFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
 		// Not fired until the sweep actually finishes.
-		static::assertNull( $received );
+		static::assertCount( 0, $received );
 
 		static::assertSame( 1, $this->revoker->run() );
 		static::assertFalse( $this->revoker->has_pending_work() );
-		static::assertSame( [ 7, 101 ], $received );
+		static::assertSame( [ 7, 101 ], $received->getArrayCopy() );
 
 		foreach ( $post_ids as $post_id ) {
 			static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );

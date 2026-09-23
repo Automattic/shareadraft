@@ -48,6 +48,7 @@ final class BulkLinkRevoker {
 	}
 
 	public function register(): void {
+		// @phpstan-ignore return.void (The count is for callers and tests; WordPress discards an action's return value.)
 		add_action( self::HOOK, [ $this, 'run' ] );
 
 		// Offboarding hygiene: a hard-deleted user's links stop working.

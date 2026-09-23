@@ -102,7 +102,7 @@ final class PreviewGate {
 			$status = get_post_status_object( $post->post_status );
 
 			// Only unpublished posts need unlocking; public ones already render.
-			if ( $status && $status->public ) {
+			if ( null !== $status && $status->public ) {
 				continue;
 			}
 
@@ -209,7 +209,9 @@ final class PreviewGate {
 	 * Show a friendly page when a real preview link could not be served.
 	 */
 	public function maybe_render_notice(): void {
-		if ( null === $this->denial_reason ) {
+		$reason = $this->denial_reason;
+
+		if ( null === $reason ) {
 			return;
 		}
 
@@ -217,11 +219,11 @@ final class PreviewGate {
 
 		// An unfurler poking a recipient-bound link gets the same contentless
 		// stub as any other automated client, not the verification form.
-		if ( AccessDecision::REASON_EMAIL_UNVERIFIED === $this->denial_reason && $this->is_automated_client() ) {
-			$this->denial_reason = self::REASON_AUTOMATED;
+		if ( AccessDecision::REASON_EMAIL_UNVERIFIED === $reason && $this->is_automated_client() ) {
+			$reason = self::REASON_AUTOMATED;
 		}
 
-		if ( self::REASON_AUTOMATED === $this->denial_reason ) {
+		if ( self::REASON_AUTOMATED === $reason ) {
 			// A neutral 200 so a chat unfurl renders a tidy card, with none of
 			// the draft's title, excerpt, or image in it.
 			NoticePage::render(
@@ -231,7 +233,7 @@ final class PreviewGate {
 			);
 		}
 
-		if ( AccessDecision::REASON_EMAIL_UNVERIFIED === $this->denial_reason ) {
+		if ( AccessDecision::REASON_EMAIL_UNVERIFIED === $reason ) {
 			$this->handle_verification();
 		}
 
@@ -260,15 +262,15 @@ final class PreviewGate {
 		 * @param string $reason   Machine reason, one of AccessDecision::REASON_EXPIRED,
 		 *                         REASON_REVOKED, REASON_EXHAUSTED, or 'links_disabled'.
 		 */
-		$disclose = (bool) apply_filters( 'shareadraft_disclose_denial_reason', true, $this->denial_reason );
+		$disclose = (bool) apply_filters( 'shareadraft_disclose_denial_reason', true, $reason );
 
 		$message = $disclose
-			? ( $specific[ $this->denial_reason ] ?? $generic )
+			? ( $specific[ $reason ] ?? $generic )
 			: $generic;
 
 		// While the site-wide switch is off, a fresh link would not work either,
 		// so "ask for a new link" would send the visitor on a pointless errand.
-		$advice = $disclose && self::REASON_DISABLED === $this->denial_reason
+		$advice = $disclose && self::REASON_DISABLED === $reason
 			? __( 'Please try again later.', 'shareadraft' )
 			: __( 'Ask the author to share a new preview link.', 'shareadraft' );
 
@@ -336,13 +338,6 @@ final class PreviewGate {
 
 				// Redirect back to the same preview URL as a GET, so the page
 				// loads with the fresh cookie and a refresh cannot re-post.
-				/**
-				 * Psalm's globals stub types REQUEST_URI as always a non-empty
-				 * string, but some SAPIs genuinely omit it, so the runtime
-				 * guard stays.
-				 *
-				 * @psalm-suppress RedundantCondition, TypeDoesNotContainType
-				 */
 				// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REQUEST_URI__ -- Uncached preview request (unique token query string + nocache headers); redirecting to the URL just requested.
 				$target = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] )
 					? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
@@ -445,12 +440,6 @@ final class PreviewGate {
 	 */
 	private function client_ip(): ?string {
 		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__ -- On VIP the edge rewrites REMOTE_ADDR to the true client IP (unlike X-Forwarded-For it is not client-spoofable there), the value is validated with FILTER_VALIDATE_IP below, and preview requests are never page-cached (unique token query string + nocache headers).
-		/**
-		 * Psalm's globals stub types REMOTE_ADDR as always set, but some SAPIs
-		 * (CLI) genuinely omit it, so the runtime guard stays.
-		 *
-		 * @psalm-suppress RedundantCondition, TypeDoesNotContainType
-		 */
 		$remote_addr = isset( $_SERVER['REMOTE_ADDR'] ) && is_string( $_SERVER['REMOTE_ADDR'] )
 			? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) )
 			: '';
@@ -555,7 +544,7 @@ final class PreviewGate {
 	 */
 	private function is_automated_client(): bool {
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__ -- Only read on uncached preview requests, to decide whether to serve the draft or a stub.
-		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( (string) $_SERVER['HTTP_USER_AGENT'] ) ) : '';
+		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) && is_string( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 
 		if ( '' === $user_agent ) {
 			return true;

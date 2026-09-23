@@ -73,7 +73,7 @@ function shares(): array {
 		$shares = [];
 		/** @var mixed $share */
 		foreach ( $options['shared'] as $share ) {
-			if ( ! is_array( $share ) || ! isset( $share['id'], $share['expires'], $share['key'] ) || ! is_scalar( $share['key'] ) ) {
+			if ( ! is_array( $share ) || ! isset( $share['id'], $share['expires'], $share['key'] ) || ! is_numeric( $share['id'] ) || ! is_numeric( $share['expires'] ) || ! is_scalar( $share['key'] ) ) {
 				continue;
 			}
 
@@ -124,7 +124,6 @@ function live_post( array $share ): ?WP_Post {
 		return null;
 	}
 
-	/** @var mixed $post */
 	$post = get_post( $share['id'] );
 
 	return $post instanceof WP_Post ? $post : null;
@@ -168,7 +167,7 @@ function unlock_shared_draft( $posts, WP_Query $query ) {
 
 	$post   = $posts[0];
 	$status = get_post_status_object( $post->post_status );
-	if ( $status && $status->public ) {
+	if ( null !== $status && $status->public ) {
 		return $posts;
 	}
 
@@ -207,7 +206,7 @@ function restore_shared_draft( $posts, WP_Query $query ) {
 	$post = shared_draft();
 	shared_draft( null );
 
-	return [] === $posts && $post ? [ $post ] : $posts;
+	return [] === $posts && null !== $post ? [ $post ] : $posts;
 }
 
 /**
@@ -251,7 +250,7 @@ function current_user_shares(): array {
 	$rows = [];
 	foreach ( shares()[ get_current_user_id() ] ?? [] as $share ) {
 		$post = live_post( $share );
-		if ( $post ) {
+		if ( null !== $post ) {
 			$rows[] = [
 				'share' => $share,
 				'post'  => $post,
@@ -309,13 +308,13 @@ function prune_orphans(): void {
  */
 function maybe_delete(): void {
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Routing only; the nonce is checked below before anything changes.
-	if ( ! isset( $_GET['page'], $_GET['action'], $_GET['key'] ) || PAGE !== $_GET['page'] || 'delete' !== $_GET['action'] || ! is_scalar( $_GET['key'] ) ) {
+	if ( ! isset( $_GET['page'], $_GET['action'], $_GET['key'] ) || PAGE !== $_GET['page'] || 'delete' !== $_GET['action'] || ! is_string( $_GET['key'] ) ) {
 		return;
 	}
 
 	check_admin_referer( 'shareadraft-delete' );
 
-	delete_share( sanitize_text_field( wp_unslash( (string) $_GET['key'] ) ) );
+	delete_share( is_string( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '' );
 
 	$destination = [] === current_user_shares()
 		? admin_url( 'edit.php' )
@@ -347,13 +346,13 @@ function delete_share( string $key ): bool {
 			continue;
 		}
 
-		if ( get_post( $share['id'] ) && ! current_user_can( 'edit_post', $share['id'] ) ) {
+		if ( null !== get_post( $share['id'] ) && ! current_user_can( 'edit_post', $share['id'] ) ) {
 			wp_die( esc_html__( 'Sorry, you are not allowed to delete links to posts you cannot edit.', 'shareadraft' ), 403 );
 		}
 
 		unset( $all[ $user_id ][ $index ] );
 		$all[ $user_id ] = array_values( $all[ $user_id ] );
-		save( $all );
+		save( $all ); // @phpstan-ignore argument.type (array_values() has just re-indexed this user's shares into a list.)
 
 		return true;
 	}

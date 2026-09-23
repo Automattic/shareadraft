@@ -35,8 +35,8 @@ validate with `vip-integration validate` before shipping.
 
 ## Non-negotiables
 
-- **Do not delete the app folders.** Every top-level directory is part of a
-  complete VIP application (`docs/directories.md`). Removing them breaks the plugin.
+- **Do not delete the top-level folders.** Each one is part of the plugin, its
+  tests, or its tooling (see "Repository structure" in `CONTRIBUTING.md`).
 - **One config constant.** All runtime config comes from a single VIP-defined
   constant read through `inc/class-config.php`. Never read `$_ENV`, hardcode
   secrets, or add a second config source.
@@ -50,8 +50,8 @@ validate with `vip-integration validate` before shipping.
   (`Automattic\ShareADraft`), and constant (`VIP_SHAREADRAFT_*`) are one
   consistent set. Keep them in sync if you rename anything. The telemetry prefix
   `shareadraft_` must stay a single word before its trailing underscore, because
-  the leading token is the Tracks *source* and must be whitelisted in nosara — do
-  not "expand" it to `share_a_draft_`.
+  the leading token is the Tracks *source*, which must be a registered source for
+  events to be accepted — do not "expand" it to `share_a_draft_`.
 
 ## Conventions
 

@@ -4,17 +4,20 @@
 # at any depth.
 #
 # What ships is deliberately small: shareadraft.php, vestigial.php, inc/,
-# build/, languages/, vip-manifest.yaml, README.md and CHANGELOG.md. The plugin
+# build/, languages/, vip-manifest.yaml, README.md and LICENSE. The plugin
 # has no runtime Composer dependencies — inc/autoload.php resolves its own
 # classes — so no vendor/ directory is needed at runtime. WordPress.org assets
 # live in .wordpress-org/ and are deployed separately, not inside the ZIP.
+# CHANGELOG.md stays on GitHub, which the README's Changelog section links to.
 #
-# Adding a new development-only file? Add it here too, or it ends up in the ZIP.
+# Adding a new development-only file? Add it here and to .gitattributes, or it
+# ends up in the ZIP or GitHub's source archives.
 
 # Version control and CI
 /.git
 /.github
 /.gitignore
+/.gitattributes
 /.distignore
 
 # Development environments
@@ -53,6 +56,7 @@
 /AGENTS.md
 /CLAUDE.md
 /CONTRIBUTING.md
+/CHANGELOG.md
 
 # Build and test artefacts
 /dist

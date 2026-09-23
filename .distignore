@@ -1,0 +1,64 @@
+# Files and directories excluded from the distributable ZIP built by
+# .github/workflows/release.yml. Passed to `rsync --exclude-from`, so these are
+# rsync patterns: a leading slash anchors to the plugin root, no slash matches
+# at any depth.
+#
+# What ships is deliberately small: shareadraft.php, vestigial.php, inc/, build/,
+# languages/,
+# vip-manifest.yaml, README.md and CHANGELOG.md. The plugin has no runtime
+# Composer dependencies — inc/autoload.php resolves its own classes — so no
+# vendor/ directory is needed at runtime.
+#
+# Adding a new development-only file? Add it here too, or it ends up in the ZIP.
+
+# Version control and CI
+/.git
+/.github
+/.gitignore
+/.distignore
+
+# Development environments
+/.devcontainer
+/.wp-env
+/.wp-env.json
+/.wpvip
+/.context
+
+# Sources and fixtures that are compiled or dev-only
+/src
+/tests
+/features
+/fixtures
+/docs
+/wordpress.stubs
+/vip-manifest.schema.json
+
+# Dependency manifests and installed dependencies
+/composer.json
+/composer.lock
+/package.json
+/package-lock.json
+/node_modules
+/vendor
+
+# Tooling configuration
+/behat.yml
+/eslint.config.cjs
+/phpcs.xml.dist
+/phpunit.xml.dist
+/phpunit-unit.xml.dist
+/psalm.xml.dist
+/playwright.config.ts
+/AGENTS.md
+/CLAUDE.md
+
+# Build and test artefacts
+/dist
+/coverage
+/.playwright
+/.phpunit.result.cache
+
+# OS cruft
+.DS_Store
+Thumbs.db
+ehthumbs.db

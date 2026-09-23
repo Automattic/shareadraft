@@ -60,7 +60,7 @@ Optional values:
   it is generated; the gate allows a request when the client IP matches *any*
   range in the combined set (a union, so per-link ranges widen access, never
   narrow it). Absent or empty means links carry no IP restriction beyond what
-  they set individually — the pre-allowlist behaviour. Unusable entries are
+  they set individually — the pre-allowlist behavior. Unusable entries are
   silently dropped rather than half-applied.
 
 Example valid config:
@@ -135,13 +135,13 @@ translate.wordpress.org. Two consequences follow, and both are easy to undo by
 accident:
 
 - `Plugin::init()` calls `load_plugin_textdomain()`. Without it WordPress only
-  looks in `wp-content/languages/plugins/` and the bundled catalogues are
+  looks in `wp-content/languages/plugins/` and the bundled catalogs are
   ignored.
 - `EditorAssets` passes the plugin's `languages/` directory as the third
   argument to `wp_set_script_translations()`, for the same reason.
 
 `composer i18n` regenerates `languages/shareadraft.pot` and splits any
-translated `.po` files into the JSON catalogues the editor script loads. It
+translated `.po` files into the JSON catalogs the editor script loads. It
 scans `build/`, not `src/`: WordPress derives each JSON filename from a hash of
 the *enqueued* script path, so the POT references have to point at
 `build/index.js`. Run `npm run build` first, or the POT will describe a stale
@@ -165,7 +165,7 @@ so internal test builds can be cut from a `release/*` branch without touching
 4. Run `npm run build`, then `composer i18n`, and commit the results. This
    order matters: the POT takes its `Project-Id-Version` from the plugin
    header, so regenerating it before step 3 stamps the previous version on
-   the catalogue.
+   the catalog.
 5. Push the branch, then tag its head: `git tag -s 1.0.0-RC1 -m "1.0.0-RC1"`
    and `git push origin 1.0.0-RC1`.
 

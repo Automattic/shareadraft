@@ -126,7 +126,7 @@ addresses, or customer credentials in event properties.
 
 | Name                            | Type   | Trigger                              | Properties                                             | Notes                                             |
 | ------------------------------- | ------ | ------------------------------------ | ------------------------------------------------------ | ------------------------------------------------- |
-| `shareadraft_link_created` | Tracks | A preview link is minted, via REST or the Abilities API. | `expiration`, `max_uses` (null = unlimited), `channel` (`rest` or `ability`), `plugin_version` (global) | Usage metadata only; never the token, content, or PII. |
+| `shareadraft_link_created` | Tracks | A preview link is created, from the editor (REST), WP-CLI, or the Abilities API. | `expiration`, `is_capped`, `max_uses` (0 when uncapped), `channel` (`rest`, `cli`, or `ability`), `has_ip_allowlist`, `has_recipients`, `recipient_count`, plus `plugin_version` on every event | Usage metadata only; never the token, content, IP ranges, or email addresses. |
 
 ## Translations
 

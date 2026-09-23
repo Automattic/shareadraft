@@ -72,6 +72,7 @@ telemetry:
       trigger: A preview link is minted, via REST, WP-CLI, or the Abilities API.
       properties:
         - expiration
+        - is_capped
         - max_uses
         - channel
         - has_ip_allowlist

@@ -116,7 +116,7 @@ final class RecipientVerifier {
 		$subject = sprintf(
 			/* translators: 1: site name, 2: the verification code. */
 			__( '[%1$s] %2$s is your preview access code', 'shareadraft' ),
-			wp_specialchars_decode( (string) get_option( 'blogname' ), ENT_QUOTES ),
+			wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 			$code
 		);
 
@@ -157,15 +157,13 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 			$code
 		);
 
-		if ( ! is_array( $mail ) || ! isset( $mail['subject'], $mail['message'] ) || ! is_string( $mail['subject'] ) || ! is_string( $mail['message'] ) ) {
-			$mail = [
-				'subject' => $subject,
-				'message' => $message,
-			];
+		if ( is_array( $mail ) && isset( $mail['subject'], $mail['message'] ) && is_string( $mail['subject'] ) && is_string( $mail['message'] ) ) {
+			$subject = $mail['subject'];
+			$message = $mail['message'];
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- One short code email per human request, capped by the per-address window above; nothing bulk. On VIP wp_mail already routes through the platform's managed mail path.
-		return wp_mail( $email, $mail['subject'], $mail['message'] );
+		return wp_mail( $email, $subject, $message );
 	}
 
 	/**
@@ -179,13 +177,14 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 		$email = strtolower( $email );
 		$key   = $this->challenge_key( $token, $email );
 
-		/** @var mixed $challenge */
 		$challenge = get_transient( $key );
 
 		if (
 			! is_array( $challenge )
 			|| ! isset( $challenge['code_hash'], $challenge['attempts'], $challenge['expires_at'] )
 			|| ! is_string( $challenge['code_hash'] )
+			|| ! is_numeric( $challenge['attempts'] )
+			|| ! is_numeric( $challenge['expires_at'] )
 			|| time() >= (int) $challenge['expires_at']
 		) {
 			delete_transient( $key );
@@ -307,26 +306,33 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 	private function under_request_cap( Token $token, string $email, int $now ): bool {
 		$key = self::REQUESTS_PREFIX . $this->challenge_suffix( $token, $email );
 
-		/** @var mixed $window */
-		$window = get_transient( $key );
+		$window    = get_transient( $key );
+		$count     = 0;
+		$resets_at = $now + self::REQUEST_WINDOW;
 
 		if (
-			! is_array( $window )
-			|| ! isset( $window['count'], $window['resets_at'] )
-			|| $now >= (int) $window['resets_at']
+			is_array( $window )
+			&& isset( $window['count'], $window['resets_at'] )
+			&& is_numeric( $window['count'] )
+			&& is_numeric( $window['resets_at'] )
+			&& $now < (int) $window['resets_at']
 		) {
-			$window = [
-				'count'     => 0,
-				'resets_at' => $now + self::REQUEST_WINDOW,
-			];
+			$count     = (int) $window['count'];
+			$resets_at = (int) $window['resets_at'];
 		}
 
-		if ( (int) $window['count'] >= self::MAX_REQUESTS ) {
+		if ( $count >= self::MAX_REQUESTS ) {
 			return false;
 		}
 
-		$window['count'] = (int) $window['count'] + 1;
-		set_transient( $key, $window, self::REQUEST_WINDOW );
+		set_transient(
+			$key,
+			[
+				'count'     => $count + 1,
+				'resets_at' => $resets_at,
+			],
+			self::REQUEST_WINDOW
+		);
 
 		return true;
 	}

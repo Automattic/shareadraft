@@ -18,7 +18,7 @@ final class Plugin {
 	// @codeCoverageIgnoreStart
 	// This code is executed in bootstrap.php, before PHPUnit initializes test coverage
 	public static function get_instance(): self {
-		if ( ! self::$instance ) {
+		if ( null === self::$instance ) {
 			self::$instance = new self();
 		}
 

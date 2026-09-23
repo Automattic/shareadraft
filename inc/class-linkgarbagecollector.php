@@ -43,6 +43,7 @@ final class LinkGarbageCollector {
 	}
 
 	public function register(): void {
+		// @phpstan-ignore return.void (The count is for callers and tests; WordPress discards an action's return value.)
 		add_action( self::HOOK, [ $this, 'run' ] );
 
 		if ( false === wp_next_scheduled( self::HOOK ) ) {
@@ -68,9 +69,10 @@ final class LinkGarbageCollector {
 	 *
 	 * Read by {@see SiteHealth}: a scheduled event that never fires leaves this
 	 * behind, which is the difference between "set up correctly" and "working".
+	 *
+	 * @phpstan-impure
 	 */
 	public static function last_run(): ?int {
-		/** @var mixed $value */
 		$value = get_option( self::LAST_RUN_OPTION, null );
 
 		return is_numeric( $value ) ? (int) $value : null;
@@ -87,7 +89,8 @@ final class LinkGarbageCollector {
 		// nothing to delete" is still a yes.
 		update_option( self::LAST_RUN_OPTION, time(), false );
 
-		$cursor   = (int) get_option( self::CURSOR_OPTION, 0 );
+		$cursor   = get_option( self::CURSOR_OPTION, 0 );
+		$cursor   = is_numeric( $cursor ) ? (int) $cursor : 0;
 		$post_ids = $this->service->post_ids_with_links( $cursor, self::BATCH_SIZE );
 
 		if ( [] === $post_ids ) {

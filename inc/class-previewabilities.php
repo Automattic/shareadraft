@@ -439,7 +439,7 @@ final class PreviewAbilities {
 	 * @param mixed $input The ability input.
 	 */
 	public function can_create_link( $input ): bool {
-		$post_id = is_array( $input ) && isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$post_id = is_array( $input ) && isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
 
 		return current_user_can( 'edit_post', $post_id );
 	}
@@ -451,9 +451,9 @@ final class PreviewAbilities {
 	public function create_link( $input ) {
 		$input = is_array( $input ) ? $input : [];
 
-		$post_id    = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
-		$expiration = isset( $input['expiration'] ) ? (int) $input['expiration'] : PreviewRestController::default_expiration();
-		$max_uses   = isset( $input['max_uses'] ) ? (int) $input['max_uses'] : null;
+		$post_id    = isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$expiration = isset( $input['expiration'] ) && is_numeric( $input['expiration'] ) ? (int) $input['expiration'] : PreviewRestController::default_expiration();
+		$max_uses   = isset( $input['max_uses'] ) && is_numeric( $input['max_uses'] ) ? (int) $input['max_uses'] : null;
 
 		$allowed_ips = [];
 
@@ -488,7 +488,7 @@ final class PreviewAbilities {
 	 * @param mixed $input The ability input.
 	 */
 	public function can_list_links( $input ): bool {
-		$post_id = is_array( $input ) && isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$post_id = is_array( $input ) && isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
 
 		return $post_id > 0
 			? current_user_can( 'edit_post', $post_id )
@@ -501,8 +501,8 @@ final class PreviewAbilities {
 	 */
 	public function list_links( $input ) {
 		$input      = is_array( $input ) ? $input : [];
-		$post_id    = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
-		$created_by = isset( $input['created_by'] ) ? (int) $input['created_by'] : 0;
+		$post_id    = isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$created_by = isset( $input['created_by'] ) && is_numeric( $input['created_by'] ) ? (int) $input['created_by'] : 0;
 
 		if ( $post_id > 0 && $created_by > 0 ) {
 			return new WP_Error(
@@ -544,9 +544,9 @@ final class PreviewAbilities {
 	 */
 	public function can_revoke_link( $input ): bool {
 		$input      = is_array( $input ) ? $input : [];
-		$post_id    = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
-		$created_by = isset( $input['created_by'] ) ? (int) $input['created_by'] : 0;
-		$all        = ! empty( $input['all'] );
+		$post_id    = isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$created_by = isset( $input['created_by'] ) && is_numeric( $input['created_by'] ) ? (int) $input['created_by'] : 0;
+		$all        = (bool) ( $input['all'] ?? false );
 
 		// Resolve the target in the same precedence revoke_link() acts on it:
 		// a creator sweep outranks post_id, so the gate must check created_by
@@ -574,10 +574,10 @@ final class PreviewAbilities {
 	public function revoke_link( $input ) {
 		$input = is_array( $input ) ? $input : [];
 
-		$post_id    = isset( $input['post_id'] ) ? (int) $input['post_id'] : 0;
+		$post_id    = isset( $input['post_id'] ) && is_numeric( $input['post_id'] ) ? (int) $input['post_id'] : 0;
 		$identifier = isset( $input['link'] ) && is_string( $input['link'] ) ? $input['link'] : '';
-		$created_by = isset( $input['created_by'] ) ? (int) $input['created_by'] : 0;
-		$all        = ! empty( $input['all'] );
+		$created_by = isset( $input['created_by'] ) && is_numeric( $input['created_by'] ) ? (int) $input['created_by'] : 0;
+		$all        = (bool) ( $input['all'] ?? false );
 
 		$targets = (int) ( '' !== $identifier ) + (int) ( $created_by > 0 ) + (int) $all;
 
@@ -684,7 +684,7 @@ final class PreviewAbilities {
 	 * @return array{enabled: bool, disabled_at: int|null, disabled_by: int|null}
 	 */
 	public function set_links_enabled( $input ): array {
-		$enabled = is_array( $input ) && ! empty( $input['enabled'] );
+		$enabled = is_array( $input ) && (bool) ( $input['enabled'] ?? false );
 
 		if ( $enabled ) {
 			$this->toggle->enable();

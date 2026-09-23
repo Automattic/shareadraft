@@ -398,8 +398,7 @@ final class PreviewLinksAdminPage {
 			$who  = false !== $user ? $user->display_name : null;
 		}
 
-		$format = (string) get_option( 'date_format' ) . ' ' . (string) get_option( 'time_format' );
-		$when   = null !== $since ? wp_date( $format, $since ) : false;
+		$when = null !== $since ? wp_date( PreviewLinksListTable::datetime_format(), $since ) : false;
 
 		if ( null !== $who && false !== $when ) {
 			/* translators: 1: user display name, 2: date and time */
@@ -677,7 +676,6 @@ final class PreviewLinksAdminPage {
 	private function table(): PreviewLinksListTable {
 		if ( null === $this->table ) {
 			if ( ! class_exists( 'WP_List_Table' ) ) {
-				/** @psalm-suppress MissingFile */
 				require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 			}
 

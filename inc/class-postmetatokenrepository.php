@@ -52,8 +52,13 @@ final class PostMetaTokenRepository implements TokenRepository {
 	public function all_for_post( int $post_id ): array {
 		$links = [];
 
-		/** @var mixed $row */
-		foreach ( get_post_meta( $post_id, self::META_KEY, false ) as $row ) {
+		$rows = get_post_meta( $post_id, self::META_KEY, false );
+
+		if ( ! is_array( $rows ) ) {
+			return [];
+		}
+
+		foreach ( $rows as $row ) {
 			if ( is_array( $row ) ) {
 				/** @var array<string, mixed> $row */
 				$links[] = $this->from_array( $post_id, $row );
@@ -190,7 +195,8 @@ final class PostMetaTokenRepository implements TokenRepository {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Batched cron sweep over an indexed meta_key; see above.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT DISTINCT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND post_id > %d ORDER BY post_id ASC LIMIT %d",
+				'SELECT DISTINCT post_id FROM %i WHERE meta_key = %s AND post_id > %d ORDER BY post_id ASC LIMIT %d',
+				$wpdb->postmeta,
 				self::META_KEY,
 				$after_post_id,
 				$limit
@@ -214,7 +220,8 @@ final class PostMetaTokenRepository implements TokenRepository {
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- created_by_clause() returns a fragment prepared with its own placeholder.
-				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = %s{$this->created_by_clause( $created_by )} ORDER BY meta_id DESC LIMIT %d OFFSET %d",
+				"SELECT post_id, meta_value FROM %i WHERE meta_key = %s{$this->created_by_clause( $created_by )} ORDER BY meta_id DESC LIMIT %d OFFSET %d", // @phpstan-ignore argument.type (The interpolated fragment is prepared with its own placeholder.)
+				$wpdb->postmeta,
 				self::META_KEY,
 				$limit,
 				$offset
@@ -232,7 +239,6 @@ final class PostMetaTokenRepository implements TokenRepository {
 			$post_id = isset( $row['post_id'] ) && is_scalar( $row['post_id'] ) ? (int) $row['post_id'] : 0;
 			$raw     = isset( $row['meta_value'] ) && is_string( $row['meta_value'] ) ? $row['meta_value'] : '';
 
-			/** @psalm-suppress MixedAssignment */
 			$stored = maybe_unserialize( $raw );
 
 			if ( is_array( $stored ) ) {
@@ -252,7 +258,8 @@ final class PostMetaTokenRepository implements TokenRepository {
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
 				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- created_by_clause() returns a fragment prepared with its own placeholder.
-				"SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key = %s{$this->created_by_clause( $created_by )}",
+				"SELECT COUNT(*) FROM %i WHERE meta_key = %s{$this->created_by_clause( $created_by )}", // @phpstan-ignore argument.type (The interpolated fragment is prepared with its own placeholder.)
+				$wpdb->postmeta,
 				self::META_KEY
 			)
 		);
@@ -326,12 +333,12 @@ final class PostMetaTokenRepository implements TokenRepository {
 		return new PreviewLink(
 			$post_id,
 			isset( $row['token_hash'] ) && is_string( $row['token_hash'] ) ? $row['token_hash'] : '',
-			isset( $row['expires_at'] ) ? (int) $row['expires_at'] : 0,
-			isset( $row['max_uses'] ) && null !== $row['max_uses'] ? (int) $row['max_uses'] : null,
-			isset( $row['created_by'] ) ? (int) $row['created_by'] : 0,
-			isset( $row['created_at'] ) ? (int) $row['created_at'] : 0,
+			isset( $row['expires_at'] ) && is_numeric( $row['expires_at'] ) ? (int) $row['expires_at'] : 0,
+			isset( $row['max_uses'] ) && is_numeric( $row['max_uses'] ) ? (int) $row['max_uses'] : null,
+			isset( $row['created_by'] ) && is_numeric( $row['created_by'] ) ? (int) $row['created_by'] : 0,
+			isset( $row['created_at'] ) && is_numeric( $row['created_at'] ) ? (int) $row['created_at'] : 0,
 			$this->viewers_from_row( $row ),
-			isset( $row['revoked_at'] ) ? (int) $row['revoked_at'] : null,
+			isset( $row['revoked_at'] ) && is_numeric( $row['revoked_at'] ) ? (int) $row['revoked_at'] : null,
 			isset( $row['token_hint'] ) && is_string( $row['token_hint'] ) ? $row['token_hint'] : '',
 			IpAllowlist::sanitize( $row['allowed_ips'] ?? [] ),
 			$this->recipients_from_row( $row )
@@ -354,7 +361,6 @@ final class PostMetaTokenRepository implements TokenRepository {
 
 		$recipients = [];
 
-		/** @var mixed $recipient */
 		foreach ( $row['recipients'] as $recipient ) {
 			if ( is_string( $recipient ) && '' !== $recipient ) {
 				$recipients[] = strtolower( $recipient );
@@ -379,7 +385,6 @@ final class PostMetaTokenRepository implements TokenRepository {
 		if ( isset( $row['viewers'] ) && is_array( $row['viewers'] ) ) {
 			$viewers = [];
 
-			/** @var mixed $viewer */
 			foreach ( $row['viewers'] as $viewer ) {
 				if ( is_string( $viewer ) && '' !== $viewer ) {
 					$viewers[] = $viewer;
@@ -389,7 +394,7 @@ final class PostMetaTokenRepository implements TokenRepository {
 			return $viewers;
 		}
 
-		$legacy_count = isset( $row['use_count'] ) ? max( 0, (int) $row['use_count'] ) : 0;
+		$legacy_count = isset( $row['use_count'] ) && is_numeric( $row['use_count'] ) ? max( 0, (int) $row['use_count'] ) : 0;
 		$viewers      = [];
 
 		for ( $index = 0; $index < $legacy_count; $index++ ) {

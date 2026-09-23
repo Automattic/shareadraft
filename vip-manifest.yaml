@@ -21,7 +21,7 @@ integration:
     support_contact: support@wpvip.com
 
 documentation:
-  public_url: https://wpvip.com/features/live-previews/
+  public_url: https://github.com/Automattic/shareadraft/blob/main/docs/README.md
   support_url: https://wpvip.com/support/
 
 runtime:

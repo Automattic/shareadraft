@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Share a Draft
- * Plugin URI: https://wpvip.com
+ * Plugin URI: https://wordpress.org/plugins/shareadraft/
  * Description: Generate safe-to-share, time- and usage-limited preview links so reviewers without a WordPress account can review a draft. Hardens the existing Preview Links.
  * Version: 2.0.0-alpha
  * Requires at least: 6.9

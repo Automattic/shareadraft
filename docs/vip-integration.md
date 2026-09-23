@@ -60,25 +60,31 @@ Optional values:
   it is generated; the gate allows a request when the client IP matches *any*
   range in the combined set (a union, so per-link ranges widen access, never
   narrow it). Absent or empty means links carry no IP restriction beyond what
-  they set individually — the pre-allowlist behaviour. Unusable entries are
+  they set individually — the pre-allowlist behavior. Unusable entries are
   silently dropped rather than half-applied.
 
 Example valid config:
 
 ```php
-define( 'VIP_SHAREADRAFT_CONFIG', [
-	'dead_link_grace_period' => 604800, // 7 days.
-	'ip_allowlist'           => '203.0.113.0/24, 2001:db8::/32',
-] );
+define(
+	'VIP_SHAREADRAFT_CONFIG',
+	array(
+		'dead_link_grace_period' => 604800, // 7 days.
+		'ip_allowlist'           => '203.0.113.0/24, 2001:db8::/32',
+	)
+);
 ```
 
 Example incomplete config (setup in progress — the customer has opened the field
 but not filled it in, so it arrives blank):
 
 ```php
-define( 'VIP_SHAREADRAFT_CONFIG', [
-	'dead_link_grace_period' => '',
-] );
+define(
+	'VIP_SHAREADRAFT_CONFIG',
+	array(
+		'dead_link_grace_period' => '',
+	)
+);
 ```
 
 A blank or nonsensical value **must not be taken at face value**: the retention
@@ -119,13 +125,14 @@ Telemetry uses the helper in `inc/class-telemetry.php`, which wraps the VIP
 Telemetry API (Tracks events only, no Stats) behind a `class_exists` guard so
 environments without VIP MU plugins no-op. Event names are prefixed with
 `shareadraft_` — a single word with no underscores, because the leading token is
-the Tracks *source* and must be whitelisted in nosara (an underscore there would
-divert events to `prod_rejects`). Never include secrets, raw content, email
+the Tracks *source*, which must be a registered source for events to be accepted
+(an underscore there would change the source, and the events would be
+discarded). Never include secrets, raw content, email
 addresses, or customer credentials in event properties.
 
 | Name                            | Type   | Trigger                              | Properties                                             | Notes                                             |
 | ------------------------------- | ------ | ------------------------------------ | ------------------------------------------------------ | ------------------------------------------------- |
-| `shareadraft_link_created` | Tracks | A preview link is minted, via REST or the Abilities API. | `expiration`, `max_uses` (null = unlimited), `channel` (`rest` or `ability`), `plugin_version` (global) | Usage metadata only; never the token, content, or PII. |
+| `shareadraft_link_created` | Tracks | A preview link is created, from the editor (REST), WP-CLI, or the Abilities API. | `expiration`, `is_capped`, `max_uses` (0 when uncapped), `channel` (`rest`, `cli`, or `ability`), `has_ip_allowlist`, `has_recipients`, `recipient_count`, plus `plugin_version` on every event | Usage metadata only; never the token, content, IP ranges, or email addresses. |
 
 ## Translations
 
@@ -134,13 +141,13 @@ translate.wordpress.org. Two consequences follow, and both are easy to undo by
 accident:
 
 - `Plugin::init()` calls `load_plugin_textdomain()`. Without it WordPress only
-  looks in `wp-content/languages/plugins/` and the bundled catalogues are
+  looks in `wp-content/languages/plugins/` and the bundled catalogs are
   ignored.
 - `EditorAssets` passes the plugin's `languages/` directory as the third
   argument to `wp_set_script_translations()`, for the same reason.
 
 `composer i18n` regenerates `languages/shareadraft.pot` and splits any
-translated `.po` files into the JSON catalogues the editor script loads. It
+translated `.po` files into the JSON catalogs the editor script loads. It
 scans `build/`, not `src/`: WordPress derives each JSON filename from a hash of
 the *enqueued* script path, so the POT references have to point at
 `build/index.js`. Run `npm run build` first, or the POT will describe a stale
@@ -164,13 +171,24 @@ so internal test builds can be cut from a `release/*` branch without touching
 4. Run `npm run build`, then `composer i18n`, and commit the results. This
    order matters: the POT takes its `Project-Id-Version` from the plugin
    header, so regenerating it before step 3 stamps the previous version on
-   the catalogue.
+   the catalog.
 5. Push the branch, then tag its head: `git tag -s 1.0.0-RC1 -m "1.0.0-RC1"`
    and `git push origin 1.0.0-RC1`.
 
+The same tag also triggers `.github/workflows/deploy.yml`, which pushes the
+plugin to WordPress.org SVN as `shareadraft`, with `.wordpress-org/` going to
+the SVN `assets/` directory. Pre-release tags are skipped, and the deploy fails
+unless the plugin header, the version constant and the `Stable tag` in
+`README.md` all match the tag, so bump `Stable tag` in step 3 for a final
+release. It needs the `SVN_USERNAME` and `SVN_PASSWORD` repository secrets. To
+dry-run against SVN, or to deploy a tag cut before the workflow existed, run it
+by hand from the Actions tab.
+
 What ends up in the ZIP is controlled by `.distignore`: `shareadraft.php`,
-`inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`, `README.md`,
-and `CHANGELOG.md`, unpacked under a single `shareadraft/` directory. There is no
-`vendor/` — `inc/autoload.php` resolves the plugin's own classes, and there are
-no runtime Composer dependencies. **Add a new development-only file to
-`.distignore` when you add it to the repo**, or it ships.
+`vestigial.php`, `inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`
+and `README.md`, unpacked under a single `shareadraft/` directory. `CHANGELOG.md`
+stays on GitHub, where the README links to it. There is no `vendor/` —
+`inc/autoload.php` resolves the plugin's own classes, and there are no runtime
+Composer dependencies. `.gitattributes` keeps the same files out of GitHub's
+"Source code" archives. **Add a new development-only file to both `.distignore`
+and `.gitattributes` when you add it to the repo**, or it ships.

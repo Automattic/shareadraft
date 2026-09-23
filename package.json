@@ -9,7 +9,7 @@
   "devDependencies": {
     "@playwright/test": "^1.45.3",
     "@types/node": "^26.1.2",
-    "@wordpress/scripts": "^34.1.0"
+    "@wordpress/scripts": "^35.0.0"
   },
   "scripts": {
     "build": "wp-scripts build src/index.js src/admin.js",

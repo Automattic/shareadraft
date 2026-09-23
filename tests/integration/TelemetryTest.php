@@ -33,10 +33,10 @@ class TelemetryTest extends WP_UnitTestCase {
 		static::assertCount( 0, VIP_Telemetry::$events );
 	}
 
-	public function test_the_source_prefix_is_a_whitelisted_tracks_source(): void {
+	public function test_the_source_prefix_is_a_registered_tracks_source(): void {
 		// The Tracks source (the token before the first underscore) must be a
-		// single lowercase word whitelisted in Automattic/nosara, or events are
-		// diverted to `prod_rejects`. Guard the exact value against regressions.
+		// single lowercase word that Tracks is registered to accept, or events
+		// are silently discarded. Guard the exact value against regressions.
 		static::assertSame( 'shareadraft_', Telemetry::EVENT_PREFIX );
 
 		$source = strtok( Telemetry::EVENT_PREFIX, '_' );

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-23T23:32:59+00:00\n"
+"POT-Creation-Date: 2026-09-24T17:12:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -58,7 +58,7 @@ msgid "How long the link stays valid, in seconds."
 msgstr ""
 
 #: inc/class-previewabilities.php:103
-msgid "Maximum number of distinct viewers, or null for unlimited."
+msgid "How many people can open the link, or null for unlimited. Each browser or device counts as a new person."
 msgstr ""
 
 #: inc/class-previewabilities.php:115
@@ -231,76 +231,76 @@ msgstr ""
 msgid "\"%1$s\" matches more than one link; use one of these full ids instead: %2$s."
 msgstr ""
 
-#: inc/class-previewgate.php:228
+#: inc/class-previewgate.php:230
 msgid "Private preview link"
 msgstr ""
 
-#: inc/class-previewgate.php:229
+#: inc/class-previewgate.php:231
 msgid "This is a private preview link. Open it in a browser to view the draft."
 msgstr ""
 
-#: inc/class-previewgate.php:238
+#: inc/class-previewgate.php:240
 msgid "This preview link is no longer available."
 msgstr ""
 
-#: inc/class-previewgate.php:241
+#: inc/class-previewgate.php:243
 msgid "This preview link has expired."
 msgstr ""
 
-#: inc/class-previewgate.php:242
+#: inc/class-previewgate.php:244
 msgid "This preview link has been revoked."
 msgstr ""
 
-#: inc/class-previewgate.php:243
+#: inc/class-previewgate.php:245
 msgid "This preview link has reached its viewing limit."
 msgstr ""
 
-#: inc/class-previewgate.php:244
+#: inc/class-previewgate.php:246
 msgid "Preview links are temporarily disabled on this site."
 msgstr ""
 
-#: inc/class-previewgate.php:272
+#: inc/class-previewgate.php:274
 msgid "Please try again later."
 msgstr ""
 
-#: inc/class-previewgate.php:273
+#: inc/class-previewgate.php:275
 msgid "Ask the author to share a new preview link."
 msgstr ""
 
-#: inc/class-previewgate.php:276
+#: inc/class-previewgate.php:278
 msgid "Preview unavailable"
 msgstr ""
 
-#: inc/class-previewgate.php:356
+#: inc/class-previewgate.php:351
 msgid "That code did not match or has expired. Check it, or reload this page to request a new one."
 msgstr ""
 
-#: inc/class-previewgate.php:370
+#: inc/class-previewgate.php:365
 msgid "This preview is for named reviewers. Enter your email address and, if it is on the reviewer list, we will send you a verification code."
 msgstr ""
 
-#: inc/class-previewgate.php:372
+#: inc/class-previewgate.php:367
 msgid "Email address"
 msgstr ""
 
-#: inc/class-previewgate.php:373
+#: inc/class-previewgate.php:368
 msgid "Email me a code"
 msgstr ""
 
-#: inc/class-previewgate.php:376
-#: inc/class-previewgate.php:395
+#: inc/class-previewgate.php:371
+#: inc/class-previewgate.php:390
 msgid "Verify your email"
 msgstr ""
 
-#: inc/class-previewgate.php:387
+#: inc/class-previewgate.php:382
 msgid "If that address is on the reviewer list, we have emailed it a verification code. Enter the code below."
 msgstr ""
 
-#: inc/class-previewgate.php:391
+#: inc/class-previewgate.php:386
 msgid "Verification code"
 msgstr ""
 
-#: inc/class-previewgate.php:392
+#: inc/class-previewgate.php:387
 msgid "Verify"
 msgstr ""
 
@@ -384,96 +384,100 @@ msgstr ""
 
 #. translators: %d: user ID
 #: inc/class-previewlinksadminpage.php:378
-#: inc/class-previewlinkslisttable.php:174
+#: inc/class-previewlinkslisttable.php:188
 #, php-format
 msgid "User #%d"
 msgstr ""
 
 #. translators: 1: user display name, 2: date and time
-#: inc/class-previewlinksadminpage.php:406
+#: inc/class-previewlinksadminpage.php:405
 #, php-format
 msgid "Disabled by %1$s on %2$s."
 msgstr ""
 
 #. translators: %s: date and time
-#: inc/class-previewlinksadminpage.php:409
+#: inc/class-previewlinksadminpage.php:408
 #, php-format
 msgid "Disabled on %s."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:416
+#: inc/class-previewlinksadminpage.php:415
 msgid "Preview links are disabled site-wide."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:417
+#: inc/class-previewlinksadminpage.php:416
 msgid "No preview link works while this is off — including newly generated ones. Each link keeps its own expiry and usage, and links that are still valid start working again when re-enabled."
 msgstr ""
 
 #. translators: %s: user display name
-#: inc/class-previewlinksadminpage.php:439
+#: inc/class-previewlinksadminpage.php:438
 #, php-format
 msgid "Showing links created by %s."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:442
+#: inc/class-previewlinksadminpage.php:441
 msgid "Show all creators"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:513
+#: inc/class-previewlinksadminpage.php:512
 msgid "IP ranges set in the VIP Dashboard apply to every link, in addition to any ranges shown per link below:"
 msgstr ""
 
 #. translators: %d: number of preview links revoked
-#: inc/class-previewlinksadminpage.php:529
+#: inc/class-previewlinksadminpage.php:528
 #, php-format
 msgid "%d preview link revoked."
 msgid_plural "%d preview links revoked."
 msgstr[0] ""
 msgstr[1] ""
 
-#: inc/class-previewlinksadminpage.php:535
+#: inc/class-previewlinksadminpage.php:534
 msgid "The remaining links are being revoked in the background."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:558
+#: inc/class-previewlinksadminpage.php:557
 msgid "Links per page"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:597
+#: inc/class-previewlinksadminpage.php:596
 msgid "Overview"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:598
+#: inc/class-previewlinksadminpage.php:597
 msgid "This screen lists every preview link across the site, so you can see at a glance which drafts are shared, how far each link has been used, and when it expires. It is read-only apart from revoking, and is shown to editors because they can already view the drafts these links point at."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:602
+#: inc/class-previewlinksadminpage.php:601
 msgid "The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:603
-#: inc/class-previewlinkslisttable.php:100
+#: inc/class-previewlinksadminpage.php:602
+#: inc/class-previewlinkslisttable.php:98
 msgid "Status"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:604
+#: inc/class-previewlinksadminpage.php:603
 msgid "Active: the link works."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:605
+#: inc/class-previewlinksadminpage.php:604
 msgid "Expired: past its expiry time."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:606
-msgid "Exhausted: reached its limit on distinct viewers."
+#: inc/class-previewlinksadminpage.php:605
+msgid "Exhausted: opened by as many people as it allows."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:607
+#: inc/class-previewlinksadminpage.php:606
 msgid "Revoked: switched off by hand."
 msgstr ""
 
+#: inc/class-previewlinksadminpage.php:607
+msgid "Uses counts how many people have opened the link, against its maximum; an infinity sign means no maximum."
+msgstr ""
+
 #: inc/class-previewlinksadminpage.php:608
-msgid "Uses counts distinct viewers against the cap; an infinity sign means no cap."
+msgid "Each browser counts as one person. A reviewer who opens the link in another browser, on another device, or in a private window, or who clears their cookies, counts again, while people sharing one browser count once. A browser is remembered for a week, so on a link that lasts longer, a reviewer returning after a week counts again."
 msgstr ""
 
 #: inc/class-previewlinksadminpage.php:613
@@ -532,90 +536,90 @@ msgstr ""
 msgid "For more information"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:65
+#: inc/class-previewlinkslisttable.php:63
 msgid "Preview links are enabled"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:66
+#: inc/class-previewlinkslisttable.php:64
 msgid "Preview links are disabled"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:71
+#: inc/class-previewlinkslisttable.php:69
 msgid "Apply"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:85
+#: inc/class-previewlinkslisttable.php:83
 msgid "Post"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:86
+#: inc/class-previewlinkslisttable.php:84
 msgid "Created by"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:87
+#: inc/class-previewlinkslisttable.php:85
 msgid "Uses"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:91
+#: inc/class-previewlinkslisttable.php:89
 msgid "Reviewers"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:95
+#: inc/class-previewlinkslisttable.php:93
 msgid "IP ranges"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:99
-#: vestigial.php:413
+#: inc/class-previewlinkslisttable.php:97
+#: vestigial.php:412
 msgid "Expires"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:101
-#: vestigial.php:413
+#: inc/class-previewlinkslisttable.php:99
+#: vestigial.php:412
 msgid "Link"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:109
-#: inc/class-previewlinkslisttable.php:308
+#: inc/class-previewlinkslisttable.php:107
+#: inc/class-previewlinkslisttable.php:321
 #: build/index.js:9
 msgid "Revoke"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:117
+#: inc/class-previewlinkslisttable.php:115
 msgid "No preview links have been created yet."
 msgstr ""
 
 #. translators: %d: post ID
-#: inc/class-previewlinkslisttable.php:154
+#: inc/class-previewlinkslisttable.php:168
 #, php-format
 msgid "(post #%d)"
 msgstr ""
 
 #. translators: %s: human-readable duration, e.g. "2 hours"
-#: inc/class-previewlinkslisttable.php:249
+#: inc/class-previewlinkslisttable.php:262
 #, php-format
 msgid "%s ago"
 msgstr ""
 
 #. translators: %s: human-readable duration, e.g. "2 hours"
-#: inc/class-previewlinkslisttable.php:252
-#: vestigial.php:449
+#: inc/class-previewlinkslisttable.php:265
+#: vestigial.php:448
 #, php-format
 msgid "in %s"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:264
+#: inc/class-previewlinkslisttable.php:277
 msgid "Revoked"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:266
+#: inc/class-previewlinkslisttable.php:279
 msgid "Expired"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:268
+#: inc/class-previewlinkslisttable.php:281
 msgid "Exhausted"
 msgstr ""
 
-#: inc/class-previewlinkslisttable.php:270
+#: inc/class-previewlinkslisttable.php:283
 msgid "Active"
 msgstr ""
 
@@ -635,7 +639,7 @@ msgstr ""
 msgid "7 days"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:198
+#: inc/class-previewrestcontroller.php:199
 msgid "No matching preview link to revoke."
 msgstr ""
 
@@ -696,47 +700,47 @@ msgstr ""
 msgid "Performance"
 msgstr ""
 
+#: vestigial.php:274
 #: vestigial.php:275
-#: vestigial.php:276
-#: vestigial.php:393
+#: vestigial.php:392
 msgid "Share a Draft (Old)"
 msgstr ""
 
-#: vestigial.php:351
+#: vestigial.php:350
 msgid "Sorry, you are not allowed to delete links to posts you cannot edit."
 msgstr ""
 
-#: vestigial.php:382
+#: vestigial.php:381
 msgid "Link copied to the clipboard."
 msgstr ""
 
-#: vestigial.php:383
+#: vestigial.php:382
 msgid "Copied"
 msgstr ""
 
-#: vestigial.php:397
+#: vestigial.php:396
 msgid "Link deleted."
 msgstr ""
 
 #. translators: %s: URL of the Preview Links screen.
-#: vestigial.php:405
+#: vestigial.php:404
 #, php-format
 msgid "These links were made with an earlier version of Share a Draft. Each keeps working until it expires, and you can delete any you no longer need. To share a draft now, open it in the block editor and use the Share a Draft panel; links made that way are listed under <a href=\"%s\">Preview Links</a>."
 msgstr ""
 
-#: vestigial.php:413
+#: vestigial.php:412
 msgid "Title"
 msgstr ""
 
-#: vestigial.php:413
+#: vestigial.php:412
 msgid "Actions"
 msgstr ""
 
-#: vestigial.php:446
+#: vestigial.php:445
 msgid "Copy"
 msgstr ""
 
-#: vestigial.php:451
+#: vestigial.php:450
 msgid "Delete"
 msgstr ""
 
@@ -830,7 +834,7 @@ msgid "Maximum uses"
 msgstr ""
 
 #: build/index.js:4
-msgid "Number of distinct viewers. Leave empty for unlimited."
+msgid "How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited."
 msgstr ""
 
 #: build/index.js:4

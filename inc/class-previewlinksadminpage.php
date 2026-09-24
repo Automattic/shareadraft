@@ -602,9 +602,10 @@ final class PreviewLinksAdminPage {
 		$reading .= '<p><strong>' . esc_html__( 'Status', 'shareadraft' ) . '</strong></p><ul>';
 		$reading .= '<li>' . esc_html__( 'Active: the link works.', 'shareadraft' ) . '</li>';
 		$reading .= '<li>' . esc_html__( 'Expired: past its expiry time.', 'shareadraft' ) . '</li>';
-		$reading .= '<li>' . esc_html__( 'Exhausted: reached its limit on distinct viewers.', 'shareadraft' ) . '</li>';
+		$reading .= '<li>' . esc_html__( 'Exhausted: opened by as many people as it allows.', 'shareadraft' ) . '</li>';
 		$reading .= '<li>' . esc_html__( 'Revoked: switched off by hand.', 'shareadraft' ) . '</li>';
-		$reading .= '</ul><p>' . esc_html__( 'Uses counts distinct viewers against the cap; an infinity sign means no cap.', 'shareadraft' ) . '</p>';
+		$reading .= '</ul><p>' . esc_html__( 'Uses counts how many people have opened the link, against its maximum; an infinity sign means no maximum.', 'shareadraft' ) . '</p>';
+		$reading .= '<p>' . esc_html__( 'Each browser counts as one person. A reviewer who opens the link in another browser, on another device, or in a private window, or who clears their cookies, counts again, while people sharing one browser count once. A browser is remembered for a week, so on a link that lasts longer, a reviewer returning after a week counts again.', 'shareadraft' ) . '</p>';
 
 		// The optional restriction columns only exist while their feature is
 		// enabled, so their explanations come and go with them.

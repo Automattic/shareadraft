@@ -232,7 +232,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 					step={ 1 }
 					label={ __( 'Maximum uses', 'shareadraft' ) }
 					help={ __(
-						'Number of distinct viewers. Leave empty for unlimited.',
+						'How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited.',
 						'shareadraft'
 					) }
 					value={ maxUses }

@@ -6,7 +6,7 @@ Share a Draft needs WordPress 6.9 or later and PHP 8.2 or later, and has nothing
 
 A preview link carries its token in the URL (`?p=13&preview=true&shareadraft-token=…`). When Share a Draft opens a draft for someone holding a valid link, it tells caches not to store the response (`nocache_headers()`), asks search engines not to index it (`X-Robots-Tag: noindex`), and stops the URL leaking to other sites (`Referrer-Policy: no-referrer`). Any full-page cache in front of WordPress, whether Varnish, nginx FastCGI cache, LiteSpeed, a caching plugin, or a CDN, must respect those headers and must never serve a cached response for a URL carrying `shareadraft-token`.
 
-Almost every cache already skips requests with `preview=true` or an unrecognized query string. If yours does not, the first sign is usually that "how many people can open this link" limits stop counting properly, because each visitor is recognized by a cookie that a cached response never sets. The worse and quieter failure is a cached copy of a draft being served to somebody with no link at all, so it is worth confirming rather than assuming.
+Almost every cache already skips requests with `preview=true` or an unrecognized query string. If yours does not, the first sign is usually that [maximum uses](managing-links.md#limiting-how-many-people-can-open-a-link) stop counting properly, because each visitor is recognized by a cookie that a cached response never sets. The worse and quieter failure is a cached copy of a draft being served to somebody with no link at all, so it is worth confirming rather than assuming.
 
 ## IP restrictions need the visitor's real IP address
 

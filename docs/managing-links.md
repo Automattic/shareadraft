@@ -1,6 +1,21 @@
 # Managing preview links
 
-Every preview link can be revoked on its own, and administrators can also pause every link on the site at once, revoke links in bulk, and make sure links do not outlive the people who created them. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
+Every preview link can limit how many people open it and can be revoked on its own, and administrators can also pause every link on the site at once, revoke links in bulk, and make sure links do not outlive the people who created them. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
+
+## Limiting how many people can open a link
+
+When you generate a link, **Maximum uses** sets how many people can open it. Leave it empty for no limit. Once that many people have opened the link, anyone new is told it has been used up, while the people who already opened it can keep coming back until it expires.
+
+Share a Draft tells people apart by browser, not by who they are, since reviewers do not log in. The first time a browser opens the link, it is given a cookie that counts it as one person, so:
+
+- A reviewer who opens the link in another browser, on another device, or in a private window counts as another person.
+- A reviewer who clears their cookies counts again the next time they open the link.
+- Several people sharing one browser count as one.
+- A browser is remembered for a week. If your site offers links that last longer than that, a reviewer who returns after a week counts again.
+
+Chat apps and crawlers that fetch the link to show a preview are never counted.
+
+If you expect a reviewer to switch devices, allow for it when you set the limit. For a link only certain people should open, whatever browser they use, [bind it to named reviewers](hosting.md#links-for-named-reviewers-need-working-outgoing-email) instead.
 
 ## Revoking a link
 

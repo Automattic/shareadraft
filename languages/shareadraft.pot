@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-30T12:44:31+00:00\n"
+"POT-Creation-Date: 2026-09-30T13:58:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -58,7 +58,7 @@ msgid "How long the link stays valid, in seconds."
 msgstr ""
 
 #: inc/class-previewabilities.php:103
-msgid "Maximum number of distinct viewers, or null for unlimited."
+msgid "How many people can open the link, or null for unlimited. Each browser or device counts as a new person."
 msgstr ""
 
 #: inc/class-previewabilities.php:115
@@ -469,7 +469,7 @@ msgid "Expired: past its expiry time."
 msgstr ""
 
 #: inc/class-previewlinksadminpage.php:605
-msgid "Exhausted: reached its limit on distinct viewers."
+msgid "Exhausted: opened by as many people as it allows."
 msgstr ""
 
 #: inc/class-previewlinksadminpage.php:606
@@ -477,70 +477,74 @@ msgid "Revoked: switched off by hand."
 msgstr ""
 
 #: inc/class-previewlinksadminpage.php:607
-msgid "Uses counts distinct viewers against the cap; an infinity sign means no cap."
+msgid "Uses counts how many people have opened the link, against its maximum; an infinity sign means no maximum."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:612
+#: inc/class-previewlinksadminpage.php:608
+msgid "Each browser counts as one person. A reviewer who opens the link in another browser, on another device, or in a private window, or who clears their cookies, counts again, while people sharing one browser count once. A browser is remembered for a week, so on a link that lasts longer, a reviewer returning after a week counts again."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:613
 msgid "Reviewers shows the email addresses a link is bound to. Each reviewer proves control of their address with an emailed code before the draft opens, so the link works for the people it names rather than for anyone it gets forwarded to. A dash means anyone with the link can view. To change the reviewer list, revoke the link and generate a new one."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:619
+#: inc/class-previewlinksadminpage.php:620
 msgid "IP ranges shows the addresses a link is restricted to: a link with ranges opens only from them."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:620
+#: inc/class-previewlinksadminpage.php:621
 msgid "IP ranges shows the ranges a link has of its own. Every link opens only from the ranges set in the VIP Dashboard, and a link's own ranges let it open from further places too."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:621
+#: inc/class-previewlinksadminpage.php:622
 msgid "A dash means the link has no ranges of its own. A link cannot be edited once shared: to change its ranges, revoke it and generate a new one."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:627
+#: inc/class-previewlinksadminpage.php:628
 msgid "Reading a row"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:635
+#: inc/class-previewlinksadminpage.php:636
 msgid "Revoking"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:636
+#: inc/class-previewlinksadminpage.php:637
 msgid "Revoking a link stops it working immediately. For a short period the visitor sees a \"no longer available\" notice, and after that a plain \"not found\" page. Revoking cannot be undone: generate a new link to restore access. Use the row action to revoke one link, or tick several and choose the Revoke bulk action."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:637
+#: inc/class-previewlinksadminpage.php:638
 msgid "To revoke at scale, tick the checkbox in the table header. If more links exist than the page shows, you are offered \"Select all\" across every page — covering the whole site, or, if you first clicked a name in the Created by column, everything that person created (useful when someone leaves). Then apply the Revoke bulk action as usual. Selecting every link site-wide is limited to administrators. When a user account is deleted, their links are revoked automatically."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:638
+#: inc/class-previewlinksadminpage.php:639
 msgid "Not sure yet whether to revoke? Preview links can also be paused site-wide — see the Pausing all links tab."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:645
+#: inc/class-previewlinksadminpage.php:646
 msgid "Pausing all links"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:646
+#: inc/class-previewlinksadminpage.php:647
 msgid "The toggle next to the bulk actions switches every preview link off at once — the first response when links may be leaking but you are not yet sure. It is a reversible pause, not a revocation: nothing is deleted, each link keeps its own expiry and usage, and links that are still valid resume working the moment an administrator re-enables them."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:647
+#: inc/class-previewlinksadminpage.php:648
 msgid "While links are paused, this screen banners who paused them and when, the editor warns authors that new and existing links will not work, and visitors opening a link see a \"temporarily disabled\" notice. Only administrators can flip the switch."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:665
+#: inc/class-previewlinksadminpage.php:666
 msgid "WordPress VIP documentation"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:666
+#: inc/class-previewlinksadminpage.php:667
 msgid "Contact VIP support"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:669
+#: inc/class-previewlinksadminpage.php:670
 msgid "Support forum"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:672
+#: inc/class-previewlinksadminpage.php:673
 msgid "For more information"
 msgstr ""
 
@@ -842,7 +846,7 @@ msgid "Maximum uses"
 msgstr ""
 
 #: build/index.js:4
-msgid "Number of distinct viewers. Leave empty for unlimited."
+msgid "How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited."
 msgstr ""
 
 #: build/index.js:4

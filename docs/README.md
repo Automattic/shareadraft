@@ -4,7 +4,7 @@ What Share a Draft does, and whether it suits your site, is covered in the [READ
 
 ## Using Share a Draft
 
-- [Managing preview links](managing-links.md): revoking links, pausing every link at once, revoking in bulk, and revoking a person's links when they leave.
+- [Managing preview links](managing-links.md): how many people can open a link, revoking links, pausing every link at once, revoking in bulk, and revoking a person's links when they leave.
 - [Customizing Share a Draft](customizing.md): offering different link lifetimes, turning off optional restrictions, changing what reviewers are told, and more.
 - [Hosting requirements](hosting.md): page caching, reverse proxies, outgoing email, and scheduled events.
 - [WP-CLI commands](wp-cli.md): creating, listing, revoking, and cleaning up links from the shell.

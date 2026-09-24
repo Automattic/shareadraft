@@ -100,7 +100,7 @@ final class PreviewAbilities {
 				'default'     => null,
 				'minimum'     => 1,
 				'maximum'     => PreviewRestController::MAX_USES_LIMIT,
-				'description' => __( 'Maximum number of distinct viewers, or null for unlimited.', 'shareadraft' ),
+				'description' => __( 'How many people can open the link, or null for unlimited. Each browser or device counts as a new person.', 'shareadraft' ),
 			],
 		];
 

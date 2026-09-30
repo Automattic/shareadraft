@@ -14,7 +14,7 @@ Share a Draft tells people apart by browser, not by who they are, since reviewer
 - A browser is remembered for a week. If your site offers links that last longer than that, a reviewer who returns after a week counts again.
 - The cookie is signed with your site's security keys, so if those keys change, every reviewer counts again the next time they open the link.
 
-Chat apps and crawlers that fetch the link to show a preview are never counted.
+Chat apps and crawlers that fetch the link to show a preview are never counted, nor are link checkers and browser prefetches.
 
 If you expect a reviewer to switch devices, allow for it when you set the limit. For a link only certain people should open, whatever browser they use, [bind it to named reviewers](hosting.md#links-for-named-reviewers-need-working-outgoing-email) instead.
 

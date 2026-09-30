@@ -33,9 +33,10 @@ class PreviewGateTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_GET['shareadraft-postpass'], $_SERVER['HTTP_USER_AGENT'] );
-		$_COOKIE                = [];
-		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_GET['shareadraft-postpass'], $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_SEC_PURPOSE'] );
+		$_SERVER['REQUEST_METHOD'] = 'GET';
+		$_COOKIE                   = [];
+		$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
 		parent::tear_down();
 	}
 
@@ -205,6 +206,34 @@ class PreviewGateTest extends WP_UnitTestCase {
 
 		static::assertSame( 'draft', $this->visit( $post_id, $token, true ) );
 		static::assertSame( 0, $this->repository->all_for_post( $post_id )[0]->use_count() );
+	}
+
+	public function test_a_head_request_gets_no_content_and_spends_no_slot(): void {
+		$post_id                   = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token                     = $this->service->mint( $post_id, HOUR_IN_SECONDS, 1, 1 );
+		$_SERVER['REQUEST_METHOD'] = 'HEAD';
+
+		// A link checker with a browser-like user agent: core would drop the
+		// body anyway, so a slot spent here is a slot the reviewer never gets.
+		static::assertSame( 'draft', $this->visit( $post_id, $token, true ) );
+		static::assertSame( 0, $this->repository->all_for_post( $post_id )[0]->use_count() );
+	}
+
+	public function test_a_prefetch_spends_no_slot_and_is_refused_with_a_non_2xx(): void {
+		$post_id                     = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token                       = $this->service->mint( $post_id, HOUR_IN_SECONDS, 1, 1 );
+		$_SERVER['HTTP_SEC_PURPOSE'] = 'prefetch;prerender';
+
+		static::assertSame( 'draft', $this->visit( $post_id, $token, true ) );
+		static::assertSame( 0, $this->repository->all_for_post( $post_id )[0]->use_count() );
+
+		// A 200 stub would be shown in place of the draft when the reviewer
+		// navigates; a non-2xx makes the browser discard it and fetch afresh.
+		$gate = $this->denied_main_query( $post_id, $token );
+
+		$this->expectException( \WPDieException::class );
+		$this->expectExceptionCode( 503 );
+		$gate->maybe_render_notice();
 	}
 
 	public function test_a_bot_is_shown_a_stub_with_no_draft_details(): void {

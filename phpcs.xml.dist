@@ -13,6 +13,7 @@
 	<!-- What to scan -->
 	<file>./inc/</file>
 	<file>./vestigial.php</file>
+	<file>./uninstall.php</file>
 	<file>./tests/behat/</file>
 	<file>./tests/unit/</file>
 	<file>./tests/integration/</file>

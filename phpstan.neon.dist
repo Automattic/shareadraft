@@ -8,6 +8,7 @@ parameters:
 	paths:
 		- shareadraft.php
 		- vestigial.php
+		- uninstall.php
 		- inc
 		- tests/unit
 		- tests/integration

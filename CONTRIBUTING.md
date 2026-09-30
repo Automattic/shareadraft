@@ -46,6 +46,8 @@ CI runs on every push and pull request:
 | `static-code-analysis.yml`             | PHPStan static analysis.                                                                                    |
 | `codeql.yml` / `dependency-review.yml` | Security scanning of code and dependency changes.                                                           |
 
+Releases run from a pushed tag: `release.yml` publishes the GitHub Release and its WordPress.org ZIP, `deploy.yml` pushes to WordPress.org SVN, and `vip-integration-release.yml` builds and validates the package handed to VIP; dry-run that last one by hand on the release branch before tagging. See [Cutting a release](/docs/vip-integration.md#cutting-a-release).
+
 ## Repository structure
 
 | Path | What lives here |

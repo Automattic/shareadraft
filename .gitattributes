@@ -38,6 +38,7 @@
 /phpunit.xml.dist                export-ignore
 /phpunit-unit.xml.dist           export-ignore
 /playwright.config.ts            export-ignore
+/vip-manifest.yaml               export-ignore
 /vip-manifest.schema.json        export-ignore
 
 # Auto detect text files and perform LF normalization

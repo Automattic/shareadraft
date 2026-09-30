@@ -4,8 +4,9 @@
 # at any depth.
 #
 # What ships is deliberately small: shareadraft.php, vestigial.php,
-# uninstall.php, inc/, build/, languages/, vip-manifest.yaml, README.md and
-# LICENSE. The plugin
+# uninstall.php, inc/, build/, languages/, README.md and LICENSE. The VIP
+# handoff manifest goes to VIP in its own package (vip-integration-release.yml),
+# not here. The plugin
 # has no runtime Composer dependencies — inc/autoload.php resolves its own
 # classes — so no vendor/ directory is needed at runtime. WordPress.org assets
 # live in .wordpress-org/ and are deployed separately, not inside the ZIP.
@@ -35,6 +36,7 @@
 /features
 /fixtures
 /docs
+/vip-manifest.yaml
 /vip-manifest.schema.json
 
 # Dependency manifests and installed dependencies

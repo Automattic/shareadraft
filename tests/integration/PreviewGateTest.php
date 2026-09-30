@@ -433,6 +433,16 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( 'draft', $this->visit( $post_id, $token, true ) );
 	}
 
+	public function test_an_unverified_visitor_spends_no_slot_on_a_capped_recipient_bound_link(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, 1, 1, [], [ 'legal@example.com' ] );
+
+		// An email security scanner opening the link with a browser's user
+		// agent: the docs promise it cannot use up the reviewer's only slot.
+		static::assertSame( 'draft', $this->visit( $post_id, $token, true ) );
+		static::assertSame( 0, $this->repository->all_for_post( $post_id )[0]->use_count() );
+	}
+
 	public function test_an_unverified_visitor_is_offered_the_verification_form(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );

@@ -16,6 +16,8 @@ Share a Draft tells people apart by browser, not by who they are, since reviewer
 
 Chat apps and crawlers that fetch the link to show a preview are never counted, nor are link checkers and browser prefetches.
 
+Take care when emailing a link with a limit. Many organizations route incoming mail through a security service (such as Microsoft Defender Safe Links, Proofpoint, or Mimecast) that opens every link in a message before the recipient sees it, posing as an ordinary browser so that sites cannot hide anything from it. Share a Draft cannot tell that visit from a real reviewer's, so it counts, and a link limited to one person can be used up before the reviewer clicks it. To email a link to someone at an organization like that, [bind it to them as a named reviewer](hosting.md#links-for-named-reviewers-need-working-outgoing-email): nothing is counted until they have confirmed their email address, which a scanner cannot do.
+
 If you expect a reviewer to switch devices, allow for it when you set the limit. For a link only certain people should open, whatever browser they use, [bind it to named reviewers](hosting.md#links-for-named-reviewers-need-working-outgoing-email) instead.
 
 ## Revoking a link

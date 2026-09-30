@@ -33,7 +33,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 	}
 
 	public function tear_down(): void {
-		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_SERVER['HTTP_USER_AGENT'] );
+		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_GET['shareadraft-postpass'], $_SERVER['HTTP_USER_AGENT'] );
 		$_COOKIE                = [];
 		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 		parent::tear_down();
@@ -405,6 +405,80 @@ class PreviewGateTest extends WP_UnitTestCase {
 		( new RecipientVerifier() )->remember_verified( $token, 'stranger@example.com' );
 
 		static::assertSame( 'draft', $this->visit( $post_id, $token ) );
+	}
+
+	public function test_a_password_form_sends_a_token_holder_back_to_the_preview(): void {
+		$post_id = self::factory()->post->create(
+			[
+				'post_status'   => 'draft',
+				'post_password' => 'secret',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$form = $this->password_form( $post_id, $token );
+
+		$expected = get_preview_post_link(
+			$post_id,
+			[
+				PreviewGate::TOKEN_QUERY_VAR => $token->value(),
+				'shareadraft-postpass'       => '1',
+			]
+		);
+		static::assertIsString( $expected );
+		static::assertStringContainsString( 'name="redirect_to" value="' . esc_attr( $expected ) . '"', $form );
+		static::assertStringNotContainsString( 'role="alert"', $form );
+	}
+
+	public function test_a_rejected_password_is_announced(): void {
+		$post_id = self::factory()->post->create(
+			[
+				'post_status'   => 'draft',
+				'post_password' => 'secret',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		// What core's postpass handler leaves behind after any attempt.
+		$_GET['shareadraft-postpass']           = '1';
+		$_COOKIE[ 'wp-postpass_' . COOKIEHASH ] = 'hash-of-the-wrong-password';
+
+		$form = $this->password_form( $post_id, $token );
+
+		static::assertStringContainsString( 'role="alert"', $form );
+		static::assertStringContainsString( 'aria-describedby="error-pwbox-' . $post_id . '"', $form );
+		static::assertStringContainsString( 'password-form-error', $form );
+	}
+
+	public function test_a_password_form_for_a_locked_draft_is_untouched(): void {
+		$post_id = self::factory()->post->create(
+			[
+				'post_status'   => 'draft',
+				'post_password' => 'secret',
+			]
+		);
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$core = get_the_password_form( $post_id );
+
+		static::assertSame( $core, $this->password_form( $post_id, Token::from_string( 'not-the-token' ) ) );
+	}
+
+	/**
+	 * Visit the draft with a token, then render its password form through the gate.
+	 */
+	private function password_form( int $post_id, Token $token ): string {
+		$_GET[ PreviewGate::TOKEN_QUERY_VAR ] = $token->value();
+		clean_post_cache( $post_id );
+
+		$gate = new PreviewGate( $this->service, new RecipientVerifier() );
+		$gate->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() );
+
+		add_filter( 'the_password_form', [ $gate, 'keep_token_in_password_form' ], 10, 2 );
+		$form = get_the_password_form( $post_id );
+		remove_filter( 'the_password_form', [ $gate, 'keep_token_in_password_form' ], 10 );
+
+		return $form;
 	}
 
 	/**

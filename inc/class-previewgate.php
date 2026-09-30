@@ -32,6 +32,9 @@ final class PreviewGate {
 
 	private const COOKIE_PREFIX = 'shareadraft_viewer_';
 
+	/** Marks a return from core's post-password handler, so a rejection can be shown. */
+	private const POSTPASS_QUERY_VAR = 'shareadraft-postpass';
+
 	/** Marks a request that was withheld because the client looks automated. */
 	private const REASON_AUTOMATED = 'automated_client';
 
@@ -58,6 +61,13 @@ final class PreviewGate {
 	/** Ensures a single request claims at most one slot, however many queries run. */
 	private bool $claimed_this_request = false;
 
+	/**
+	 * Posts this request's token unlocked, keyed by ID.
+	 *
+	 * @var array<int, true>
+	 */
+	private array $unlocked = [];
+
 	public function __construct( PreviewLinkService $service, ?RecipientVerifier $verifier = null, ?LinkToggle $toggle = null ) {
 		$this->service  = $service;
 		$this->verifier = $verifier ?? new RecipientVerifier();
@@ -67,6 +77,7 @@ final class PreviewGate {
 	public function register(): void {
 		add_filter( 'posts_results', [ $this, 'unlock_valid_previews' ], 10, 2 );
 		add_action( 'template_redirect', [ $this, 'maybe_render_notice' ] );
+		add_filter( 'the_password_form', [ $this, 'keep_token_in_password_form' ], 10, 2 );
 	}
 
 	/**
@@ -146,12 +157,76 @@ final class PreviewGate {
 
 			$this->send_preview_headers();
 
+			$this->unlocked[ $post_id ] = true;
+
 			// Marking the post published for this query alone lets it survive
 			// WP_Query's "logged-out users cannot see non-public posts" check.
 			$post->post_status = 'publish';
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * Send a password-protected draft's password form back to the preview.
+	 *
+	 * Core points the form's `redirect_to` at `get_permalink()`, which for a draft
+	 * is the bare `?p=123`: after entering the password, a token holder lands on
+	 * a 404. Core has no filter for that value alone, so the hidden field is
+	 * swapped out of the markup; a theme that has rebuilt the form is left alone.
+	 *
+	 * Core also only reports a wrong password when the referer is the permalink,
+	 * which never holds here (we send `no-referrer`), so the error state is added
+	 * back, keyed on a marker only this redirect carries.
+	 *
+	 * @param mixed $output The password form HTML.
+	 * @param mixed $post   The post being protected.
+	 * @return mixed
+	 */
+	public function keep_token_in_password_form( $output, $post ) {
+		if ( ! is_string( $output ) || ! $post instanceof WP_Post || ! isset( $this->unlocked[ $post->ID ] ) ) {
+			return $output;
+		}
+
+		$field = sprintf( '<input type="hidden" name="redirect_to" value="%s" />', esc_attr( (string) get_permalink( $post->ID ) ) );
+
+		if ( ! str_contains( $output, $field ) ) {
+			return $output;
+		}
+
+		$preview = (string) get_preview_post_link(
+			$post->ID,
+			[
+				self::TOKEN_QUERY_VAR    => (string) $this->token_from_request(),
+				self::POSTPASS_QUERY_VAR => '1',
+			]
+		);
+
+		$replacement = sprintf( '<input type="hidden" name="redirect_to" value="%s" />', esc_attr( $preview ) );
+
+		// Core sets this cookie whatever was typed, so on our return trip with
+		// the form still showing, the password was wrong.
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- Read-only marker on an uncached preview request.
+		if ( isset( $_GET[ self::POSTPASS_QUERY_VAR ], $_COOKIE[ 'wp-postpass_' . COOKIEHASH ] ) ) {
+			$field_id = 'pwbox-' . $post->ID;
+
+			/** This filter is documented in wp-includes/post-template.php */
+			$message = apply_filters( 'the_password_form_incorrect_password', __( 'Invalid password.', 'shareadraft' ), $post ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core's hook, so existing customisations apply here too.
+
+			$replacement .= sprintf(
+				'<div class="post-password-form-invalid-password" role="alert"><p id="error-%s">%s</p></div>',
+				esc_attr( $field_id ),
+				wp_kses_post( is_string( $message ) ? $message : '' )
+			);
+
+			$output = str_replace(
+				[ 'class="post-password-form"', 'id="' . $field_id . '"' ],
+				[ 'class="post-password-form password-form-error"', 'id="' . $field_id . '" aria-describedby="error-' . $field_id . '"' ],
+				$output
+			);
+		}
+
+		return str_replace( $field, $replacement, $output );
 	}
 
 	/**

@@ -11,6 +11,8 @@ parameters:
 		- inc
 		- tests/unit
 		- tests/integration
+	bootstrapFiles:
+		- tests/phpstan/constants.php
 	scanFiles:
 		- vendor/wildwolf/wordpress-test-library-stubs/wordpress-test-library-stubs.php
 		- tests/phpstan/wp-cli.stubs

@@ -40,6 +40,7 @@ removed in 2.1.0.
 - Offer preview links only for post types that have a front-end view (`is_post_type_viewable()`): the editor panel does not appear for other types, and REST, the Abilities API and `wp shareadraft create` refuse them, rather than minting a link that could only 404.
 - Respect a draft's post password on a preview link: the reviewer is asked for it as usual, then returned to the preview rather than a 404, and a wrong password is announced as an error instead of silently showing the form again.
 - Report whether the cleanup sweep is scheduled and actually running, as a Site Health check under Tools → Site Health.
+- Find and remove named reviewers' email addresses with WordPress's own Export Personal Data and Erase Personal Data tools. The export lists every preview link an address is bound to; erasing removes the address from each link, and revokes any link left with no reviewers rather than letting it open to anyone.
 - Ship translatable strings with a bundled POT; translations are delivered as language packs from [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/shareadraft/).
 
 ### Changed

@@ -36,9 +36,10 @@ final class PostMetaTokenRepository implements TokenRepository {
 	private const VERSION = 2;
 
 	/**
-	 * How many times a revoke re-reads and retries after losing a write race.
+	 * How many times a revoke or erasure re-reads and retries after losing a
+	 * write race.
 	 */
-	private const REVOKE_ATTEMPTS = 10;
+	private const REWRITE_ATTEMPTS = 10;
 
 	public function save( PreviewLink $link ): void {
 		add_post_meta( $link->post_id(), self::META_KEY, $this->to_array( $link ) );
@@ -154,25 +155,53 @@ final class PostMetaTokenRepository implements TokenRepository {
 	}
 
 	/**
-	 * Compare-and-swap `revoked_at` onto a link's row, re-reading and retrying
-	 * when the row changed underneath. Every viewer who claims a slot rewrites
-	 * the row, so a single attempt loses to exactly the traffic that makes an
-	 * author reach for Revoke: a leaked link being opened over and over.
+	 * Compare-and-swap `revoked_at` onto a link's row (see {@see rewrite()}).
+	 * Every viewer who claims a slot rewrites the row, so a single attempt loses
+	 * to exactly the traffic that makes an author reach for Revoke: a leaked
+	 * link being opened over and over.
 	 *
 	 * Returns whether the stored link is now revoked. False means the link is
 	 * gone, or every attempt lost the race, and the caller must not report it
 	 * as revoked.
 	 */
 	private function stamp_revoked( PreviewLink $link, int $revoked_at ): bool {
-		for ( $attempt = 0; $attempt < self::REVOKE_ATTEMPTS; $attempt++ ) {
-			if ( $link->is_revoked() ) {
+		return $this->rewrite(
+			$link,
+			static fn ( PreviewLink $current ): ?PreviewLink => $current->is_revoked() ? null : $current->with_revoked( $revoked_at )
+		);
+	}
+
+	public function remove_recipient( PreviewLink $link, string $email, int $now ): bool {
+		return $this->rewrite(
+			$link,
+			static fn ( PreviewLink $current ): ?PreviewLink => $current->is_recipient( $email ) ? $current->without_recipient( $email, $now ) : null
+		);
+	}
+
+	/**
+	 * Compare-and-swap a change onto a link's row, re-reading and retrying when
+	 * the row changed underneath. Each write is conditional on the pre-read row
+	 * (see {@see add_viewer()}), so a concurrent write is re-read rather than
+	 * clobbered.
+	 *
+	 * @param callable(PreviewLink): ?PreviewLink $change The link to store, or
+	 *                                                    null when the current
+	 *                                                    state already holds.
+	 * @return bool Whether the stored link now reflects the change. False means
+	 *              the link is gone, or every attempt lost the race.
+	 */
+	private function rewrite( PreviewLink $link, callable $change ): bool {
+		for ( $attempt = 0; $attempt < self::REWRITE_ATTEMPTS; $attempt++ ) {
+			$changed = $change( $link );
+
+			if ( null === $changed ) {
 				return true;
 			}
 
 			$updated = update_post_meta(
 				$link->post_id(),
 				self::META_KEY,
-				$this->to_array( $link->with_revoked( $revoked_at ) ),
+				$this->to_array( $changed ),
 				$this->to_array( $link )
 			);
 
@@ -230,6 +259,34 @@ final class PostMetaTokenRepository implements TokenRepository {
 				self::META_KEY,
 				$after_post_id,
 				$limit
+			)
+		);
+
+		return array_map( 'intval', $ids );
+	}
+
+	public function post_ids_with_recipient( string $email, int $offset, int $limit ): array {
+		/** @var \wpdb $wpdb */
+		global $wpdb;
+
+		/**
+		 * Recipients live inside the serialised row, so this matches the quoted
+		 * address as {@see to_array()} writes it (`"bob@example.com"`), the same
+		 * stopgap {@see created_by_clause()} uses. Quoted, it cannot match a
+		 * token hash, hint, or CIDR range; a false positive would only cost a
+		 * wasted read, since callers re-check {@see PreviewLink::is_recipient()}.
+		 * Run only from the admin privacy tools, and not cached for the same
+		 * reason as {@see post_ids_with_links()}.
+		 */
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Admin privacy tools over an indexed meta_key; see above.
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				'SELECT DISTINCT post_id FROM %i WHERE meta_key = %s AND meta_value LIKE %s ORDER BY post_id ASC LIMIT %d OFFSET %d',
+				$wpdb->postmeta,
+				self::META_KEY,
+				'%' . $wpdb->esc_like( '"' . strtolower( $email ) . '"' ) . '%',
+				$limit,
+				$offset
 			)
 		);
 

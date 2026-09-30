@@ -88,6 +88,9 @@ final class Plugin {
 		// minter and service as the REST endpoint above.
 		( new PreviewAbilities( $service, $minter, $collector, $toggle, $revoker ) )->register();
 
+		// Reviewer emails in core's Export/Erase Personal Data tools.
+		( new PersonalData( $service ) )->register();
+
 		// Surfaces whether the cleanup sweep is actually running, which is the
 		// one part of the plugin that depends on cron firing.
 		( new SiteHealth( $clock ) )->register();

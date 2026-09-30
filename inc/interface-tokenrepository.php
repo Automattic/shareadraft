@@ -60,6 +60,14 @@ interface TokenRepository {
 	public function revoke( PreviewLink $link, int $revoked_at ): bool;
 
 	/**
+	 * Persist a link with one named reviewer forgotten. The passed link is the
+	 * pre-erasure state; implementations store its {@see
+	 * PreviewLink::without_recipient()} form. Returns whether the stored link no
+	 * longer names the address; false means it could not be written.
+	 */
+	public function remove_recipient( PreviewLink $link, string $email, int $now ): bool;
+
+	/**
 	 * Revoke every not-yet-revoked link on a post, returning how many were
 	 * revoked. The per-post building block the bulk-revoke sweep drives; each row
 	 * keeps its own `revoked_at` so it stays the source of truth and the gate can
@@ -98,6 +106,20 @@ interface TokenRepository {
 	 * @return list<int>
 	 */
 	public function post_ids_with_links( int $after_post_id, int $limit ): array;
+
+	/**
+	 * A page of post IDs carrying at least one link bound to this reviewer, for
+	 * the personal-data exporter and eraser. Ordered by post ID ascending.
+	 *
+	 * A cross-post read like {@see page_of_links()}, so it runs only from the
+	 * admin privacy tools, never from the gate.
+	 *
+	 * @param string $email  Reviewer address; matched case-insensitively.
+	 * @param int    $offset Posts to skip.
+	 * @param int    $limit  Maximum posts to return.
+	 * @return list<int>
+	 */
+	public function post_ids_with_recipient( string $email, int $offset, int $limit ): array;
 
 	/**
 	 * A page of issued links across every post, newest first, for the site-wide

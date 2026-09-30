@@ -292,6 +292,45 @@ final class PreviewLinkService {
 	}
 
 	/**
+	 * A page of post IDs carrying links bound to this reviewer, for the
+	 * personal-data exporter and eraser.
+	 *
+	 * @return list<int>
+	 */
+	public function post_ids_with_recipient( string $email, int $offset, int $limit ): array {
+		return $this->repository->post_ids_with_recipient( $email, $offset, $limit );
+	}
+
+	/**
+	 * Forget a reviewer on every link of a post that names them, revoking any
+	 * link left with no reviewers (see {@see PreviewLink::without_recipient()}).
+	 *
+	 * @return array{removed: int, failed: int} Links rewritten, and links that
+	 *                                          could not be.
+	 */
+	public function forget_recipient( int $post_id, string $email ): array {
+		$now    = $this->clock->now();
+		$result = [
+			'removed' => 0,
+			'failed'  => 0,
+		];
+
+		foreach ( $this->repository->all_for_post( $post_id ) as $link ) {
+			if ( ! $link->is_recipient( $email ) ) {
+				continue;
+			}
+
+			if ( $this->repository->remove_recipient( $link, $email, $now ) ) {
+				++$result['removed'];
+			} else {
+				++$result['failed'];
+			}
+		}
+
+		return $result;
+	}
+
+	/**
 	 * A page of every issued link across the site, newest first, for the admin
 	 * table — optionally only the links a given user created.
 	 *

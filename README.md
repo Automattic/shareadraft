@@ -76,6 +76,10 @@ Behind a reverse proxy, every visitor appears to come from the proxy's address. 
 
 Yes, with [a line of code each](https://github.com/Automattic/shareadraft/blob/main/docs/customizing.md#turn-off-named-reviewer-or-ip-restriction-features). The options disappear from the editor and the Preview Links screen, and links that already use them keep enforcing them.
 
+### Does it work with the Export and Erase Personal Data tools?
+
+Yes. A named reviewer's email address shows up in Tools → Export Personal Data as a list of the preview links it is bound to. Erasing it removes the address from each link, and a link left with no reviewers is revoked rather than opened to anyone.
+
 ### Where can I report a bug or contribute?
 
 On [GitHub](https://github.com/Automattic/shareadraft). See the [contributing guide](https://github.com/Automattic/shareadraft/blob/main/CONTRIBUTING.md) to get started.

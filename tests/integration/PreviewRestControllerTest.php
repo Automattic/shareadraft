@@ -146,6 +146,17 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
 	}
 
+	public function test_a_private_post_is_refused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'private' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$response = $this->create_link( $post_id, 8 * HOUR_IN_SECONDS );
+
+		static::assertSame( 400, $response->get_status() );
+		static::assertSame( 'shareadraft_post_not_shareable', ( (array) $response->get_data() )['code'] );
+		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
+	}
+
 	public function test_a_capped_link_is_accepted(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );

@@ -47,6 +47,22 @@ class PublishCleanupTest extends WP_UnitTestCase {
 		static::assertCount( 0, $this->repository->all_for_post( $post_id ) );
 	}
 
+	public function test_making_a_post_private_discards_its_preview_links(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		// Private restricts the post to logged-in staff; a link must not
+		// reopen it to anonymous visitors.
+		wp_update_post(
+			[
+				'ID'          => $post_id,
+				'post_status' => 'private',
+			]
+		);
+
+		static::assertCount( 0, $this->repository->all_for_post( $post_id ) );
+	}
+
 	public function test_a_pending_review_post_keeps_its_links(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );

@@ -124,6 +124,13 @@ final class PreviewGate {
 				continue;
 			}
 
+			// Private and trashed posts are closed to anonymous visitors on
+			// purpose. Cleanup discards their links, but one left behind (a post
+			// made private before that rule existed) must still not open them.
+			if ( PublishCleanup::is_terminal( $post->post_status ) ) {
+				continue;
+			}
+
 			// Leave authors and editors to WordPress's own preview: they can
 			// already see the draft, so a spent link must not lock them out.
 			if ( current_user_can( 'edit_post', (int) $post->ID ) ) {

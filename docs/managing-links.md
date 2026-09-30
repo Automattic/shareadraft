@@ -12,6 +12,7 @@ Share a Draft tells people apart by browser, not by who they are, since reviewer
 - A reviewer who clears their cookies counts again the next time they open the link.
 - Several people sharing one browser count as one.
 - A browser is remembered for a week. If your site offers links that last longer than that, a reviewer who returns after a week counts again.
+- The cookie is signed with your site's security keys, so if those keys change, every reviewer counts again the next time they open the link.
 
 Chat apps and crawlers that fetch the link to show a preview are never counted.
 

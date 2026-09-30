@@ -70,7 +70,7 @@ class LinkGarbageCollectorTest extends WP_UnitTestCase {
 				null,
 				1,
 				time() - 200 * DAY_IN_SECONDS,
-				[],
+				0,
 				time() - 90 * DAY_IN_SECONDS
 			)
 		);

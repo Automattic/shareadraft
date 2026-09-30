@@ -67,7 +67,7 @@ final class PreviewLinkServiceMatchingTest extends TestCase {
 			null,
 			1,
 			1000,
-			[],
+			0,
 			$revoked_at,
 			$token_hint
 		);

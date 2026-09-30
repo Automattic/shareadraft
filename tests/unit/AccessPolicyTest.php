@@ -68,7 +68,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'expires_at' => self::NOW + 100,
 			'max_uses'   => 3,
-			'viewers'    => self::slots( 3 ),
+			'uses'       => 3,
 		] );
 
 		$decision = $this->policy->decide( $link, self::NOW );
@@ -81,7 +81,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'expires_at' => self::NOW + 100,
 			'max_uses'   => 3,
-			'viewers'    => self::slots( 2 ),
+			'uses'       => 2,
 		] );
 
 		self::assertTrue( $this->policy->decide( $link, self::NOW )->is_allowed() );
@@ -91,7 +91,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'expires_at' => self::NOW + 100,
 			'max_uses'   => null,
-			'viewers'    => self::slots( 999 ),
+			'uses'       => 999,
 		] );
 
 		self::assertTrue( $this->policy->decide( $link, self::NOW )->is_allowed() );
@@ -101,7 +101,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'expires_at' => self::NOW + 100,
 			'max_uses'   => 3,
-			'viewers'    => self::slots( 3 ),
+			'uses'       => 3,
 		] );
 
 		// A returning viewer holds one of the spent slots, so must still get in.
@@ -112,7 +112,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'expires_at' => self::NOW - 1,
 			'max_uses'   => 3,
-			'viewers'    => self::slots( 1 ),
+			'uses'       => 1,
 		] );
 
 		self::assertSame(
@@ -187,7 +187,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'allowed_ips' => [ '203.0.113.0/24' ],
 			'max_uses'    => 3,
-			'viewers'     => self::slots( 1 ),
+			'uses'        => 1,
 		] );
 
 		self::assertFalse( $this->policy->decide( $link, self::NOW, true, '198.51.100.7' )->is_allowed() );
@@ -260,7 +260,7 @@ final class AccessPolicyTest extends TestCase {
 		$link = $this->link( [
 			'recipients' => [ 'legal@example.com' ],
 			'max_uses'   => 1,
-			'viewers'    => self::slots( 1 ),
+			'uses'       => 1,
 		] );
 
 		self::assertSame(
@@ -270,7 +270,7 @@ final class AccessPolicyTest extends TestCase {
 	}
 
 	/**
-	 * @param array{expires_at?: int, max_uses?: int|null, viewers?: list<string>, revoked_at?: int|null, allowed_ips?: list<string>, recipients?: list<string>} $overrides
+	 * @param array{expires_at?: int, max_uses?: int|null, uses?: int, revoked_at?: int|null, allowed_ips?: list<string>, recipients?: list<string>} $overrides
 	 */
 	private function link( array $overrides ): PreviewLink {
 		return new PreviewLink(
@@ -280,26 +280,11 @@ final class AccessPolicyTest extends TestCase {
 			array_key_exists( 'max_uses', $overrides ) ? $overrides['max_uses'] : null,
 			1,
 			self::NOW - 100,
-			$overrides['viewers'] ?? [],
+			$overrides['uses'] ?? 0,
 			$overrides['revoked_at'] ?? null,
 			'',
 			$overrides['allowed_ips'] ?? [],
 			$overrides['recipients'] ?? []
 		);
-	}
-
-	/**
-	 * A given number of distinct, already-issued slot IDs.
-	 *
-	 * @return list<string>
-	 */
-	private static function slots( int $count ): array {
-		$slots = [];
-
-		for ( $index = 0; $index < $count; $index++ ) {
-			$slots[] = 'viewer-' . $index;
-		}
-
-		return $slots;
 	}
 }

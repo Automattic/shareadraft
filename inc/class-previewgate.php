@@ -15,12 +15,13 @@ use WP_Query;
  * and, for a valid token, mark that one post public for the current query. Every
  * other request is untouched. Approach borrowed from vip-workflow-plugin PR #19.
  *
- * When a link caps the number of viewers, the gate spends one slot per distinct
- * browser. The slot ID is minted by the server and handed back in a cookie, so a
- * visitor cannot fabricate one: the previous scheme derived the cookie from the
- * token's SHA-256 hash, which every link holder can compute, and so let anyone
- * with the URL walk past a spent cap. A separate browser or a private window has
- * its own cookie jar and so claims a new slot, which is the intended behaviour.
+ * The gate spends one slot per distinct browser, and the link counts them
+ * against its cap. The browser gets its slot back in a cookie signed by the
+ * server, so a visitor cannot fabricate one: the previous scheme derived the
+ * cookie from the token's SHA-256 hash, which every link holder can compute, and
+ * so let anyone with the URL walk past a spent cap. A separate browser or a
+ * private window has its own cookie jar and so claims a new slot, which is the
+ * intended behaviour.
  *
  * Automated clients (crawlers, chat-link unfurlers) are served a contentless stub
  * instead of the draft. Exempting them from the cap by user agent alone would be
@@ -31,6 +32,9 @@ final class PreviewGate {
 	public const TOKEN_QUERY_VAR = 'shareadraft-token';
 
 	private const COOKIE_PREFIX = 'shareadraft_viewer_';
+
+	/** Bytes of randomness in a slot's nonce. 16 bytes = 128 bits. */
+	private const SLOT_NONCE_BYTES = 16;
 
 	/** Marks a return from core's post-password handler, so a rejection can be shown. */
 	private const POSTPASS_QUERY_VAR = 'shareadraft-postpass';
@@ -46,7 +50,7 @@ final class PreviewGate {
 
 	private RecipientVerifier $verifier;
 
-	/** The slot ID this visitor holds, once resolved or claimed. */
+	/** The slot this visitor presented or was issued, not yet verified. */
 	private ?string $viewer_id = null;
 
 	/** The email this visitor has proved control of, or null. Resolved once. */
@@ -134,7 +138,7 @@ final class PreviewGate {
 			}
 
 			$post_id  = (int) $post->ID;
-			$decision = $this->service->authorize( $post_id, $token, $this->viewer_id, $this->client_ip(), $this->verified_email );
+			$decision = $this->service->authorize( $post_id, $token, $this->holds_slot( $token ), $this->client_ip(), $this->verified_email );
 
 			if ( ! $decision->is_allowed() ) {
 				// Remember a dead-but-real link so template_redirect can explain
@@ -288,23 +292,45 @@ final class PreviewGate {
 			return true;
 		}
 
-		// A cookie that merely looks like a slot ID is not one. Only the link
-		// knows which IDs it issued, so ask it rather than trusting the shape.
-		if ( $this->service->holds_slot( $post_id, $token, $this->viewer_id ) ) {
+		// A cookie that merely looks like a slot is not one; only a valid
+		// signature makes this a returning viewer rather than a new one.
+		if ( $this->holds_slot( $token ) ) {
 			return true;
 		}
 
-		$viewer_id = $this->service->claim_slot( $post_id, $token, $this->client_ip(), $this->verified_email );
-
-		if ( null === $viewer_id ) {
+		if ( ! $this->service->claim_slot( $post_id, $token, $this->client_ip(), $this->verified_email ) ) {
 			return false;
 		}
 
 		$this->claimed_this_request = true;
-		$this->viewer_id            = $viewer_id;
-		$this->remember_viewer( $token, $viewer_id );
+		$this->viewer_id            = $this->slot_id( $token, bin2hex( random_bytes( self::SLOT_NONCE_BYTES ) ) );
+		$this->remember_viewer( $token, $this->viewer_id );
 
 		return true;
+	}
+
+	/**
+	 * Whether the slot this visitor presented is one the server issued for this
+	 * link.
+	 *
+	 * A slot is a random nonce followed by an HMAC of that nonce and the link's
+	 * token hash, keyed on the site's auth salt. Nothing is stored per slot:
+	 * only the server can sign one, and signing the token hash stops a slot on
+	 * one link opening another. Rotating the salt invalidates every slot, so
+	 * returning viewers are counted again, which errs on the strict side.
+	 */
+	private function holds_slot( Token $token ): bool {
+		if ( null === $this->viewer_id ) {
+			return false;
+		}
+
+		$nonce = substr( $this->viewer_id, 0, self::SLOT_NONCE_BYTES * 2 );
+
+		return hash_equals( $this->slot_id( $token, $nonce ), $this->viewer_id );
+	}
+
+	private function slot_id( Token $token, string $nonce ): string {
+		return $nonce . hash_hmac( 'sha256', 'slot|' . $token->hash() . '|' . $nonce, wp_salt( 'auth' ) );
 	}
 
 	/**
@@ -589,7 +615,7 @@ final class PreviewGate {
 	}
 
 	/**
-	 * The cookie that carries a slot ID for this link.
+	 * The cookie that carries a slot for this link.
 	 *
 	 * The *name* is derived from the token hash so a browser can hold slots on
 	 * several links at once; it is deliberately not a secret, since the browser
@@ -600,11 +626,10 @@ final class PreviewGate {
 	}
 
 	/**
-	 * The slot ID this visitor presented, or null.
+	 * The slot this visitor presented, or null.
 	 *
-	 * Whether it is genuine is not decided here: the link itself is the authority
-	 * (see {@see PreviewLink::holds_slot()}), so a forged value simply fails to
-	 * match and the visitor is treated as new.
+	 * Whether it is genuine is not decided here: {@see holds_slot()} checks its
+	 * signature, so a forged value simply fails and the visitor is treated as new.
 	 */
 	private function viewer_id_from_request( Token $token ): ?string {
 		$name = $this->cookie_name( $token );
@@ -626,12 +651,13 @@ final class PreviewGate {
 
 		$raw = sanitize_text_field( wp_unslash( $raw_cookie ) );
 
-		// Slot IDs are hex, so anything else is junk and not worth comparing.
-		return 1 === preg_match( '/^[a-f0-9]{32}$/', $raw ) ? $raw : null;
+		// A slot is a hex nonce and a hex SHA-256 HMAC, so anything else is junk
+		// and not worth checking.
+		return 1 === preg_match( '/^[a-f0-9]{96}$/', $raw ) ? $raw : null;
 	}
 
 	/**
-	 * Hand the slot ID back to this browser so a return visit is recognised.
+	 * Hand the slot back to this browser so a return visit is recognised.
 	 * Scoped to a week, comfortably longer than the longest offered lifetime.
 	 */
 	private function remember_viewer( Token $token, string $viewer_id ): void {

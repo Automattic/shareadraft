@@ -44,14 +44,14 @@ final class AccessPolicy {
 	 *                                           presented token.
 	 * @param int              $now              Current Unix timestamp.
 	 * @param bool             $viewer_holds_slot Whether this visitor presented a
-	 *                                           slot ID the link actually issued.
-	 *                                           Such a viewer already occupies a
-	 *                                           slot, so the exhaustion cap does
-	 *                                           not lock them out on a revisit.
-	 *                                           Callers must verify the ID
-	 *                                           against the link before passing
-	 *                                           true — see
-	 *                                           {@see PreviewLink::holds_slot()}.
+	 *                                           slot the server issued for this
+	 *                                           link. Such a viewer already
+	 *                                           occupies a slot, so the
+	 *                                           exhaustion cap does not lock them
+	 *                                           out on a revisit. Callers must
+	 *                                           verify the slot's signature
+	 *                                           before passing true — see
+	 *                                           {@see PreviewGate}.
 	 * @param string|null      $client_ip        The visitor's true client IP, or
 	 *                                           null if it could not be resolved.
 	 *                                           Only consulted when the combined

@@ -55,7 +55,7 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 
 		$this->repository->save(
-			new PreviewLink( $post, 'a-hash', 2000, 5, 7, 1000, [], null, 'ab12' )
+			new PreviewLink( $post, 'a-hash', 2000, 5, 7, 1000, 0, null, 'ab12' )
 		);
 
 		$links = $this->repository->page_of_links( 0, 10 );
@@ -72,7 +72,7 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 
 		$this->repository->save(
-			new PreviewLink( $post, 'a-hash', 2000, null, 1, 1000, [], null, 'ab12', [ '203.0.113.0/24', '2001:db8::/32' ] )
+			new PreviewLink( $post, 'a-hash', 2000, null, 1, 1000, 0, null, 'ab12', [ '203.0.113.0/24', '2001:db8::/32' ] )
 		);
 
 		static::assertSame(
@@ -81,23 +81,23 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_a_row_stored_before_the_allowlist_existed_is_still_revocable(): void {
+	public function test_a_row_without_the_optional_keys_is_still_revocable(): void {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 
-		// A pre-allowlist row has no allowed_ips key at all. The revoke write is
-		// a compare-and-swap against the exact stored array, so the rebuilt link
-		// must serialise back to the same bytes or the revoke silently no-ops.
+		// An unrestricted row has no allowed_ips or recipients key at all. The
+		// revoke write is a compare-and-swap against the exact stored array, so
+		// the rebuilt link must serialise back to the same bytes or the revoke
+		// silently no-ops.
 		add_post_meta(
 			$post,
 			PostMetaTokenRepository::META_KEY,
 			[
-				'version'    => 2,
+				'version'    => 3,
 				'token_hash' => 'legacy-hash',
 				'expires_at' => time() + HOUR_IN_SECONDS,
 				'max_uses'   => null,
 				'created_by' => 1,
 				'created_at' => time() - HOUR_IN_SECONDS,
-				'viewers'    => [],
 				'revoked_at' => null,
 				'token_hint' => 'ab12',
 			]
@@ -112,6 +112,109 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$reloaded = $this->repository->find_by_hash( $post, 'legacy-hash' );
 		static::assertNotNull( $reloaded );
 		static::assertTrue( $reloaded->is_revoked() );
+	}
+
+	public function test_a_pre_release_row_reads_its_inline_count(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->add_pre_release_row( $post, 'v2-hash', [ 'viewers' => [ 'a', 'b' ] ] );
+		$this->add_pre_release_row(
+			$post,
+			'v1-hash',
+			[
+				'version'   => 1,
+				'use_count' => 4,
+			]
+		);
+
+		static::assertSame( 2, $this->repository->find_by_hash( $post, 'v2-hash' )?->use_count() );
+		static::assertSame( 4, $this->repository->find_by_hash( $post, 'v1-hash' )?->use_count() );
+	}
+
+	public function test_the_first_claim_on_a_pre_release_row_moves_its_count_out(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->add_pre_release_row( $post, 'v2-hash', [ 'viewers' => [ 'a', 'b' ] ] );
+		$stale = $this->repository->find_by_hash( $post, 'v2-hash' );
+		static::assertNotNull( $stale );
+
+		static::assertTrue( $this->repository->add_use( $stale ) );
+
+		// A concurrent claim from the same pre-release read loses, rather than
+		// adding a second uses row.
+		static::assertFalse( $this->repository->add_use( $stale ) );
+
+		$settings = get_post_meta( $post, PostMetaTokenRepository::META_KEY, true );
+		static::assertIsArray( $settings );
+		static::assertArrayNotHasKey( 'viewers', $settings );
+		static::assertSame( 3, $settings['version'] ?? null );
+		static::assertCount( 1, (array) get_post_meta( $post, PostMetaTokenRepository::USES_META_KEY, false ) );
+
+		$moved = $this->repository->find_by_hash( $post, 'v2-hash' );
+		static::assertNotNull( $moved );
+		static::assertSame( 3, $moved->use_count() );
+
+		// From here it is an ordinary link.
+		static::assertTrue( $this->repository->add_use( $moved ) );
+		static::assertSame( 4, $this->repository->find_by_hash( $post, 'v2-hash' )?->use_count() );
+	}
+
+	public function test_a_pre_release_row_is_revocable_and_keeps_its_count(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->add_pre_release_row( $post, 'v2-hash', [ 'viewers' => [ 'a', 'b' ] ] );
+		$link = $this->repository->find_by_hash( $post, 'v2-hash' );
+		static::assertNotNull( $link );
+
+		static::assertTrue( $this->repository->revoke( $link, 1234 ) );
+
+		$reloaded = $this->repository->find_by_hash( $post, 'v2-hash' );
+		static::assertNotNull( $reloaded );
+		static::assertSame( 1234, $reloaded->revoked_at() );
+		static::assertSame( 2, $reloaded->use_count() );
+	}
+
+	public function test_a_dead_pre_release_row_is_garbage_collected(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->add_pre_release_row(
+			$post,
+			'v2-hash',
+			[
+				'viewers'    => [ 'a' ],
+				'expires_at' => 1000,
+			]
+		);
+
+		static::assertSame( 1, $this->repository->delete_dead_for_post( $post, 2000, 3000 ) );
+		static::assertSame( [], $this->repository->all_for_post( $post ) );
+	}
+
+	public function test_a_claim_waits_for_a_links_uses_row_rather_than_creating_one(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		// A current-shape row whose uses row is not written yet, as in the
+		// moment between the two writes that create or move one.
+		add_post_meta(
+			$post,
+			PostMetaTokenRepository::META_KEY,
+			[
+				'version'    => 3,
+				'token_hash' => 'new-hash',
+				'expires_at' => time() + HOUR_IN_SECONDS,
+				'max_uses'   => null,
+				'created_by' => 1,
+				'created_at' => time(),
+				'revoked_at' => null,
+				'token_hint' => 'ab12',
+			]
+		);
+
+		$link = $this->repository->find_by_hash( $post, 'new-hash' );
+		static::assertNotNull( $link );
+
+		static::assertFalse( $this->repository->add_use( $link ) );
+		static::assertSame( [], get_post_meta( $post, PostMetaTokenRepository::USES_META_KEY, false ) );
 	}
 
 	public function test_revokes_every_live_link_on_a_post(): void {
@@ -130,21 +233,22 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		static::assertSame( 0, $this->repository->revoke_all_for_post( $post, 5678 ) );
 	}
 
-	public function test_a_revoke_that_loses_a_race_with_a_viewer_still_lands(): void {
+	public function test_a_viewer_claiming_mid_revoke_does_not_stop_the_revoke(): void {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 
 		$this->save_link( $post, 'aaaa' );
 		$link = $this->repository->all_for_post( $post )[0];
 
-		// A viewer claims a slot between the revoke's read and its write, so the
-		// revoke's compare-and-swap no longer matches the stored row.
+		// A viewer claims a slot between the revoke's read and its write. The
+		// claim only writes the uses row, so the revoke's single write still
+		// matches, and neither write clobbers the other.
 		$raced = false;
 		add_filter(
 			'update_post_metadata',
 			function ( $check, $object_id, $meta_key ) use ( &$raced, $link ) {
 				if ( ! $raced && PostMetaTokenRepository::META_KEY === $meta_key ) {
 					$raced = true;
-					$this->repository->add_viewer( $link, 'racing-viewer' );
+					static::assertTrue( $this->repository->add_use( $link ) );
 				}
 
 				return $check;
@@ -158,8 +262,51 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$reloaded = $this->repository->find_by_hash( $post, $link->token_hash() );
 		static::assertNotNull( $reloaded );
 		static::assertSame( 1234, $reloaded->revoked_at() );
-		// The racing claim is kept, not clobbered by the retry.
-		static::assertTrue( $reloaded->holds_slot( 'racing-viewer' ) );
+		static::assertSame( 1, $reloaded->use_count() );
+	}
+
+	public function test_a_use_is_counted_against_its_own_link(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->save_link( $post, 'aaaa' );
+		$this->save_link( $post, 'bbbb' );
+		[ $first, $second ] = $this->repository->all_for_post( $post );
+
+		static::assertTrue( $this->repository->add_use( $first ) );
+
+		// A second claim from the same stale read loses the compare-and-swap.
+		static::assertFalse( $this->repository->add_use( $first ) );
+
+		$reloaded = $this->repository->all_for_post( $post );
+		static::assertSame( 1, $reloaded[0]->use_count() );
+		static::assertSame( 0, $reloaded[1]->use_count() );
+		static::assertSame( $second->token_hash(), $reloaded[1]->token_hash() );
+	}
+
+	public function test_listing_carries_each_links_use_count(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->save_link( $post, 'aaaa' );
+		$this->repository->add_use( $this->repository->all_for_post( $post )[0] );
+
+		static::assertSame( 1, $this->repository->page_of_links( 0, 10 )[0]->use_count() );
+	}
+
+	public function test_deleting_links_removes_their_uses_rows(): void {
+		$dead = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$gone = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->repository->save( new PreviewLink( $dead, 'dead-hash', 1000, null, 1, 500, 0, null, 'dddd' ) );
+		$this->save_link( $dead, 'live' );
+		$this->save_link( $gone, 'gggg' );
+
+		static::assertSame( 1, $this->repository->delete_dead_for_post( $dead, 2000, 3000 ) );
+		$this->repository->delete_all_for_post( $gone );
+
+		$remaining = get_post_meta( $dead, PostMetaTokenRepository::USES_META_KEY, false );
+		static::assertIsArray( $remaining );
+		static::assertCount( 1, $remaining );
+		static::assertSame( [], get_post_meta( $gone, PostMetaTokenRepository::USES_META_KEY, false ) );
 	}
 
 	public function test_revokes_only_one_creators_links_on_a_post(): void {
@@ -225,6 +372,32 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		static::assertSame( [ 'legal@example.com' ], $revoked->recipients() );
 	}
 
+	/**
+	 * Store a link the way a pre-release build did: version 2 by default, with
+	 * no uses row. Callers supply the inline count (`viewers` or `use_count`).
+	 *
+	 * @param array<string, mixed> $overrides
+	 */
+	private function add_pre_release_row( int $post_id, string $token_hash, array $overrides ): void {
+		add_post_meta(
+			$post_id,
+			PostMetaTokenRepository::META_KEY,
+			array_merge(
+				[
+					'version'    => 2,
+					'token_hash' => $token_hash,
+					'expires_at' => time() + HOUR_IN_SECONDS,
+					'max_uses'   => 5,
+					'created_by' => 1,
+					'created_at' => time() - HOUR_IN_SECONDS,
+					'revoked_at' => null,
+					'token_hint' => 'ab12',
+				],
+				$overrides
+			)
+		);
+	}
+
 	private function save_link( int $post_id, string $hint, int $created_by = 1 ): void {
 		$this->repository->save(
 			new PreviewLink(
@@ -234,7 +407,7 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 				null,
 				$created_by,
 				time(),
-				[],
+				0,
 				null,
 				$hint
 			)

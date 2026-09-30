@@ -34,15 +34,18 @@ interface TokenRepository {
 	public function all_for_post( int $post_id ): array;
 
 	/**
-	 * Give a viewer a slot on an existing link, atomically.
+	 * Spend one slot on an existing link, atomically.
 	 *
 	 * The passed link is the state the caller read; implementations must persist
-	 * its {@see PreviewLink::with_viewer()} form *only if* the stored record is
-	 * still in that same state, and return false otherwise. That compare-and-swap
-	 * is what stops two concurrent visitors both claiming the last slot: the
-	 * loser is told so and re-reads rather than silently overwriting.
+	 * its {@see PreviewLink::with_use()} count *only if* the stored count is
+	 * still the same, and return false otherwise. That compare-and-swap is what
+	 * stops two concurrent visitors both claiming the last slot: the loser is
+	 * told so and re-reads rather than silently overwriting.
+	 *
+	 * The count must be stored apart from the link's other state, so a claim
+	 * never races a revoke.
 	 */
-	public function add_viewer( PreviewLink $link, string $viewer_id ): bool;
+	public function add_use( PreviewLink $link ): bool;
 
 	/**
 	 * The link on this post whose token hash matches, or null. Unlike {@see find()}

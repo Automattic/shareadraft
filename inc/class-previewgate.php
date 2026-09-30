@@ -507,7 +507,11 @@ final class PreviewGate {
 
 			$this->render_code_form(
 				$email,
-				__( 'That code did not match or has expired. Check it, or reload this page to request a new one.', 'shareadraft' )
+				sprintf(
+					/* translators: %d: number of minutes. */
+					__( 'That code did not match or has expired. Check it, or reload this page to request a new one. After several wrong tries, wait %d minutes first.', 'shareadraft' ),
+					RecipientVerifier::WINDOW / MINUTE_IN_SECONDS
+				)
 			);
 		}
 

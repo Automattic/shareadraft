@@ -110,7 +110,7 @@ Returning `0` deletes them at the next cleanup. To delete them straight away, ru
 
 ## Recognize more link previewers
 
-Chat apps and social networks fetch a link as soon as it is pasted, to show a preview. Share a Draft recognizes these, and crawlers, by their user agent, and shows them an empty placeholder instead of the draft, so they neither see its content nor use up one of the link's views. To add another service, extend the regular expression in `shareadraft_bot_user_agent_pattern`:
+Chat apps and social networks fetch a link as soon as it is pasted, to show a preview. Share a Draft recognizes these, and crawlers, by their user agent, and shows them an empty placeholder instead of the draft, so they neither see its content nor count toward the link's maximum uses. To add another service, extend the regular expression in `shareadraft_bot_user_agent_pattern`:
 
 ```php
 add_filter(

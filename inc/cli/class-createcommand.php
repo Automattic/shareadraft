@@ -41,7 +41,7 @@ final class CreateCommand {
 	 * : How long the link stays valid, in seconds. Must be one of the allowed lifetimes (3600, 28800, 86400, or 604800 unless the site filters `shareadraft_expiration_options`). Defaults to the site's default lifetime (8 hours unless filtered).
 	 *
 	 * [--max-uses=<count>]
-	 * : Maximum number of distinct viewers, between 1 and 1000. Defaults to unlimited.
+	 * : How many people can open the link, between 1 and 1000. Each browser or device counts as a new person. Defaults to unlimited.
 	 *
 	 * [--allowed-ips=<ranges>]
 	 * : Comma-separated IP addresses or CIDR ranges (IPv4 or IPv6) the link may be opened from. Defaults to no IP restriction.

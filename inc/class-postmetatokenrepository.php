@@ -35,6 +35,11 @@ final class PostMetaTokenRepository implements TokenRepository {
 	 */
 	private const VERSION = 2;
 
+	/**
+	 * How many times a revoke re-reads and retries after losing a write race.
+	 */
+	private const REVOKE_ATTEMPTS = 10;
+
 	public function save( PreviewLink $link ): void {
 		add_post_meta( $link->post_id(), self::META_KEY, $this->to_array( $link ) );
 	}
@@ -110,13 +115,8 @@ final class PostMetaTokenRepository implements TokenRepository {
 		return null;
 	}
 
-	public function revoke( PreviewLink $link, int $revoked_at ): void {
-		update_post_meta(
-			$link->post_id(),
-			self::META_KEY,
-			$this->to_array( $link->with_revoked( $revoked_at ) ),
-			$this->to_array( $link )
-		);
+	public function revoke( PreviewLink $link, int $revoked_at ): bool {
+		return $this->stamp_revoked( $link, $revoked_at );
 	}
 
 	public function revoke_all_for_post( int $post_id, int $revoked_at ): int {
@@ -130,8 +130,8 @@ final class PostMetaTokenRepository implements TokenRepository {
 	/**
 	 * Stamp `revoked_at` on this post's not-yet-revoked links, optionally only
 	 * those a given user created. Each write is conditional on the pre-read row
-	 * (see {@see add_viewer()}), so a link that changes concurrently is simply
-	 * not counted rather than clobbered.
+	 * (see {@see add_viewer()}) and retried on a lost race, so a link that
+	 * changes concurrently is re-read rather than clobbered or skipped.
 	 */
 	private function revoke_matching( int $post_id, ?int $created_by, int $revoked_at ): int {
 		$revoked = 0;
@@ -145,19 +145,49 @@ final class PostMetaTokenRepository implements TokenRepository {
 				continue;
 			}
 
+			if ( $this->stamp_revoked( $link, $revoked_at ) ) {
+				++$revoked;
+			}
+		}
+
+		return $revoked;
+	}
+
+	/**
+	 * Compare-and-swap `revoked_at` onto a link's row, re-reading and retrying
+	 * when the row changed underneath. Every viewer who claims a slot rewrites
+	 * the row, so a single attempt loses to exactly the traffic that makes an
+	 * author reach for Revoke: a leaked link being opened over and over.
+	 *
+	 * Returns whether the stored link is now revoked. False means the link is
+	 * gone, or every attempt lost the race, and the caller must not report it
+	 * as revoked.
+	 */
+	private function stamp_revoked( PreviewLink $link, int $revoked_at ): bool {
+		for ( $attempt = 0; $attempt < self::REVOKE_ATTEMPTS; $attempt++ ) {
+			if ( $link->is_revoked() ) {
+				return true;
+			}
+
 			$updated = update_post_meta(
-				$post_id,
+				$link->post_id(),
 				self::META_KEY,
 				$this->to_array( $link->with_revoked( $revoked_at ) ),
 				$this->to_array( $link )
 			);
 
 			if ( false !== $updated ) {
-				++$revoked;
+				return true;
+			}
+
+			$link = $this->find_by_hash( $link->post_id(), $link->token_hash() );
+
+			if ( null === $link ) {
+				return false;
 			}
 		}
 
-		return $revoked;
+		return false;
 	}
 
 	public function delete_all_for_post( int $post_id ): void {

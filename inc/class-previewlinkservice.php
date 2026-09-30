@@ -87,8 +87,9 @@ final class PreviewLinkService {
 	}
 
 	/**
-	 * Revoke a link by its token hash. Returns false if no live link matched, so
-	 * the caller can distinguish "revoked" from "nothing to revoke".
+	 * Revoke a link by its token hash. Returns false if no live link matched,
+	 * or the revocation could not be written, so the caller never reports a
+	 * link as revoked while it still works.
 	 */
 	public function revoke( int $post_id, string $token_hash ): bool {
 		$link = $this->repository->find_by_hash( $post_id, $token_hash );
@@ -97,9 +98,7 @@ final class PreviewLinkService {
 			return false;
 		}
 
-		$this->repository->revoke( $link, $this->clock->now() );
-
-		return true;
+		return $this->repository->revoke( $link, $this->clock->now() );
 	}
 
 	/**

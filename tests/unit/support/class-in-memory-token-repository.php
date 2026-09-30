@@ -72,8 +72,10 @@ final class InMemoryTokenRepository implements TokenRepository {
 		return null;
 	}
 
-	public function revoke( PreviewLink $link, int $revoked_at ): void {
+	public function revoke( PreviewLink $link, int $revoked_at ): bool {
 		$this->replace( $link, $link->with_revoked( $revoked_at ) );
+
+		return true;
 	}
 
 	public function revoke_all_for_post( int $post_id, int $revoked_at ): int {

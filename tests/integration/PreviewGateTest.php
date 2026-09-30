@@ -484,6 +484,32 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=' . $token->value(), $url );
 	}
 
+	public function test_an_unlocked_draft_reads_as_a_draft_once_the_query_has_let_it_through(): void {
+		$this->set_permalink_structure( '/%postname%/' );
+
+		$post_id = self::factory()->post->create(
+			[
+				'post_status' => 'draft',
+				'post_name'   => '',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$_GET[ PreviewGate::TOKEN_QUERY_VAR ] = $token->value();
+		clean_post_cache( $post_id );
+
+		$gate  = new PreviewGate( $this->service, new RecipientVerifier() );
+		$posts = $gate->restore_unlocked_statuses( $gate->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() ) );
+
+		static::assertSame( 'draft', self::first_status( $posts ) );
+
+		// Read as published, a slugless draft's permalink is the home page, so
+		// page-break links pointed at /2/ rather than at the draft.
+		static::assertIsArray( $posts );
+		static::assertInstanceOf( WP_Post::class, $posts[0] );
+		static::assertStringContainsString( 'p=' . $post_id, (string) get_permalink( $posts[0] ) );
+	}
+
 	public function test_preview_links_for_a_locked_draft_carry_no_token(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );

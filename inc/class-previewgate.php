@@ -62,9 +62,9 @@ final class PreviewGate {
 	private bool $claimed_this_request = false;
 
 	/**
-	 * Posts this request's token unlocked, keyed by ID.
+	 * Posts this request's token unlocked, keyed by ID, with their real status.
 	 *
-	 * @var array<int, true>
+	 * @var array<int, non-empty-string>
 	 */
 	private array $unlocked = [];
 
@@ -79,6 +79,8 @@ final class PreviewGate {
 		add_action( 'template_redirect', [ $this, 'maybe_render_notice' ] );
 		add_filter( 'the_password_form', [ $this, 'keep_token_in_password_form' ], 10, 2 );
 		add_filter( 'preview_post_link', [ $this, 'keep_token_in_preview_links' ], 10, 2 );
+		// Late, so other the_posts filters see what they always have.
+		add_filter( 'the_posts', [ $this, 'restore_unlocked_statuses' ], PHP_INT_MAX );
 	}
 
 	/**
@@ -158,11 +160,37 @@ final class PreviewGate {
 
 			$this->send_preview_headers();
 
-			$this->unlocked[ $post_id ] = true;
+			$this->unlocked[ $post_id ] = $post->post_status;
 
 			// Marking the post published for this query alone lets it survive
 			// WP_Query's "logged-out users cannot see non-public posts" check.
+			// restore_unlocked_statuses() puts the real status back after it.
 			$post->post_status = 'publish';
+		}
+
+		return $posts;
+	}
+
+	/**
+	 * Put an unlocked post's real status back once WP_Query has let it through.
+	 *
+	 * `the_posts` runs straight after WP_Query's visibility check. Left as
+	 * `publish` beyond it, the post reads as live to everything that renders
+	 * it: core builds its links as a published post's, so page two of a
+	 * multi-page draft pointed at a pretty permalink made from an empty slug.
+	 *
+	 * @param mixed $posts Posts loaded by the query (array of WP_Post on success).
+	 * @return mixed
+	 */
+	public function restore_unlocked_statuses( $posts ) {
+		if ( ! is_array( $posts ) ) {
+			return $posts;
+		}
+
+		foreach ( $posts as $post ) {
+			if ( $post instanceof WP_Post && isset( $this->unlocked[ $post->ID ] ) ) {
+				$post->post_status = $this->unlocked[ $post->ID ];
+			}
 		}
 
 		return $posts;

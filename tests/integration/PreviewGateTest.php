@@ -464,6 +464,98 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( $core, $this->password_form( $post_id, Token::from_string( 'not-the-token' ) ) );
 	}
 
+	public function test_page_break_links_keep_the_token(): void {
+		$post_id = self::factory()->post->create(
+			[
+				'post_status'  => 'draft',
+				'post_content' => 'Page one<!--nextpage-->Page two',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$gate = $this->denied_main_query( $post_id, $token );
+		add_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10, 2 );
+		// How core's _wp_link_page() builds the link to page two of a draft.
+		$url = get_preview_post_link( $post_id, [], add_query_arg( 'page', 2, (string) get_permalink( $post_id ) ) );
+		remove_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10 );
+
+		static::assertIsString( $url );
+		static::assertStringContainsString( 'page=2', $url );
+		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=' . $token->value(), $url );
+	}
+
+	public function test_an_unlocked_draft_reads_as_a_draft_once_the_query_has_let_it_through(): void {
+		$this->set_permalink_structure( '/%postname%/' );
+
+		$post_id = self::factory()->post->create(
+			[
+				'post_status' => 'draft',
+				'post_name'   => '',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$_GET[ PreviewGate::TOKEN_QUERY_VAR ] = $token->value();
+		clean_post_cache( $post_id );
+
+		$gate  = new PreviewGate( $this->service, new RecipientVerifier() );
+		$posts = $gate->restore_unlocked_statuses( $gate->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() ) );
+
+		static::assertSame( 'draft', self::first_status( $posts ) );
+
+		// Read as published, a slugless draft's permalink is the home page, so
+		// page-break links pointed at /2/ rather than at the draft.
+		static::assertIsArray( $posts );
+		static::assertInstanceOf( WP_Post::class, $posts[0] );
+		static::assertStringContainsString( 'p=' . $post_id, (string) get_permalink( $posts[0] ) );
+	}
+
+	public function test_a_real_preview_request_serves_the_draft_without_caching_it_as_published(): void {
+		wp_set_current_user( 0 );
+
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		// Start uncached, so whatever the cache holds afterwards was written
+		// during this request.
+		clean_post_cache( $post_id );
+
+		// Through the plugin's own registered gate, in core's real filter order.
+		$url = add_query_arg(
+			[
+				'p'                          => $post_id,
+				'preview'                    => 'true',
+				PreviewGate::TOKEN_QUERY_VAR => $token->value(),
+			],
+			home_url( '/' )
+		);
+		$this->go_to( $url );
+
+		// Served to a logged-out visitor, yet still a draft to everything after.
+		$served = get_queried_object();
+		static::assertInstanceOf( WP_Post::class, $served );
+		static::assertSame( $post_id, $served->ID );
+		static::assertSame( 'draft', $served->post_status );
+		static::assertSame( 'draft', get_post_status( $post_id ) );
+
+		$cached = wp_cache_get( (string) $post_id, 'posts' );
+		static::assertIsObject( $cached );
+		static::assertSame( 'draft', get_object_vars( $cached )['post_status'] ?? null );
+	}
+
+	public function test_preview_links_for_a_locked_draft_carry_no_token(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$gate = $this->denied_main_query( $post_id, Token::from_string( 'not-the-token' ) );
+		add_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10, 2 );
+		$url = get_preview_post_link( $post_id );
+		remove_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10 );
+
+		static::assertIsString( $url );
+		static::assertStringNotContainsString( PreviewGate::TOKEN_QUERY_VAR, $url );
+	}
+
 	/**
 	 * Visit the draft with a token, then render its password form through the gate.
 	 */

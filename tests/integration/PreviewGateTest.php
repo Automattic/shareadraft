@@ -510,6 +510,39 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertStringContainsString( 'p=' . $post_id, (string) get_permalink( $posts[0] ) );
 	}
 
+	public function test_a_real_preview_request_serves_the_draft_without_caching_it_as_published(): void {
+		wp_set_current_user( 0 );
+
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		// Start uncached, so whatever the cache holds afterwards was written
+		// during this request.
+		clean_post_cache( $post_id );
+
+		// Through the plugin's own registered gate, in core's real filter order.
+		$url = add_query_arg(
+			[
+				'p'                          => $post_id,
+				'preview'                    => 'true',
+				PreviewGate::TOKEN_QUERY_VAR => $token->value(),
+			],
+			home_url( '/' )
+		);
+		$this->go_to( $url );
+
+		// Served to a logged-out visitor, yet still a draft to everything after.
+		$served = get_queried_object();
+		static::assertInstanceOf( WP_Post::class, $served );
+		static::assertSame( $post_id, $served->ID );
+		static::assertSame( 'draft', $served->post_status );
+		static::assertSame( 'draft', get_post_status( $post_id ) );
+
+		$cached = wp_cache_get( (string) $post_id, 'posts' );
+		static::assertIsObject( $cached );
+		static::assertSame( 'draft', get_object_vars( $cached )['post_status'] ?? null );
+	}
+
 	public function test_preview_links_for_a_locked_draft_carry_no_token(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );

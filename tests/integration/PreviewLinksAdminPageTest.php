@@ -43,6 +43,7 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 			$_POST['_wpnonce']
 		);
 
+		unregister_post_type( 'sad_product' );
 		set_current_screen( 'front' );
 		BulkLinkRevoker::unschedule();
 		wp_dequeue_script( 'shareadraft-admin' );
@@ -147,6 +148,114 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 		foreach ( $this->repository->all_for_post( $post_id ) as $link ) {
 			static::assertTrue( $link->is_revoked() );
 		}
+	}
+
+	/**
+	 * A post type with its own capabilities, which the screen's
+	 * `edit_others_posts` gate does not reach: an editor holds that capability
+	 * but not `edit_others_products`, so cannot edit a draft of this type.
+	 */
+	private function post_the_editor_cannot_edit(): int {
+		register_post_type(
+			'sad_product',
+			[
+				'labels'          => [
+					'name'          => 'Products',
+					'singular_name' => 'Product',
+				],
+				'public'          => true,
+				'capability_type' => 'product',
+				'map_meta_cap'    => true,
+			]
+		);
+
+		return self::factory()->post->create(
+			[
+				'post_type'   => 'sad_product',
+				'post_status' => 'draft',
+				'post_title'  => 'Unreleased widget',
+				'post_author' => self::factory()->user->create( [ 'role' => 'administrator' ] ),
+			]
+		);
+	}
+
+	/**
+	 * Redacted rather than filtered, so the paging still counts the row: the
+	 * link is visible as existing, but not whose draft it is or who reviews it.
+	 */
+	public function test_a_row_on_a_post_the_viewer_cannot_edit_is_redacted(): void {
+		$hidden  = $this->post_the_editor_cannot_edit();
+		$visible = self::factory()->post->create(
+			[
+				'post_status' => 'draft',
+				'post_title'  => 'Ordinary draft',
+			]
+		);
+		$this->service->mint( $hidden, HOUR_IN_SECONDS, null, 1, [ '203.0.113.7' ], [ 'hidden@example.com' ] );
+		$this->service->mint( $visible, HOUR_IN_SECONDS, null, 1, [], [ 'visible@example.com' ] );
+		$hash = $this->repository->all_for_post( $hidden )[0]->token_hash();
+
+		$output = $this->rendered( $this->page );
+
+		static::assertStringContainsString( 'Ordinary draft', $output );
+		static::assertStringContainsString( 'visible@example.com', $output );
+		static::assertStringContainsString( '(You cannot edit this Product)', $output );
+		static::assertStringNotContainsString( 'Unreleased widget', $output );
+		static::assertStringNotContainsString( 'hidden@example.com', $output );
+		static::assertStringNotContainsString( '203.0.113.7', $output );
+		static::assertStringNotContainsString( $hash, $output );
+	}
+
+	public function test_a_row_revoke_on_a_post_the_viewer_cannot_edit_is_refused(): void {
+		$post_id = $this->post_the_editor_cannot_edit();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+		$hash = $this->repository->all_for_post( $post_id )[0]->token_hash();
+
+		$nonce                = wp_create_nonce( 'shareadraft_revoke_' . $post_id . '_' . $hash );
+		$_GET['action']       = 'revoke';
+		$_GET['post']         = (string) $post_id;
+		$_GET['token']        = $hash;
+		$_GET['_wpnonce']     = $nonce;
+		$_REQUEST['_wpnonce'] = $nonce;
+
+		static::assertSame( 0, $this->page->process_request() );
+		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+	}
+
+	/**
+	 * The bulk nonce covers every row, so a hand-built selection must not
+	 * reach a post the viewer cannot edit.
+	 */
+	public function test_a_bulk_revoke_skips_posts_the_viewer_cannot_edit(): void {
+		$hidden  = $this->post_the_editor_cannot_edit();
+		$visible = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $hidden, HOUR_IN_SECONDS, null, 1 );
+		$this->service->mint( $visible, HOUR_IN_SECONDS, null, 1 );
+
+		$this->submit_bulk_revoke( false );
+		$_POST['links'] = [
+			$hidden . ':' . $this->repository->all_for_post( $hidden )[0]->token_hash(),
+			$visible . ':' . $this->repository->all_for_post( $visible )[0]->token_hash(),
+		];
+
+		static::assertSame( 1, $this->page->process_request() );
+		static::assertFalse( $this->repository->all_for_post( $hidden )[0]->is_revoked() );
+		static::assertTrue( $this->repository->all_for_post( $visible )[0]->is_revoked() );
+	}
+
+	/**
+	 * Offboarding is not narrowed to what the viewer can edit: leaving some of
+	 * a leaver's links working would be worse than over-revoking.
+	 */
+	public function test_a_creator_sweep_reaches_posts_the_viewer_cannot_edit(): void {
+		$post_id = $this->post_the_editor_cannot_edit();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		$this->submit_bulk_revoke( true );
+		$_GET['creator'] = '7';
+
+		static::assertSame( 1, $this->page->process_request() );
+		static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
 	}
 
 	/**

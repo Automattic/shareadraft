@@ -13,8 +13,8 @@ namespace Automattic\ShareADraft;
  * construction.
  *
  * The verifier never touches the link record. Challenges are keyed by the
- * token's hash and the address, stored hashed with a bounded number of
- * attempts; success is remembered in a signed, stateless cookie — an HMAC over
+ * token's hash and the address and stored hashed; guesses and code requests
+ * are capped per (link, address) per window; success is remembered in a signed, stateless cookie — an HMAC over
  * (token hash, email, expiry) under the site's auth salt, so there is no
  * session table and nothing here to garbage-collect beyond transient expiry.
  * The cookie only ever *identifies* the visitor's proven address; whether that
@@ -30,14 +30,18 @@ final class RecipientVerifier {
 	/** How long a sent code stays redeemable. */
 	public const CODE_TTL = 10 * MINUTE_IN_SECONDS;
 
-	/** Wrong guesses allowed before the challenge is voided. */
+	/**
+	 * Guesses one address gets per window, however many codes it requests: a
+	 * fresh code must not bring a fresh budget, or re-requesting would multiply
+	 * the odds of guessing.
+	 */
 	private const MAX_ATTEMPTS = 5;
 
 	/** Codes one address can request per window, so the form cannot spam a reviewer. */
 	private const MAX_REQUESTS = 3;
 
-	/** The window the request cap applies over. */
-	private const REQUEST_WINDOW = 15 * MINUTE_IN_SECONDS;
+	/** The fixed window both caps apply over, starting at its first use. */
+	public const WINDOW = 15 * MINUTE_IN_SECONDS;
 
 	/**
 	 * Verification cookie lifetime. A backstop only — comfortably longer than
@@ -49,6 +53,8 @@ final class RecipientVerifier {
 	private const COOKIE_PREFIX    = 'shareadraft_recipient_';
 	private const CHALLENGE_PREFIX = 'shareadraft_otp_';
 	private const REQUESTS_PREFIX  = 'shareadraft_otp_req_';
+	private const ATTEMPTS_PREFIX  = 'shareadraft_otp_try_';
+	private const CACHE_GROUP      = 'shareadraft';
 
 	/**
 	 * Email a fresh code for this link to the address, replacing any code still
@@ -56,8 +62,9 @@ final class RecipientVerifier {
 	 *
 	 * The caller is responsible for only asking on behalf of a listed recipient
 	 * (see {@see PreviewLinkService::is_recipient()}); this method's own guard
-	 * is the per-address request cap. Returns false when the cap said no or the
-	 * mail could not be handed off — callers must show the same neutral message
+	 * is the per-address request cap, and it sends nothing while the address is
+	 * out of guesses, since that code could not be redeemed. Returns false when
+	 * either said no or the mail could not be handed off — callers must show the same neutral message
 	 * either way, so the form never confirms which addresses are listed.
 	 */
 	/**
@@ -92,7 +99,10 @@ final class RecipientVerifier {
 		$email = strtolower( $email );
 		$now   = time();
 
-		if ( ! $this->under_request_cap( $token, $email, $now ) ) {
+		if (
+			$this->tally( self::ATTEMPTS_PREFIX . $this->challenge_suffix( $token, $email ) ) >= self::MAX_ATTEMPTS
+			|| $this->bump( self::REQUESTS_PREFIX . $this->challenge_suffix( $token, $email ), $now ) > self::MAX_REQUESTS
+		) {
 			return false;
 		}
 
@@ -104,10 +114,6 @@ final class RecipientVerifier {
 				// Hashed at rest, like the token itself: a peek at the options
 				// table must not hand over a working code.
 				'code_hash'  => $this->hmac( $code ),
-				'attempts'   => 0,
-				// Authoritative expiry lives in the payload; the transient TTL
-				// is only storage cleanup, since re-saving the attempt counter
-				// resets the TTL clock.
 				'expires_at' => $now + self::CODE_TTL,
 			],
 			self::CODE_TTL
@@ -169,9 +175,9 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 	/**
 	 * Redeem a code. True voids the challenge and means the visitor has proved
 	 * control of the address; the caller should follow with
-	 * {@see RecipientVerifier::remember_verified()}. A wrong guess burns one of
-	 * a small number of attempts, after which the challenge is voided and the
-	 * visitor must request a fresh code.
+	 * {@see RecipientVerifier::remember_verified()}. Every guess spends one of
+	 * the address's attempts for the window; once they are gone, even the right
+	 * code is refused until the window ends.
 	 */
 	public function verify_code( Token $token, string $email, string $code ): bool {
 		$email = strtolower( $email );
@@ -181,9 +187,8 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 
 		if (
 			! is_array( $challenge )
-			|| ! isset( $challenge['code_hash'], $challenge['attempts'], $challenge['expires_at'] )
+			|| ! isset( $challenge['code_hash'], $challenge['expires_at'] )
 			|| ! is_string( $challenge['code_hash'] )
-			|| ! is_numeric( $challenge['attempts'] )
 			|| ! is_numeric( $challenge['expires_at'] )
 			|| time() >= (int) $challenge['expires_at']
 		) {
@@ -192,9 +197,10 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 			return false;
 		}
 
-		if ( (int) $challenge['attempts'] >= self::MAX_ATTEMPTS ) {
-			delete_transient( $key );
-
+		// Count the guess before checking it. Reading the count, checking, and
+		// then writing it back would let a burst of parallel guesses all read
+		// the same count and all be checked.
+		if ( $this->bump( self::ATTEMPTS_PREFIX . $this->challenge_suffix( $token, $email ), time() ) > self::MAX_ATTEMPTS ) {
 			return false;
 		}
 
@@ -203,9 +209,6 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 
 			return true;
 		}
-
-		$challenge['attempts'] = (int) $challenge['attempts'] + 1;
-		set_transient( $key, $challenge, self::CODE_TTL );
 
 		return false;
 	}
@@ -299,16 +302,64 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 	}
 
 	/**
-	 * Whether the address may request another code right now. Counts within a
-	 * fixed window whose start is stored in the payload, so re-saving the
-	 * counter cannot stretch the window.
+	 * Add one to a counter and return its new value. The counter resets
+	 * {@see RecipientVerifier::WINDOW} after its first bump; later bumps do not
+	 * stretch the window.
+	 *
+	 * With a persistent object cache (always the case on VIP) this is an atomic
+	 * add-then-increment, so parallel requests each get a distinct value and
+	 * none can slip under a cap. A counter evicted between the two calls reads
+	 * as over any cap: refusing once beats counting from zero.
 	 */
-	private function under_request_cap( Token $token, string $email, int $now ): bool {
-		$key = self::REQUESTS_PREFIX . $this->challenge_suffix( $token, $email );
+	private function bump( string $key, int $now ): int {
+		if ( wp_using_ext_object_cache() ) {
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- WINDOW is 15 minutes.
+			wp_cache_add( $key, 0, self::CACHE_GROUP, self::WINDOW );
+			$count = wp_cache_incr( $key, 1, self::CACHE_GROUP );
 
-		$window    = get_transient( $key );
-		$count     = 0;
-		$resets_at = $now + self::REQUEST_WINDOW;
+			return is_int( $count ) ? $count : PHP_INT_MAX;
+		}
+
+		// ponytail: read-then-write, so parallel requests can undercount on a host
+		// without a persistent object cache; a conditional UPDATE on the options
+		// row would close it if standalone hosts ever need that.
+		[ $count, $resets_at ] = $this->stored_window( $key, $now );
+
+		// The window start lives in the payload, since re-saving the transient
+		// resets its TTL clock.
+		set_transient(
+			$key,
+			[
+				'count'     => $count + 1,
+				'resets_at' => $resets_at,
+			],
+			self::WINDOW
+		);
+
+		return $count + 1;
+	}
+
+	/**
+	 * A counter's current value, without adding to it.
+	 */
+	private function tally( string $key ): int {
+		if ( wp_using_ext_object_cache() ) {
+			$count = wp_cache_get( $key, self::CACHE_GROUP );
+
+			return is_numeric( $count ) ? (int) $count : 0;
+		}
+
+		return $this->stored_window( $key, time() )[0];
+	}
+
+	/**
+	 * The transient fallback's count and window end, or a fresh window if it
+	 * is missing, malformed, or over.
+	 *
+	 * @return array{int, int}
+	 */
+	private function stored_window( string $key, int $now ): array {
+		$window = get_transient( $key );
 
 		if (
 			is_array( $window )
@@ -317,24 +368,10 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 			&& is_numeric( $window['resets_at'] )
 			&& $now < (int) $window['resets_at']
 		) {
-			$count     = (int) $window['count'];
-			$resets_at = (int) $window['resets_at'];
+			return [ (int) $window['count'], (int) $window['resets_at'] ];
 		}
 
-		if ( $count >= self::MAX_REQUESTS ) {
-			return false;
-		}
-
-		set_transient(
-			$key,
-			[
-				'count'     => $count + 1,
-				'resets_at' => $resets_at,
-			],
-			self::REQUEST_WINDOW
-		);
-
-		return true;
+		return [ 0, $now + self::WINDOW ];
 	}
 
 	private function challenge_key( Token $token, string $email ): string {

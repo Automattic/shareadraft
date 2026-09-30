@@ -18,9 +18,12 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 
 	private RecipientVerifier $verifier;
 	private Token $token;
+	private bool $ext_object_cache;
 
 	public function set_up(): void {
 		parent::set_up();
+
+		$this->ext_object_cache = (bool) wp_using_ext_object_cache();
 
 		$this->verifier = new RecipientVerifier();
 		$this->token    = Token::generate();
@@ -30,6 +33,7 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		$_COOKIE = [];
+		wp_using_ext_object_cache( $this->ext_object_cache );
 		reset_phpmailer_instance();
 		parent::tear_down();
 	}
@@ -53,7 +57,11 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		static::assertTrue( $this->verifier->verify_code( $this->token, self::EMAIL, $this->sent_code() ) );
 	}
 
-	public function test_guessing_is_bounded(): void {
+	/**
+	 * @dataProvider data_counter_stores
+	 */
+	public function test_guessing_is_bounded( bool $object_cache ): void {
+		wp_using_ext_object_cache( $object_cache );
 		$this->verifier->send_code( $this->token, self::EMAIL );
 
 		for ( $attempt = 0; $attempt < 5; $attempt++ ) {
@@ -66,7 +74,49 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_code_requests_are_rate_limited_per_address(): void {
+	/**
+	 * @dataProvider data_counter_stores
+	 */
+	public function test_a_new_code_does_not_bring_new_guesses( bool $object_cache ): void {
+		wp_using_ext_object_cache( $object_cache );
+		$this->verifier->send_code( $this->token, self::EMAIL );
+
+		for ( $attempt = 0; $attempt < 4; $attempt++ ) {
+			$this->verifier->verify_code( $this->token, self::EMAIL, 'wrong' . $attempt );
+		}
+
+		static::assertTrue( $this->verifier->send_code( $this->token, self::EMAIL ) );
+		static::assertFalse( $this->verifier->verify_code( $this->token, self::EMAIL, 'wrong' ) );
+
+		static::assertFalse(
+			$this->verifier->verify_code( $this->token, self::EMAIL, $this->sent_code() ),
+			'Guesses are counted per address across codes, so re-requesting cannot reset the budget.'
+		);
+	}
+
+	/**
+	 * @dataProvider data_counter_stores
+	 */
+	public function test_no_code_is_sent_once_the_guesses_are_spent( bool $object_cache ): void {
+		wp_using_ext_object_cache( $object_cache );
+		$this->verifier->send_code( $this->token, self::EMAIL );
+
+		for ( $attempt = 0; $attempt < 5; $attempt++ ) {
+			$this->verifier->verify_code( $this->token, self::EMAIL, 'wrong' . $attempt );
+		}
+
+		static::assertFalse(
+			$this->verifier->send_code( $this->token, self::EMAIL ),
+			'A code that could not be redeemed is not worth emailing.'
+		);
+		static::assertCount( 1, self::mailer()->mock_sent );
+	}
+
+	/**
+	 * @dataProvider data_counter_stores
+	 */
+	public function test_code_requests_are_rate_limited_per_address( bool $object_cache ): void {
+		wp_using_ext_object_cache( $object_cache );
 		static::assertTrue( $this->verifier->send_code( $this->token, self::EMAIL ) );
 		static::assertTrue( $this->verifier->send_code( $this->token, self::EMAIL ) );
 		static::assertTrue( $this->verifier->send_code( $this->token, self::EMAIL ) );
@@ -163,6 +213,20 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		$_COOKIE[ $name ] = implode( '.', $parts );
 
 		static::assertNull( $this->verifier->verified_email( $this->token ) );
+	}
+
+	/**
+	 * The counters are atomic in a persistent object cache and fall back to
+	 * transients without one; both must enforce the same caps. The core
+	 * object cache stands in for the persistent one within a single request.
+	 *
+	 * @return array<string, array{bool}>
+	 */
+	public function data_counter_stores(): array {
+		return [
+			'transients'   => [ false ],
+			'object cache' => [ true ],
+		];
 	}
 
 	/**

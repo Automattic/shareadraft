@@ -54,9 +54,10 @@ interface TokenRepository {
 	/**
 	 * Persist the revocation of an existing link. The passed link is the
 	 * pre-revocation state; implementations store its {@see
-	 * PreviewLink::with_revoked()} form.
+	 * PreviewLink::with_revoked()} form. Returns whether the stored link is now
+	 * revoked; false means it could not be, and must not be reported as revoked.
 	 */
-	public function revoke( PreviewLink $link, int $revoked_at ): void;
+	public function revoke( PreviewLink $link, int $revoked_at ): bool;
 
 	/**
 	 * Revoke every not-yet-revoked link on a post, returning how many were

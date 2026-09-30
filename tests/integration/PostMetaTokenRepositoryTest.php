@@ -130,6 +130,38 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		static::assertSame( 0, $this->repository->revoke_all_for_post( $post, 5678 ) );
 	}
 
+	public function test_a_revoke_that_loses_a_race_with_a_viewer_still_lands(): void {
+		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->save_link( $post, 'aaaa' );
+		$link = $this->repository->all_for_post( $post )[0];
+
+		// A viewer claims a slot between the revoke's read and its write, so the
+		// revoke's compare-and-swap no longer matches the stored row.
+		$raced = false;
+		add_filter(
+			'update_post_metadata',
+			function ( $check, $object_id, $meta_key ) use ( &$raced, $link ) {
+				if ( ! $raced && PostMetaTokenRepository::META_KEY === $meta_key ) {
+					$raced = true;
+					$this->repository->add_viewer( $link, 'racing-viewer' );
+				}
+
+				return $check;
+			},
+			10,
+			3
+		);
+
+		static::assertTrue( $this->repository->revoke( $link, 1234 ) );
+
+		$reloaded = $this->repository->find_by_hash( $post, $link->token_hash() );
+		static::assertNotNull( $reloaded );
+		static::assertSame( 1234, $reloaded->revoked_at() );
+		// The racing claim is kept, not clobbered by the retry.
+		static::assertTrue( $reloaded->holds_slot( 'racing-viewer' ) );
+	}
+
 	public function test_revokes_only_one_creators_links_on_a_post(): void {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 

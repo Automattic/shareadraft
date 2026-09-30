@@ -132,7 +132,10 @@ final class RevokeCommand {
 			return;
 		}
 
-		$this->service->revoke( $post_id, $matches[0]->token_hash() );
+		if ( ! $this->service->revoke( $post_id, $matches[0]->token_hash() ) ) {
+			WP_CLI::error( 'The preview link could not be revoked; try again.' );
+			return;
+		}
 
 		WP_CLI::success( 'Revoked 1 preview link.' );
 	}

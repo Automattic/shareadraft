@@ -641,7 +641,12 @@ final class PreviewAbilities {
 			);
 		}
 
-		$this->service->revoke( $post_id, $matches[0]->token_hash() );
+		if ( ! $this->service->revoke( $post_id, $matches[0]->token_hash() ) ) {
+			return new WP_Error(
+				'shareadraft_revoke_failed',
+				__( 'The preview link could not be revoked; try again.', 'shareadraft' )
+			);
+		}
 
 		return [
 			'revoked' => 1,

@@ -265,11 +265,11 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 						help={
 							settings.hasCentralIpRanges
 								? __(
-										'Comma-separated IPv4/IPv6 addresses or CIDR ranges, added to the ranges already set in the VIP Dashboard. Leave empty to add none.',
+										'Comma-separated IPv4/IPv6 addresses or CIDR ranges. Every link already opens only from the ranges set in the VIP Dashboard; ranges added here let this link open from these places too. Leave empty to add none.',
 										'shareadraft'
 									)
 								: __(
-										'Comma-separated IPv4/IPv6 addresses or CIDR ranges, e.g. 203.0.113.0/24. Limits where the link opens, not who opens it. Leave empty for no IP restriction.',
+										'Comma-separated IPv4/IPv6 addresses or CIDR ranges, e.g. 203.0.113.0/24. The link then opens only from these ranges: this limits where it opens, not who opens it. Leave empty for no IP restriction.',
 										'shareadraft'
 									)
 						}
@@ -422,7 +422,7 @@ function ManageModal( { postId, onLinksChange, onClose } ) {
 			{ settings.hasCentralIpRanges && (
 				<p style={ { ...mutedStyle, marginTop: 0 } }>
 					{ __(
-						'IP ranges added in the VIP Dashboard also apply to every link, in addition to any restriction shown per link.',
+						'Every link opens only from the IP ranges set in the VIP Dashboard, plus any ranges shown on the link itself.',
 						'shareadraft'
 					) }
 				</p>

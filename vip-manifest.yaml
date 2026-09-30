@@ -52,12 +52,11 @@ runtime_config:
       type: text
       required: false
       help: >-
-        IP addresses or CIDR ranges (IPv4 or IPv6, comma- or newline-separated)
-        that every preview link accepts, e.g. your office networks. Each link
-        can add further ranges of its own when it is generated; a link must
-        match any one range in the combined set. Leave empty to apply no IP
-        restriction beyond what individual links set. Note this is a shared
-        convenience baseline — it can only widen where links work, and IP
+        IP addresses or CIDR ranges (IPv4 or IPv6, comma- or newline-separated),
+        such as your office networks. Once set, every preview link opens only
+        from these ranges. An author can let a link open from further ranges
+        of its own when they create it, which widens where that one link
+        opens. Leave empty to apply no site-wide IP restriction. IP
         restrictions limit where a link opens from, not who opens it.
 
 telemetry:

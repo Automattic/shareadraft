@@ -509,7 +509,7 @@ final class PreviewLinksAdminPage {
 
 		printf(
 			'<p>%s %s</p>',
-			esc_html__( 'IP ranges set in the VIP Dashboard apply to every link, in addition to any ranges shown per link below:', 'shareadraft' ),
+			esc_html__( 'Every link opens only from these IP ranges, set in the VIP Dashboard, plus any ranges shown on the link itself below:', 'shareadraft' ),
 			$ranges // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each range is passed through esc_html() above; the only markup is static <code> tags.
 		);
 	}
@@ -613,7 +613,12 @@ final class PreviewLinksAdminPage {
 		}
 
 		if ( Features::ip_allowlist_enabled() ) {
-			$reading .= '<p>' . esc_html__( 'IP ranges shows the addresses a link is restricted to, on top of any ranges configured centrally in the VIP Dashboard. A dash means the link adds no restriction of its own. A link cannot be edited once shared: to change its ranges, revoke it and generate a new one.', 'shareadraft' ) . '</p>';
+			// Central ranges change what a link's own ranges mean: without them,
+			// a link's ranges restrict it; with them, they widen it.
+			$ranges   = [] === $this->central_ip_ranges
+				? __( 'IP ranges shows the addresses a link is restricted to: a link with ranges opens only from them.', 'shareadraft' )
+				: __( 'IP ranges shows the ranges a link has of its own. Every link opens only from the ranges set in the VIP Dashboard, and a link\'s own ranges let it open from further places too.', 'shareadraft' );
+			$reading .= '<p>' . esc_html( $ranges ) . ' ' . esc_html__( 'A dash means the link has no ranges of its own. A link cannot be edited once shared: to change its ranges, revoke it and generate a new one.', 'shareadraft' ) . '</p>';
 		}
 
 		$screen->add_help_tab(

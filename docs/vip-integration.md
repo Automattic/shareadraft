@@ -172,9 +172,10 @@ so internal test builds can be cut from a `release/*` branch without touching
    order matters: the POT takes its `Project-Id-Version` from the plugin
    header, so regenerating it before step 3 stamps the previous version on
    the catalog.
-5. Push the branch, then run **VIP Integration Package** by hand against it
-   from the Actions tab (see below). Once a tag is pushed nothing can stop the
-   release, so this is the check that counts.
+5. Push the branch, then dry-run **VIP Integration Package** against it from
+   the Actions tab (see below). It checks and builds the VIP package without
+   publishing anything. Once a tag is pushed, nothing can stop the release,
+   so this is the check that counts.
 6. Tag the branch head: `git tag -s 1.0.0-RC1 -m "1.0.0-RC1"` and
    `git push origin 1.0.0-RC1`.
 
@@ -196,13 +197,14 @@ Composer dependencies. `.gitattributes` keeps the same files out of GitHub's
 "Source code" archives. **Add a new development-only file to both `.distignore`
 and `.gitattributes` when you add it to the repo**, or it ships.
 
-The tag also triggers `.github/workflows/vip-integration-release.yml`, which
-builds the package handed to VIP for the Integration Center and attaches it to
+`.github/workflows/vip-integration-release.yml` builds the package handed to
+VIP for the Integration Center. It runs twice per release: by hand on the
+release branch as a dry run (step 5), which leaves the package as a workflow
+artefact and publishes nothing, and again from the tag, which attaches it to
 the GitHub Release as `shareadraft-<version>-vip.zip`. VIP's handoff rules
 require the package to carry what `composer test` and `vip-integration
 validate` need, so unlike the WordPress.org ZIP it holds every tracked file,
 plus the built `build/` assets. The workflow fails unless the plugin header,
 the version constant and `release.plugin_version` in `vip-manifest.yaml`
 agree (and match the tag, on a tag), and unless `vip-integration validate`
-passes when run inside the unpacked package. Run by hand on a branch, it does
-the same checks and leaves the package as a workflow artefact.
+passes when run inside the unpacked package.

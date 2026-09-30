@@ -7,10 +7,15 @@ name: VIP Integration Package
 # docs and Composer files, which the VIP handoff rules require, so it fails
 # validation. This package is every tracked file plus the built editor assets.
 #
-# Run it by hand against a release branch before tagging: that is the real
-# gate, because once a tag is pushed, release.yml and deploy.yml are already
-# running alongside this and nothing here can stop them. On a tag it also
-# attaches the package to the GitHub Release.
+# It runs in two modes:
+#
+# - By hand, on a release branch before tagging: a dry run. Same checks, same
+#   build, and the package is left as a workflow artefact; nothing is
+#   published. This is the run that can still stop a release.
+# - On a tag: the real run. It also checks the versions match the tag, then
+#   attaches the package to the GitHub Release for handover. A failure here
+#   is only a warning: release.yml and deploy.yml run alongside it from the
+#   same tag push, so WordPress.org has already been deployed.
 on:
   push:
     tags:

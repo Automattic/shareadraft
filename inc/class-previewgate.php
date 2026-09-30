@@ -78,6 +78,7 @@ final class PreviewGate {
 		add_filter( 'posts_results', [ $this, 'unlock_valid_previews' ], 10, 2 );
 		add_action( 'template_redirect', [ $this, 'maybe_render_notice' ] );
 		add_filter( 'the_password_form', [ $this, 'keep_token_in_password_form' ], 10, 2 );
+		add_filter( 'preview_post_link', [ $this, 'keep_token_in_preview_links' ], 10, 2 );
 	}
 
 	/**
@@ -165,6 +166,25 @@ final class PreviewGate {
 		}
 
 		return $posts;
+	}
+
+	/**
+	 * Carry the token on the preview links core builds for an unlocked draft.
+	 *
+	 * Page-break links (`<!--nextpage-->`) go through get_preview_post_link()
+	 * with only `preview=true` added, so without this, page two of a
+	 * multi-page draft is a 404 for a token holder.
+	 *
+	 * @param mixed $preview_link The preview URL.
+	 * @param mixed $post         The post being previewed.
+	 * @return mixed
+	 */
+	public function keep_token_in_preview_links( $preview_link, $post ) {
+		if ( ! is_string( $preview_link ) || ! $post instanceof WP_Post || ! isset( $this->unlocked[ $post->ID ] ) ) {
+			return $preview_link;
+		}
+
+		return add_query_arg( self::TOKEN_QUERY_VAR, rawurlencode( (string) $this->token_from_request() ), $preview_link );
 	}
 
 	/**

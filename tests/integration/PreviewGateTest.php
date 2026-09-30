@@ -464,6 +464,39 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( $core, $this->password_form( $post_id, Token::from_string( 'not-the-token' ) ) );
 	}
 
+	public function test_page_break_links_keep_the_token(): void {
+		$post_id = self::factory()->post->create(
+			[
+				'post_status'  => 'draft',
+				'post_content' => 'Page one<!--nextpage-->Page two',
+			]
+		);
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$gate = $this->denied_main_query( $post_id, $token );
+		add_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10, 2 );
+		// How core's _wp_link_page() builds the link to page two of a draft.
+		$url = get_preview_post_link( $post_id, [], add_query_arg( 'page', 2, (string) get_permalink( $post_id ) ) );
+		remove_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10 );
+
+		static::assertIsString( $url );
+		static::assertStringContainsString( 'page=2', $url );
+		static::assertStringContainsString( PreviewGate::TOKEN_QUERY_VAR . '=' . $token->value(), $url );
+	}
+
+	public function test_preview_links_for_a_locked_draft_carry_no_token(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		$gate = $this->denied_main_query( $post_id, Token::from_string( 'not-the-token' ) );
+		add_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10, 2 );
+		$url = get_preview_post_link( $post_id );
+		remove_filter( 'preview_post_link', [ $gate, 'keep_token_in_preview_links' ], 10 );
+
+		static::assertIsString( $url );
+		static::assertStringNotContainsString( PreviewGate::TOKEN_QUERY_VAR, $url );
+	}
+
 	/**
 	 * Visit the draft with a token, then render its password form through the gate.
 	 */

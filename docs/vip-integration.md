@@ -188,8 +188,8 @@ dry-run against SVN, or to deploy a tag cut before the workflow existed, run it
 by hand from the Actions tab.
 
 What ends up in the ZIP is controlled by `.distignore`: `shareadraft.php`,
-`vestigial.php`, `uninstall.php`, `inc/`, `build/`, `languages/`, `vip-manifest.yaml`, `LICENSE`
-and `README.md`, unpacked under a single `shareadraft/` directory. `CHANGELOG.md`
+`vestigial.php`, `uninstall.php`, `inc/`, `build/`, `languages/`, `LICENSE` and
+`README.md`, unpacked under a single `shareadraft/` directory. `CHANGELOG.md`
 stays on GitHub, where the README links to it. There is no `vendor/` —
 `inc/autoload.php` resolves the plugin's own classes, and there are no runtime
 Composer dependencies. `.gitattributes` keeps the same files out of GitHub's

@@ -81,6 +81,19 @@ class PreviewLinksAdminPageHelpTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Without central ranges a link's own ranges restrict it; with them, they
+	 * widen it. The help has to say whichever is true on this site.
+	 */
+	public function test_ip_range_help_follows_whether_central_ranges_are_set(): void {
+		static::assertStringNotContainsString( 'VIP Dashboard', $this->all_help_content() );
+
+		$service    = new PreviewLinkService( new PostMetaTokenRepository(), new AccessPolicy(), new SystemClock() );
+		$this->page = new PreviewLinksAdminPage( $service, new SystemClock(), new BulkLinkRevoker( $service ), null, [ '203.0.113.0/24' ] );
+
+		static::assertStringContainsString( 'open from further places too', $this->all_help_content() );
+	}
+
+	/**
 	 * A switched-off restriction has no column, so a help paragraph describing
 	 * one would send readers hunting for something that is not on the screen.
 	 */

@@ -55,13 +55,14 @@ Optional values:
   absent or unusable, and the `shareadraft_dead_link_grace_period` filter
   still overrides whatever the platform sends.
 - `ip_allowlist`: IP addresses or CIDR ranges (IPv4 or IPv6, comma- or
-  newline-separated) that every preview link accepts — a shared baseline of
-  trusted networks, set once. Each link can add further ranges of its own when
-  it is generated; the gate allows a request when the client IP matches *any*
-  range in the combined set (a union, so per-link ranges widen access, never
-  narrow it). Absent or empty means links carry no IP restriction beyond what
-  they set individually — the pre-allowlist behavior. Unusable entries are
-  silently dropped rather than half-applied.
+  newline-separated) that every preview link is restricted to, such as office
+  networks. Setting it is what first restricts links: once set, a link opens
+  only from these ranges. Each link can add further ranges of its own when it
+  is generated; the gate allows a request when the client IP matches *any*
+  range in the combined set, so per-link ranges widen where that link opens.
+  Absent or empty means no site-wide restriction: a link with no ranges of its
+  own opens from anywhere, and the first range it adds is what restricts it.
+  Unusable entries are silently dropped rather than half-applied.
 
 Example valid config:
 

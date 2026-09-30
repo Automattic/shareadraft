@@ -64,9 +64,9 @@ final class PreviewLinkServiceTest extends TestCase {
 		$stored = $this->repository->all_for_post( self::POST_ID );
 		self::assertSame( [ '203.0.113.0/24' ], $stored[0]->allowed_ips() );
 
-		self::assertTrue( $this->service->authorize( self::POST_ID, $token, null, '203.0.113.7' )->is_allowed() );
+		self::assertTrue( $this->service->authorize( self::POST_ID, $token, false, '203.0.113.7' )->is_allowed() );
 
-		$decision = $this->service->authorize( self::POST_ID, $token, null, '198.51.100.7' );
+		$decision = $this->service->authorize( self::POST_ID, $token, false, '198.51.100.7' );
 		self::assertFalse( $decision->is_allowed() );
 		self::assertSame( AccessDecision::REASON_IP_BLOCKED, $decision->reason() );
 	}
@@ -82,15 +82,15 @@ final class PreviewLinkServiceTest extends TestCase {
 		self::assertSame( AccessDecision::REASON_EMAIL_UNVERIFIED, $unverified->reason() );
 
 		self::assertTrue(
-			$this->service->authorize( self::POST_ID, $token, null, null, 'legal@example.com' )->is_allowed()
+			$this->service->authorize( self::POST_ID, $token, false, null, 'legal@example.com' )->is_allowed()
 		);
 	}
 
 	public function test_a_slot_cannot_be_claimed_without_a_verified_recipient(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 5, 1, [], [ 'legal@example.com' ] );
 
-		self::assertNull( $this->service->claim_slot( self::POST_ID, $token ) );
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token, null, 'legal@example.com' ) );
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token, null, 'legal@example.com' ) );
 	}
 
 	public function test_is_recipient_only_answers_for_live_links(): void {
@@ -108,8 +108,8 @@ final class PreviewLinkServiceTest extends TestCase {
 	public function test_a_slot_cannot_be_claimed_from_a_blocked_ip(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 5, 1, [ '203.0.113.0/24' ] );
 
-		self::assertNull( $this->service->claim_slot( self::POST_ID, $token, '198.51.100.7' ) );
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token, '203.0.113.7' ) );
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token, '198.51.100.7' ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token, '203.0.113.7' ) );
 	}
 
 	public function test_a_token_does_not_authorize_a_different_post(): void {
@@ -140,10 +140,10 @@ final class PreviewLinkServiceTest extends TestCase {
 	public function test_claiming_slots_exhausts_a_capped_link(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 2, 1 );
 
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
 		self::assertTrue( $this->service->authorize( self::POST_ID, $token )->is_allowed() );
 
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
 		$decision = $this->service->authorize( self::POST_ID, $token );
 
 		self::assertFalse( $decision->is_allowed() );
@@ -151,48 +151,25 @@ final class PreviewLinkServiceTest extends TestCase {
 	}
 
 	public function test_a_slot_holder_still_gets_in_after_exhaustion(): void {
-		$token     = $this->service->mint( self::POST_ID, 3600, 1, 1 );
-		$viewer_id = $this->service->claim_slot( self::POST_ID, $token );
-
-		self::assertNotNull( $viewer_id );
-		self::assertFalse( $this->service->authorize( self::POST_ID, $token )->is_allowed() );
-		self::assertTrue( $this->service->authorize( self::POST_ID, $token, $viewer_id )->is_allowed() );
-	}
-
-	public function test_a_forged_viewer_id_does_not_open_an_exhausted_link(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 1, 1 );
-		$this->service->claim_slot( self::POST_ID, $token );
 
-		// The old scheme derived the cookie from sha256(token), which every link
-		// holder can compute. Nothing derivable from the URL may work now.
-		$guesses = [
-			hash( 'sha256', $token->value() ),
-			substr( hash( 'sha256', $token->value() ), 0, 32 ),
-			'1',
-			str_repeat( 'a', 32 ),
-			'',
-		];
-
-		foreach ( $guesses as $guess ) {
-			self::assertFalse(
-				$this->service->authorize( self::POST_ID, $token, $guess )->is_allowed(),
-				sprintf( 'A forged slot ID (%s) must not open a spent link.', $guess )
-			);
-		}
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertFalse( $this->service->authorize( self::POST_ID, $token )->is_allowed() );
+		self::assertTrue( $this->service->authorize( self::POST_ID, $token, true )->is_allowed() );
 	}
 
 	public function test_a_slot_cannot_be_claimed_once_the_cap_is_spent(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 1, 1 );
 
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token ) );
-		self::assertNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token ) );
 	}
 
 	public function test_a_slot_cannot_be_claimed_on_a_revoked_link(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, null, 1 );
 		$this->service->revoke( self::POST_ID, $this->repository->all_for_post( self::POST_ID )[0]->token_hash() );
 
-		self::assertNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token ) );
 	}
 
 	public function test_a_concurrent_claim_cannot_overspend_the_cap(): void {
@@ -201,32 +178,50 @@ final class PreviewLinkServiceTest extends TestCase {
 		// Simulate a competing request taking the only slot in the window between
 		// this claim reading the link and writing it back. The write must lose,
 		// and the retry must then find the link exhausted rather than overwrite.
-		$this->repository->on_next_add_viewer(
+		$this->repository->on_next_add_use(
 			function () use ( $token ): void {
 				$link = $this->repository->find( self::POST_ID, $token );
 				self::assertNotNull( $link );
-				$this->repository->add_viewer( $link, 'the-competing-viewer' );
+				$this->repository->add_use( $link );
 			}
 		);
 
-		self::assertNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token ) );
 		self::assertSame( 1, $this->repository->all_for_post( self::POST_ID )[0]->use_count() );
 	}
 
 	public function test_a_claim_that_loses_a_race_retries_when_a_slot_remains(): void {
 		$token = $this->service->mint( self::POST_ID, 3600, 5, 1 );
 
-		$this->repository->on_next_add_viewer(
+		$this->repository->on_next_add_use(
 			function () use ( $token ): void {
 				$link = $this->repository->find( self::POST_ID, $token );
 				self::assertNotNull( $link );
-				$this->repository->add_viewer( $link, 'the-competing-viewer' );
+				$this->repository->add_use( $link );
 			}
 		);
 
 		// Losing one race is not a denial while the cap has room left.
-		self::assertNotNull( $this->service->claim_slot( self::POST_ID, $token ) );
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
 		self::assertSame( 2, $this->repository->all_for_post( self::POST_ID )[0]->use_count() );
+	}
+
+	public function test_a_capped_claim_that_loses_every_race_is_denied(): void {
+		$token = $this->service->mint( self::POST_ID, 3600, 100, 1 );
+		$this->compete_on_every_claim( $token );
+
+		// Room is left, but the claim never lands, so letting the visitor in
+		// would be an uncounted view of a capped link.
+		self::assertFalse( $this->service->claim_slot( self::POST_ID, $token ) );
+	}
+
+	public function test_an_uncapped_claim_that_loses_every_race_is_still_admitted(): void {
+		$token = $this->service->mint( self::POST_ID, 3600, null, 1 );
+		$this->compete_on_every_claim( $token );
+
+		// No cap means no last slot to protect, so a busy link must not turn
+		// visitors away; only the count misses them.
+		self::assertTrue( $this->service->claim_slot( self::POST_ID, $token ) );
 	}
 
 	public function test_pruning_removes_only_links_dead_beyond_the_grace_period(): void {
@@ -292,5 +287,20 @@ final class PreviewLinkServiceTest extends TestCase {
 		$this->service->discard_all( self::POST_ID );
 
 		self::assertCount( 0, $this->repository->all_for_post( self::POST_ID ) );
+	}
+
+	/**
+	 * Land a competing claim just before every claim this test makes, so each
+	 * compare-and-swap loses.
+	 */
+	private function compete_on_every_claim( Token $token ): void {
+		$compete = function () use ( $token, &$compete ): void {
+			$link = $this->repository->find( self::POST_ID, $token );
+			self::assertNotNull( $link );
+			$this->repository->add_use( $link );
+			$this->repository->on_next_add_use( $compete );
+		};
+
+		$this->repository->on_next_add_use( $compete );
 	}
 }

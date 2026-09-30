@@ -20,9 +20,6 @@ final class PreviewLinkService {
 	 */
 	private const CLAIM_ATTEMPTS = 5;
 
-	/** Bytes of randomness in a viewer slot ID. 16 bytes = 128 bits. */
-	private const VIEWER_ID_BYTES = 16;
-
 	/** Links fetched per page when walking the site-wide listing. */
 	private const LISTING_PAGE_SIZE = 100;
 
@@ -182,9 +179,9 @@ final class PreviewLinkService {
 	 * gate, so a single page load that fires several queries cannot exhaust its
 	 * own link mid-render.
 	 *
-	 * @param string|null $viewer_id Slot ID this visitor presented, if any. It is
-	 *                               only honoured when the link actually issued
-	 *                               it, so a made-up value grants nothing.
+	 * @param bool        $holds_slot Whether this visitor presented a slot the
+	 *                                server issued for this link. The gate checks
+	 *                                its signature, so a made-up value is false.
 	 * @param string|null $client_ip The visitor's true client IP, or null when it
 	 *                               could not be resolved (which fails closed if
 	 *                               the link or platform carries an allowlist).
@@ -192,68 +189,50 @@ final class PreviewLinkService {
 	 *                               of, or null if unverified. Only consulted when
 	 *                               the link is bound to recipients.
 	 */
-	public function authorize( int $post_id, Token $candidate, ?string $viewer_id = null, ?string $client_ip = null, ?string $verified_email = null ): AccessDecision {
+	public function authorize( int $post_id, Token $candidate, bool $holds_slot = false, ?string $client_ip = null, ?string $verified_email = null ): AccessDecision {
 		$link = $this->repository->find( $post_id, $candidate );
-
-		$holds_slot = null !== $link
-			&& null !== $viewer_id
-			&& $link->holds_slot( $viewer_id );
 
 		return $this->policy->decide( $link, $this->clock->now(), $holds_slot, $client_ip, $verified_email );
 	}
 
 	/**
-	 * Whether this visitor's slot ID is one the link actually issued.
-	 *
-	 * Asked separately from {@see PreviewLinkService::authorize()} because the
-	 * gate needs the fact on its own: a visitor whose cookie is merely well-formed
-	 * must still claim a slot, or a forged value would buy free, uncounted views.
-	 */
-	public function holds_slot( int $post_id, Token $candidate, ?string $viewer_id ): bool {
-		if ( null === $viewer_id ) {
-			return false;
-		}
-
-		$link = $this->repository->find( $post_id, $candidate );
-
-		return null !== $link && $link->holds_slot( $viewer_id );
-	}
-
-	/**
-	 * Spend one of the link's viewer slots and return the ID that now holds it,
-	 * or null if there was nothing left to spend.
+	 * Spend one of the link's viewer slots, returning whether one was spent. The
+	 * caller then hands the visitor proof of the slot (the gate's signed cookie).
 	 *
 	 * The whole policy is re-evaluated here rather than trusting the gate's
 	 * earlier decision, and the write is a compare-and-swap: between reading the
 	 * link and writing it back, another visitor may have taken the last slot, or
 	 * the author may have revoked the link entirely. A caller that loses the race
-	 * gets null and must deny, which is what closes the check-then-act window.
+	 * on a capped link gets false and must deny, which is what closes the
+	 * check-then-act window.
 	 */
-	public function claim_slot( int $post_id, Token $candidate, ?string $client_ip = null, ?string $verified_email = null ): ?string {
-		$viewer_id = bin2hex( random_bytes( self::VIEWER_ID_BYTES ) );
+	public function claim_slot( int $post_id, Token $candidate, ?string $client_ip = null, ?string $verified_email = null ): bool {
+		$link = null;
 
 		for ( $attempt = 0; $attempt < self::CLAIM_ATTEMPTS; $attempt++ ) {
 			$link = $this->repository->find( $post_id, $candidate );
 
 			if ( null === $link ) {
-				return null;
+				return false;
 			}
 
-			// No viewer ID passed: this is a brand-new slot, so the exhaustion
-			// rule must apply in full. The client IP and verified email are
-			// re-checked too, since this is the write that actually spends a slot.
+			// Not a returning slot holder: this is a brand-new slot, so the
+			// exhaustion rule must apply in full. The client IP and verified email
+			// are re-checked too, since this is the write that actually spends a slot.
 			if ( ! $this->policy->decide( $link, $this->clock->now(), false, $client_ip, $verified_email )->is_allowed() ) {
-				return null;
+				return false;
 			}
 
-			if ( $this->repository->add_viewer( $link, $viewer_id ) ) {
-				return $viewer_id;
+			if ( $this->repository->add_use( $link ) ) {
+				return true;
 			}
 
 			// Lost the write race to a concurrent visitor: re-read and re-decide.
 		}
 
-		return null;
+		// An uncapped link has no last slot to fight over, so a burst of new
+		// visitors is no reason to turn this one away; the count just misses them.
+		return null !== $link && null === $link->max_uses();
 	}
 
 	/**

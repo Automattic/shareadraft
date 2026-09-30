@@ -11,7 +11,7 @@ use Automattic\ShareADraft\TokenRepository;
 /**
  * In-memory {@see TokenRepository} for unit tests. Mirrors the postmeta adapter's
  * contract (multiple links per post, matched by token hash) without a database,
- * including its compare-and-swap semantics on {@see self::add_viewer()} so the
+ * including its compare-and-swap semantics on {@see self::add_use()} so the
  * service's retry loop is exercised for real.
  */
 final class InMemoryTokenRepository implements TokenRepository {
@@ -19,11 +19,11 @@ final class InMemoryTokenRepository implements TokenRepository {
 	private array $links = [];
 
 	/**
-	 * @var callable|null Runs immediately before each add_viewer write, so a test
+	 * @var callable|null Runs immediately before each add_use write, so a test
 	 *                    can simulate a competing request landing in the window
 	 *                    between the service reading a link and writing it back.
 	 */
-	private $before_add_viewer;
+	private $before_add_use;
 
 	public function save( PreviewLink $link ): void {
 		$this->links[ $link->post_id() ][] = $link;
@@ -43,21 +43,21 @@ final class InMemoryTokenRepository implements TokenRepository {
 		return $this->links[ $post_id ] ?? [];
 	}
 
-	public function add_viewer( PreviewLink $link, string $viewer_id ): bool {
-		if ( is_callable( $this->before_add_viewer ) ) {
-			$hook                    = $this->before_add_viewer;
-			$this->before_add_viewer = null;
+	public function add_use( PreviewLink $link ): bool {
+		if ( is_callable( $this->before_add_use ) ) {
+			$hook                 = $this->before_add_use;
+			$this->before_add_use = null;
 			$hook();
 		}
 
 		$stored = $this->find_stored( $link );
 
 		// Compare-and-swap: the caller's read must still be current.
-		if ( null === $stored || $stored->viewers() !== $link->viewers() ) {
+		if ( null === $stored || $stored->use_count() !== $link->use_count() ) {
 			return false;
 		}
 
-		$this->replace( $link, $link->with_viewer( $viewer_id ) );
+		$this->replace( $stored, $stored->with_use() );
 
 		return true;
 	}
@@ -187,10 +187,10 @@ final class InMemoryTokenRepository implements TokenRepository {
 	}
 
 	/**
-	 * Arrange for a competing write to land just before the next add_viewer call.
+	 * Arrange for a competing write to land just before the next add_use call.
 	 */
-	public function on_next_add_viewer( callable $hook ): void {
-		$this->before_add_viewer = $hook;
+	public function on_next_add_use( callable $hook ): void {
+		$this->before_add_use = $hook;
 	}
 
 	private function find_stored( PreviewLink $link ): ?PreviewLink {

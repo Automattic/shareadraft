@@ -53,7 +53,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_ip_restriction_reflects_the_links_own_ranges(): void {
-		$restricted = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [ '203.0.113.0/24' ] );
+		$restricted = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 0, null, '', [ '203.0.113.0/24' ] );
 		$open       = new PreviewLink( 13, 'hash', 2000, null, 1, 1000 );
 
 		self::assertTrue( $restricted->has_ip_restriction() );
@@ -61,7 +61,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_a_link_is_identified_by_its_hash_or_hint_but_never_blank(): void {
-		$link = new PreviewLink( 13, 'full-hash', 2000, null, 1, 1000, [], null, 'ab3f' );
+		$link = new PreviewLink( 13, 'full-hash', 2000, null, 1, 1000, 0, null, 'ab3f' );
 
 		self::assertTrue( $link->is_identified_by( 'full-hash' ) );
 		self::assertTrue( $link->is_identified_by( 'ab3f' ) );
@@ -70,48 +70,32 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_an_unlimited_link_is_never_exhausted(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, self::slots( 9999 ) );
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 9999 );
 
 		self::assertFalse( $link->is_exhausted() );
 	}
 
 	public function test_a_link_is_exhausted_once_slots_reach_the_cap(): void {
-		$at_cap = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, self::slots( 5 ) );
-		$below  = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, self::slots( 4 ) );
+		$at_cap = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, 5 );
+		$below  = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, 4 );
 
 		self::assertTrue( $at_cap->is_exhausted() );
 		self::assertFalse( $below->is_exhausted() );
 	}
 
-	public function test_adding_a_viewer_spends_a_slot_on_a_copy(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, self::slots( 2 ) );
+	public function test_spending_a_slot_counts_on_a_copy(): void {
+		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, 2 );
 
-		$next = $link->with_viewer( 'fresh-viewer' );
+		$next = $link->with_use();
 
 		self::assertSame( 2, $link->use_count(), 'Original is unchanged.' );
 		self::assertSame( 3, $next->use_count() );
-		self::assertTrue( $next->holds_slot( 'fresh-viewer' ) );
-	}
-
-	public function test_a_link_only_recognises_slots_it_issued(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, [ 'issued-id' ] );
-
-		self::assertTrue( $link->holds_slot( 'issued-id' ) );
-		self::assertFalse( $link->holds_slot( 'made-up-id' ) );
-		self::assertFalse( $link->holds_slot( '' ), 'A blank ID must never pass.' );
-	}
-
-	public function test_re_adding_a_known_viewer_does_not_spend_another_slot(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, [ 'issued-id' ] );
-
-		// A retried write must be idempotent, or a retry would cost two slots.
-		self::assertSame( 1, $link->with_viewer( 'issued-id' )->use_count() );
 	}
 
 	public function test_dead_since_reports_when_a_link_stopped_working(): void {
 		$live    = new PreviewLink( 13, 'hash', 2000, null, 1, 1000 );
 		$expired = new PreviewLink( 13, 'hash', 2000, null, 1, 1000 );
-		$revoked = new PreviewLink( 13, 'hash', 9000, null, 1, 1000, [], 1500 );
+		$revoked = new PreviewLink( 13, 'hash', 9000, null, 1, 1000, 0, 1500 );
 
 		self::assertNull( $live->dead_since( 1999 ) );
 		self::assertSame( 2000, $expired->dead_since( 2500 ) );
@@ -125,7 +109,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_revoking_stamps_a_copy(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, self::slots( 2 ) );
+		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, 2 );
 
 		$revoked = $link->with_revoked( 1500 );
 
@@ -136,7 +120,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_recipient_matching_is_case_insensitive(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [], [ 'legal@example.com' ] );
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 0, null, '', [], [ 'legal@example.com' ] );
 
 		self::assertTrue( $link->is_recipient( 'legal@example.com' ) );
 		self::assertTrue( $link->is_recipient( 'Legal@Example.COM' ) );
@@ -152,29 +136,14 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_copies_preserve_recipients(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, [], null, '', [], [ 'legal@example.com' ] );
+		$link = new PreviewLink( 13, 'hash', 2000, 5, 1, 1000, 0, null, '', [], [ 'legal@example.com' ] );
 
-		self::assertSame( [ 'legal@example.com' ], $link->with_viewer( 'viewer-0' )->recipients() );
+		self::assertSame( [ 'legal@example.com' ], $link->with_use()->recipients() );
 		self::assertSame( [ 'legal@example.com' ], $link->with_revoked( 1500 )->recipients() );
 	}
 
-	/**
-	 * A given number of distinct, already-issued slot IDs.
-	 *
-	 * @return list<string>
-	 */
-	private static function slots( int $count ): array {
-		$slots = [];
-
-		for ( $index = 0; $index < $count; $index++ ) {
-			$slots[] = 'viewer-' . $index;
-		}
-
-		return $slots;
-	}
-
 	public function test_forgetting_one_of_several_recipients_keeps_the_link_live(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [], [ 'bob@example.com', 'amy@example.com' ] );
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 0, null, '', [], [ 'bob@example.com', 'amy@example.com' ] );
 
 		$forgotten = $link->without_recipient( 'BOB@example.com', 1500 );
 
@@ -183,7 +152,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_forgetting_the_last_recipient_revokes_rather_than_opening_the_link(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [], [ 'bob@example.com' ] );
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 0, null, '', [], [ 'bob@example.com' ] );
 
 		$forgotten = $link->without_recipient( 'bob@example.com', 1500 );
 
@@ -192,7 +161,7 @@ final class PreviewLinkTest extends TestCase {
 	}
 
 	public function test_forgetting_the_last_recipient_keeps_an_earlier_revocation(): void {
-		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], 1200, '', [], [ 'bob@example.com' ] );
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, 0, 1200, '', [], [ 'bob@example.com' ] );
 
 		self::assertSame( 1200, $link->without_recipient( 'bob@example.com', 1500 )->revoked_at() );
 	}

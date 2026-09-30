@@ -11,11 +11,10 @@ namespace Automattic\ShareADraft;
  * rules need to ask are pure methods here, so {@see AccessPolicy} can be tested
  * without WordPress or a database.
  *
- * The viewer cap is modelled as a set of opaque, server-issued viewer IDs rather
- * than a counter. That matters for two reasons. A visitor cannot mint themselves
- * a slot, because the ID is 128 bits of server randomness and is only ever handed
- * out by {@see PreviewLinkService::claim_slot()}. And "add an ID to a set" is
- * idempotent, so a retried write cannot double-count where an increment would.
+ * The viewer cap is a plain count of the slots spent. Telling a returning viewer
+ * from a new one is the gate's job: it hands each viewer a slot cookie signed by
+ * the server (see {@see PreviewGate}), so a visitor cannot mint a slot of their
+ * own, and the link only has to remember how many it has given out.
  */
 final class PreviewLink {
 	private int $post_id;
@@ -28,8 +27,8 @@ final class PreviewLink {
 	private int $created_by;
 	private int $created_at;
 
-	/** @var list<string> Opaque IDs of the viewers holding a slot on this link. */
-	private array $viewers;
+	/** How many distinct viewers have spent a slot on this link. */
+	private int $use_count;
 
 	/** @var int|null Unix timestamp of revocation, or null if still live. */
 	private ?int $revoked_at;
@@ -50,7 +49,6 @@ final class PreviewLink {
 	private array $recipients;
 
 	/**
-	 * @param list<string> $viewers     Opaque IDs of viewers already holding a slot.
 	 * @param list<string> $allowed_ips CIDR ranges this link is restricted to.
 	 * @param list<string> $recipients  Lowercased recipient emails, or empty for
 	 *                                  a bearer link.
@@ -62,7 +60,7 @@ final class PreviewLink {
 		?int $max_uses,
 		int $created_by,
 		int $created_at,
-		array $viewers = [],
+		int $use_count = 0,
 		?int $revoked_at = null,
 		string $token_hint = '',
 		array $allowed_ips = [],
@@ -74,7 +72,7 @@ final class PreviewLink {
 		$this->max_uses    = $max_uses;
 		$this->created_by  = $created_by;
 		$this->created_at  = $created_at;
-		$this->viewers     = $viewers;
+		$this->use_count   = $use_count;
 		$this->revoked_at  = $revoked_at;
 		$this->token_hint  = $token_hint;
 		$this->allowed_ips = $allowed_ips;
@@ -107,7 +105,7 @@ final class PreviewLink {
 			$max_uses,
 			$created_by,
 			$created_at,
-			[],
+			0,
 			null,
 			substr( $token->value(), -4 ),
 			$allowed_ips,
@@ -148,18 +146,10 @@ final class PreviewLink {
 	}
 
 	/**
-	 * How many distinct viewers hold a slot. Derived from the set rather than
-	 * tracked separately, so it cannot drift from the slots actually issued.
+	 * How many distinct viewers have spent a slot on this link.
 	 */
 	public function use_count(): int {
-		return count( $this->viewers );
-	}
-
-	/**
-	 * @return list<string>
-	 */
-	public function viewers(): array {
-		return $this->viewers;
+		return $this->use_count;
 	}
 
 	public function revoked_at(): ?int {
@@ -198,7 +188,7 @@ final class PreviewLink {
 	 *
 	 * A hint is only a few characters, so it may name several links at once;
 	 * the caller decides what ambiguity means. An empty identifier never
-	 * matches, mirroring {@see holds_slot()}.
+	 * matches.
 	 */
 	public function is_identified_by( string $identifier ): bool {
 		if ( '' === $identifier ) {
@@ -233,24 +223,6 @@ final class PreviewLink {
 	 */
 	public function matches( Token $candidate ): bool {
 		return hash_equals( $this->token_hash, $candidate->hash() );
-	}
-
-	/**
-	 * Whether this viewer ID is one this link handed out. An empty ID never
-	 * matches, so a visitor cannot present a blank cookie and claim a slot.
-	 */
-	public function holds_slot( string $viewer_id ): bool {
-		if ( '' === $viewer_id ) {
-			return false;
-		}
-
-		foreach ( $this->viewers as $known ) {
-			if ( hash_equals( $known, $viewer_id ) ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	public function is_expired( int $now ): bool {
@@ -291,15 +263,10 @@ final class PreviewLink {
 	}
 
 	/**
-	 * A copy of this link with one more viewer holding a slot. Immutable: the
-	 * caller persists the returned instance. Re-adding a known viewer is a no-op,
-	 * so a retried write cannot spend two slots on one person.
+	 * A copy of this link with one more slot spent. Immutable: the caller
+	 * persists the returned instance.
 	 */
-	public function with_viewer( string $viewer_id ): self {
-		if ( $this->holds_slot( $viewer_id ) ) {
-			return $this;
-		}
-
+	public function with_use(): self {
 		return new self(
 			$this->post_id,
 			$this->token_hash,
@@ -307,7 +274,7 @@ final class PreviewLink {
 			$this->max_uses,
 			$this->created_by,
 			$this->created_at,
-			[ ...$this->viewers, $viewer_id ],
+			$this->use_count + 1,
 			$this->revoked_at,
 			$this->token_hint,
 			$this->allowed_ips,
@@ -327,7 +294,7 @@ final class PreviewLink {
 			$this->max_uses,
 			$this->created_by,
 			$this->created_at,
-			$this->viewers,
+			$this->use_count,
 			$revoked_at,
 			$this->token_hint,
 			$this->allowed_ips,
@@ -358,7 +325,7 @@ final class PreviewLink {
 			$this->max_uses,
 			$this->created_by,
 			$this->created_at,
-			$this->viewers,
+			$this->use_count,
 			$revoked_at,
 			$this->token_hint,
 			$this->allowed_ips,

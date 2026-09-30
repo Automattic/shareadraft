@@ -118,19 +118,53 @@ class PreviewGateTest extends WP_UnitTestCase {
 
 		$this->visit( $post_id, $token, true );
 
-		$cookie = 'shareadraft_viewer_' . substr( $token->hash(), 0, 20 );
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Reading back the value the gate itself just set, in a test.
-		$issued = isset( $_COOKIE[ $cookie ] ) && is_string( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : '';
+		$issued = $this->issued_slot( $token );
 
 		static::assertNotSame( '', $issued, 'A slot ID should have been issued.' );
 		static::assertNotSame( '1', $issued );
 		static::assertStringNotContainsString( $issued, $token->value() );
 		static::assertStringNotContainsString( $issued, $token->hash() );
-		static::assertSame(
-			[ $issued ],
-			$this->repository->all_for_post( $post_id )[0]->viewers(),
-			'The issued ID is the one the server recorded.'
-		);
+		static::assertMatchesRegularExpression( '/^[a-f0-9]{96}$/', $issued, 'A slot is a nonce and its signature.' );
+	}
+
+	public function test_a_tampered_or_borrowed_slot_does_not_bypass_a_spent_cap(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, 1, 1 );
+		$other   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		// A genuine slot on another link, and a genuine slot on this one.
+		$this->visit( $post_id, $other, true );
+		$borrowed = $this->issued_slot( $other );
+		$this->visit( $post_id, $token, true );
+		$issued = $this->issued_slot( $token );
+		$cookie = 'shareadraft_viewer_' . substr( $token->hash(), 0, 20 );
+
+		$forgeries = [
+			'another link\'s slot'     => $borrowed,
+			'a re-signed nonce'        => str_repeat( '0', 32 ) . substr( $issued, 32 ),
+			'a flipped signature'      => substr( $issued, 0, -1 ) . ( '0' === substr( $issued, -1 ) ? '1' : '0' ),
+			'an unsigned pre-2.0 slot' => str_repeat( 'a', 32 ),
+		];
+
+		foreach ( $forgeries as $label => $forged ) {
+			$_COOKIE = [ $cookie => $forged ];
+			static::assertSame( 'draft', $this->visit( $post_id, $token ), "A spent cap must not open for {$label}." );
+		}
+
+		static::assertSame( 1, $this->repository->find( $post_id, $token )?->use_count() );
+	}
+
+	public function test_a_view_never_rewrites_the_links_own_row(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+		$before  = get_post_meta( $post_id, PostMetaTokenRepository::META_KEY, false );
+
+		// Only the separate uses row moves, so a revoke never races a viewer.
+		static::assertSame( 'publish', $this->visit( $post_id, $token, true ) );
+		static::assertSame( 'publish', $this->visit( $post_id, $token, true ) );
+
+		static::assertSame( $before, get_post_meta( $post_id, PostMetaTokenRepository::META_KEY, false ) );
+		static::assertSame( 2, $this->repository->all_for_post( $post_id )[0]->use_count() );
 	}
 
 	public function test_a_bot_gets_no_content_and_spends_no_slot(): void {
@@ -205,10 +239,10 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, 5, 1 );
 
 		$_COOKIE = [
-			'shareadraft_viewer_' . substr( $token->hash(), 0, 20 ) => str_repeat( 'a', 32 ),
+			'shareadraft_viewer_' . substr( $token->hash(), 0, 20 ) => str_repeat( 'a', 96 ),
 		];
 
-		// A cookie the link never issued makes this a new viewer, not a free one.
+		// A cookie the server never signed makes this a new viewer, not a free one.
 		static::assertSame( 'publish', $this->visit( $post_id, $token ) );
 		static::assertSame( 1, $this->repository->all_for_post( $post_id )[0]->use_count() );
 	}
@@ -592,6 +626,16 @@ class PreviewGateTest extends WP_UnitTestCase {
 	 *
 	 * @param bool $fresh_browser Clear the cookie jar first, i.e. a new visitor.
 	 */
+	/**
+	 * The slot cookie the gate last handed this browser for a link, or ''.
+	 */
+	private function issued_slot( Token $token ): string {
+		$cookie = 'shareadraft_viewer_' . substr( $token->hash(), 0, 20 );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Reading back the value the gate itself just set, in a test.
+		return isset( $_COOKIE[ $cookie ] ) && is_string( $_COOKIE[ $cookie ] ) ? $_COOKIE[ $cookie ] : '';
+	}
+
 	private function visit( int $post_id, Token $token, bool $fresh_browser = false ): string {
 		if ( $fresh_browser ) {
 			$_COOKIE = [];

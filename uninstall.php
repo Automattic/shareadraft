@@ -18,6 +18,7 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 $vip_shareadraft_uninstall_site = static function (): void {
 	delete_post_meta_by_key( '_shareadraft_token' );
+	delete_post_meta_by_key( '_shareadraft_uses' );
 
 	foreach ( [ 'shareadraft_disabled', 'shareadraft_gc_cursor', 'shareadraft_gc_last_run', 'shareadraft_bulk_revoke_jobs', 'ShareADraft_options' ] as $option ) {
 		delete_option( $option );

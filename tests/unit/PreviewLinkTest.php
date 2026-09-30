@@ -172,4 +172,34 @@ final class PreviewLinkTest extends TestCase {
 
 		return $slots;
 	}
+
+	public function test_forgetting_one_of_several_recipients_keeps_the_link_live(): void {
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [], [ 'bob@example.com', 'amy@example.com' ] );
+
+		$forgotten = $link->without_recipient( 'BOB@example.com', 1500 );
+
+		self::assertSame( [ 'amy@example.com' ], $forgotten->recipients() );
+		self::assertFalse( $forgotten->is_revoked() );
+	}
+
+	public function test_forgetting_the_last_recipient_revokes_rather_than_opening_the_link(): void {
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], null, '', [], [ 'bob@example.com' ] );
+
+		$forgotten = $link->without_recipient( 'bob@example.com', 1500 );
+
+		self::assertSame( [], $forgotten->recipients() );
+		self::assertSame( 1500, $forgotten->revoked_at(), 'An empty list means a bearer link; erasure must not widen access.' );
+	}
+
+	public function test_forgetting_the_last_recipient_keeps_an_earlier_revocation(): void {
+		$link = new PreviewLink( 13, 'hash', 2000, null, 1, 1000, [], 1200, '', [], [ 'bob@example.com' ] );
+
+		self::assertSame( 1200, $link->without_recipient( 'bob@example.com', 1500 )->revoked_at() );
+	}
+
+	public function test_forgetting_a_stranger_leaves_the_link_untouched(): void {
+		$bearer = new PreviewLink( 13, 'hash', 2000, null, 1, 1000 );
+
+		self::assertSame( $bearer, $bearer->without_recipient( 'bob@example.com', 1500 ) );
+	}
 }

@@ -334,4 +334,35 @@ final class PreviewLink {
 			$this->recipients
 		);
 	}
+
+	/**
+	 * A copy of this link with one named reviewer forgotten, for personal-data
+	 * erasure. Immutable: the caller persists the returned instance.
+	 *
+	 * An empty recipient list means "anyone holding the URL", so removing the
+	 * last reviewer would quietly turn a bound link into a bearer link. Erasure
+	 * must never widen access, so that case revokes the link as well.
+	 */
+	public function without_recipient( string $email, int $now ): self {
+		if ( ! $this->is_recipient( $email ) ) {
+			return $this;
+		}
+
+		$recipients = array_values( array_diff( $this->recipients, [ strtolower( $email ) ] ) );
+		$revoked_at = [] === $recipients ? ( $this->revoked_at ?? $now ) : $this->revoked_at;
+
+		return new self(
+			$this->post_id,
+			$this->token_hash,
+			$this->expires_at,
+			$this->max_uses,
+			$this->created_by,
+			$this->created_at,
+			$this->viewers,
+			$revoked_at,
+			$this->token_hint,
+			$this->allowed_ips,
+			$recipients
+		);
+	}
 }

@@ -78,6 +78,12 @@ final class InMemoryTokenRepository implements TokenRepository {
 		return true;
 	}
 
+	public function remove_recipient( PreviewLink $link, string $email, int $now ): bool {
+		$this->replace( $link, $link->without_recipient( $email, $now ) );
+
+		return true;
+	}
+
 	public function revoke_all_for_post( int $post_id, int $revoked_at ): int {
 		return $this->revoke_matching( $post_id, null, $revoked_at );
 	}
@@ -141,6 +147,23 @@ final class InMemoryTokenRepository implements TokenRepository {
 		sort( $ids );
 
 		return array_slice( $ids, 0, $limit );
+	}
+
+	public function post_ids_with_recipient( string $email, int $offset, int $limit ): array {
+		$ids = [];
+
+		foreach ( $this->links as $post_id => $links ) {
+			foreach ( $links as $link ) {
+				if ( $link->is_recipient( $email ) ) {
+					$ids[] = $post_id;
+					break;
+				}
+			}
+		}
+
+		sort( $ids );
+
+		return array_slice( $ids, $offset, $limit );
 	}
 
 	public function page_of_links( int $offset, int $limit, ?int $created_by = null ): array {

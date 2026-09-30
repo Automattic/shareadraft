@@ -374,11 +374,14 @@ final class PreviewGate {
 
 		if ( self::REASON_AUTOMATED === $reason ) {
 			// A neutral 200 so a chat unfurl renders a tidy card, with none of
-			// the draft's title, excerpt, or image in it.
+			// the draft's title, excerpt, or image in it. A prefetch gets a 503
+			// instead: a browser discards a non-2xx prefetch and fetches afresh
+			// on the real navigation, where a 200 stub would be shown in place
+			// of the draft.
 			NoticePage::render(
 				__( 'Private preview link', 'shareadraft' ),
 				sprintf( '<p>%s</p>', esc_html__( 'This is a private preview link. Open it in a browser to view the draft.', 'shareadraft' ) ),
-				200
+				$this->is_speculative_request() ? 503 : 200
 			);
 		}
 
@@ -684,14 +687,27 @@ final class PreviewGate {
 	}
 
 	/**
-	 * Whether the request looks like a crawler or chat-link unfurler.
+	 * Whether the request looks like a crawler or chat-link unfurler, or is a
+	 * request no person will read: a HEAD, or a browser prefetch.
 	 *
 	 * These are served a stub rather than the draft, so an unknown or absent user
 	 * agent is treated as automated: withholding content from an odd-looking
 	 * client is the safe way to be wrong. Because the stub is all a "crawler"
 	 * gets, there is nothing to win by spoofing one of these strings.
+	 *
+	 * The gate runs inside wp(), before core's exit_on_http_head, so without
+	 * this a link checker's HEAD would spend a slot and get no body back.
 	 */
 	private function is_automated_client(): bool {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REQUEST_METHOD__ -- Only read on uncached preview requests.
+		if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'HEAD' === $_SERVER['REQUEST_METHOD'] ) {
+			return true;
+		}
+
+		if ( $this->is_speculative_request() ) {
+			return true;
+		}
+
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__ -- Only read on uncached preview requests, to decide whether to serve the draft or a stub.
 		$user_agent = isset( $_SERVER['HTTP_USER_AGENT'] ) && is_string( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '';
 
@@ -714,5 +730,23 @@ final class PreviewGate {
 		}
 
 		return 1 === preg_match( $pattern, $user_agent );
+	}
+
+	/**
+	 * Whether a browser is prefetching or prerendering the link ahead of a
+	 * navigation that may never happen.
+	 *
+	 * Chrome sends `Sec-Purpose`, older Chrome and Safari `Purpose`, and
+	 * Firefox `X-Moz`, each containing "prefetch".
+	 */
+	private function is_speculative_request(): bool {
+		foreach ( [ 'HTTP_SEC_PURPOSE', 'HTTP_PURPOSE', 'HTTP_X_MOZ' ] as $header ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- Spoofing it only withholds the draft from the spoofer.
+			if ( isset( $_SERVER[ $header ] ) && is_string( $_SERVER[ $header ] ) && false !== stripos( sanitize_text_field( wp_unslash( $_SERVER[ $header ] ) ), 'prefetch' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

@@ -57,6 +57,7 @@ removed in 2.1.0.
 
 - Store only a hash of each token, enforce every link limit server-side, and keep drafts visible to link holders alone — preview requests are also marked no-index so a shared link cannot be indexed by search engines. ([#18](https://github.com/Automattic/live-previews/pull/18))
 - Send reviewer verification codes only after the response has been flushed to the visitor, so a listed and an unlisted address answer the email form in the same time and response timing cannot enumerate a link's reviewer list. The code email also names the site's domain and warns never to share the code, giving reviewers concrete checks against phishing imitations. ([#63](https://github.com/Automattic/live-previews/pull/63))
+- Treat a Private post as closed to preview links, as a trashed one already was: making a post Private discards its links, the editor panel does not appear on it, every minting surface refuses it, and a link left over from before still will not open it. Private means staff only, and a link must not reopen it to anonymous visitors.
 
 ### Notes for VIP
 

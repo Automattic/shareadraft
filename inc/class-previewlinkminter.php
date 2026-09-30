@@ -39,8 +39,9 @@ final class PreviewLinkMinter {
 	 *                                  to, or empty for a bearer link. Validated
 	 *                                  here for the same reason as the ranges.
 	 * @return array{url: string, expires_at: int}|WP_Error A WP_Error when the
-	 *                                  post does not exist or its type has no
-	 *                                  front-end view, a range or address is
+	 *                                  post does not exist, its type has no
+	 *                                  front-end view, it is published, private,
+	 *                                  or trashed, a range or address is
 	 *                                  invalid, or the restriction is disabled on
 	 *                                  this site.
 	 */
@@ -62,6 +63,16 @@ final class PreviewLinkMinter {
 			return new WP_Error(
 				'shareadraft_post_type_not_viewable',
 				__( 'Preview links are only available for content that can be viewed on the site.', 'shareadraft' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// A published post needs no link, and a private or trashed one must not
+		// get one: the gate would refuse it anyway, so say so up front.
+		if ( PublishCleanup::is_terminal( $post->post_status ) ) {
+			return new WP_Error(
+				'shareadraft_post_not_shareable',
+				__( 'Preview links are not available for published, private, or trashed content.', 'shareadraft' ),
 				[ 'status' => 400 ]
 			);
 		}

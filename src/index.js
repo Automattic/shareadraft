@@ -546,9 +546,10 @@ function ShareADraftPanel() {
 		};
 	}, [] );
 
-	// Neither a published post (already public) nor a type with no front-end
-	// view (the link would 404) has anything to preview.
-	const isShareable = isViewable && 'publish' !== status;
+	// A published post is already public, a private or trashed one is closed on
+	// purpose, and a type with no front-end view would only 404.
+	const isShareable =
+		isViewable && ! [ 'publish', 'private', 'trash' ].includes( status );
 
 	const [ openModal, setOpenModal ] = useState( '' );
 	const [ hasLinks, setHasLinks ] = useState( false );

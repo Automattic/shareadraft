@@ -63,6 +63,15 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( 'draft', self::first_status( $posts ) );
 	}
 
+	public function test_a_leftover_link_does_not_unlock_a_private_post(): void {
+		// Minted straight on the service, as a link made before the post went
+		// private would have been, so cleanup never saw it.
+		$post_id = self::factory()->post->create( [ 'post_status' => 'private' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+
+		static::assertSame( 'private', $this->visit( $post_id, $token ) );
+	}
+
 	public function test_non_preview_requests_are_untouched(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );

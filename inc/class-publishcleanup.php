@@ -11,19 +11,29 @@ use WP_Post;
  * storage. Trashing makes them dangerous: `trash` is a non-public status, so
  * without this the gate would happily keep unlocking a binned post for anyone
  * still holding a link. Authors reasonably read "move to bin" as "retract it",
- * and the links have to honour that.
+ * and the links have to honour that. Making a post Private is the same: the
+ * author has restricted it to logged-in staff, and a link must not reopen it to
+ * anonymous visitors.
  */
 final class PublishCleanup {
 	/**
 	 * Statuses that end a post's preview-link life. Draft, pending, and future
 	 * are all still work in progress, so their links survive.
 	 */
-	private const TERMINAL_STATUSES = [ 'publish', 'trash' ];
+	private const TERMINAL_STATUSES = [ 'publish', 'private', 'trash' ];
 
 	private PreviewLinkService $service;
 
 	public function __construct( PreviewLinkService $service ) {
 		$this->service = $service;
+	}
+
+	/**
+	 * Whether a post in this status is past sharing: its links are discarded,
+	 * no new ones are minted, and the gate will not unlock it.
+	 */
+	public static function is_terminal( string $status ): bool {
+		return in_array( $status, self::TERMINAL_STATUSES, true );
 	}
 
 	public function register(): void {
@@ -40,7 +50,7 @@ final class PublishCleanup {
 			return;
 		}
 
-		if ( in_array( $new_status, self::TERMINAL_STATUSES, true ) ) {
+		if ( self::is_terminal( $new_status ) ) {
 			$this->service->discard_all( (int) $post->ID );
 		}
 	}

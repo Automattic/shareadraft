@@ -26,7 +26,7 @@ Every link is:
 - **Restricted to trusted networks, if you want.** Allow only certain IP addresses or ranges, such as your office network.
 - **Revocable.** Switch off any link at any moment. A reviewer who returns to an expired or revoked link is told why it stopped working.
 
-Links also tidy themselves up: they are discarded when a draft is published or trashed, and revoked when the person who created them is deleted.
+Links also tidy themselves up: they are discarded when a draft is published, made private, or trashed, and revoked when the person who created them is deleted.
 
 Administrators get a **Preview Links** screen listing every link on the site, with who created it, how often it has been used, and when it expires. From there they can revoke links in bulk (for example, everything one person made, when they leave), or pause every link at once while investigating a suspected leak, then switch them back on. See [managing links](https://github.com/Automattic/shareadraft/blob/main/docs/managing-links.md) for the details, including hooks for your own offboarding process.
 

@@ -519,6 +519,13 @@ final class PreviewAbilities {
 		$items = [];
 
 		foreach ( $links as $link ) {
+			// The site-wide gate is edit_others_posts, which a post type with
+			// its own capabilities can fall outside; leave out links on posts
+			// the caller cannot edit, as the admin table redacts them.
+			if ( ! current_user_can( 'edit_post', $link->post_id() ) ) {
+				continue;
+			}
+
 			// One link at a time through the shared presenter, so this surface
 			// keeps exactly its field set (and its live-links-only rule) while
 			// pairing each row with the post it belongs to.
@@ -539,6 +546,10 @@ final class PreviewAbilities {
 	 * post's links need `edit_post` (the editor's Manage modal), a creator sweep
 	 * needs `edit_others_posts` (the site-wide table's bulk action), and the
 	 * break-glass revoke-everything needs `manage_options`.
+	 *
+	 * The creator sweep is deliberately not narrowed to posts the caller can
+	 * edit: it is offboarding, and quietly leaving some of a leaver's links
+	 * working would be worse than over-revoking.
 	 *
 	 * @param mixed $input The ability input.
 	 */

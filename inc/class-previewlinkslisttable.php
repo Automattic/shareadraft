@@ -12,6 +12,13 @@ use WP_List_Table;
  * never show or re-copy its shareable URL — that keeps the "no re-copy by
  * design" hardening intact. Rows come from {@see PreviewLinkService} one page at
  * a time, so a large site is never loaded whole.
+ *
+ * The screen's own gate is `edit_others_posts`, but a post type with its own
+ * capabilities (or a trimmed-down editor role) can leave the viewer unable to
+ * edit some posts. Those rows are redacted rather than filtered out — no title,
+ * reviewers, IP ranges, or revoke — because `edit_post` cannot be expressed in
+ * the paging SQL, so filtering would leave short pages and a total that
+ * counts rows the viewer never sees.
  */
 final class PreviewLinksListTable extends WP_List_Table {
 	/** Ties the bulk-action nonce emitted here to the check in {@see PreviewLinksAdminPage}. */
@@ -149,7 +156,7 @@ final class PreviewLinksListTable extends WP_List_Table {
 	 * @param array<mixed>|object $item
 	 */
 	public function column_cb( $item ): string {
-		if ( ! $item instanceof PreviewLink ) {
+		if ( ! $item instanceof PreviewLink || ! self::can_edit( $item ) ) {
 			return '';
 		}
 
@@ -160,6 +167,16 @@ final class PreviewLinksListTable extends WP_List_Table {
 	}
 
 	public function column_post( PreviewLink $item ): string {
+		if ( ! self::can_edit( $item ) ) {
+			// Naming the type tells the viewer which permission they lack, and
+			// so who to ask, without revealing anything about the post itself.
+			$type  = get_post_type_object( (string) get_post_type( $item->post_id() ) );
+			$label = null !== $type && is_string( $type->labels->singular_name ) ? $type->labels->singular_name : __( 'post', 'shareadraft' );
+
+			/* translators: %s: post type singular name, e.g. "Product" */
+			return esc_html( sprintf( __( '(You cannot edit this %s)', 'shareadraft' ), $label ) );
+		}
+
 		$post_id = $item->post_id();
 		$title   = get_the_title( $post_id );
 
@@ -219,6 +236,10 @@ final class PreviewLinksListTable extends WP_List_Table {
 	 * mint a fresh one — the same rule as every other property of a link.
 	 */
 	public function column_ip_ranges( PreviewLink $item ): string {
+		if ( ! self::can_edit( $item ) ) {
+			return esc_html__( 'Hidden', 'shareadraft' );
+		}
+
 		if ( ! $item->has_ip_restriction() ) {
 			return esc_html( '—' );
 		}
@@ -238,6 +259,10 @@ final class PreviewLinksListTable extends WP_List_Table {
 	 * The named reviewers a link is bound to, or a dash for a bearer link.
 	 */
 	public function column_recipients( PreviewLink $item ): string {
+		if ( ! self::can_edit( $item ) ) {
+			return esc_html__( 'Hidden', 'shareadraft' );
+		}
+
 		$recipients = $item->recipients();
 
 		if ( [] === $recipients ) {
@@ -288,6 +313,11 @@ final class PreviewLinksListTable extends WP_List_Table {
 
 	public function column_token( PreviewLink $item ): string {
 		return sprintf( '<code>%s</code>', esc_html( '····' . $item->token_hint() ) );
+	}
+
+	/** Whether the viewer may see this link's details and revoke it. */
+	private static function can_edit( PreviewLink $item ): bool {
+		return current_user_can( 'edit_post', $item->post_id() );
 	}
 
 	/**

@@ -232,7 +232,9 @@ final class PreviewLinksAdminPage {
 
 			check_admin_referer( 'shareadraft_revoke_' . $post_id . '_' . $token );
 
-			return $this->service->revoke( $post_id, $token ) ? 1 : 0;
+			// The table offers no revoke on a row the viewer cannot edit, so
+			// this only refuses a hand-built request.
+			return current_user_can( 'edit_post', $post_id ) && $this->service->revoke( $post_id, $token ) ? 1 : 0;
 		}
 
 		if ( 'revoke' === $this->requested_bulk_action() ) {
@@ -244,6 +246,9 @@ final class PreviewLinksAdminPage {
 			if ( isset( $_POST['shareadraft_all'] ) && '' !== $_POST['shareadraft_all'] ) {
 				$creator = self::requested_creator();
 
+				// Deliberately not scoped to posts the viewer can edit: this is
+				// offboarding, and a sweep that quietly left some of a leaver's
+				// links working would be worse than one that over-revokes.
 				if ( null !== $creator ) {
 					return $this->revoker->revoke_by_creator( $creator );
 				}
@@ -461,7 +466,10 @@ final class PreviewLinksAdminPage {
 
 	/**
 	 * Revoke every link ticked in the table, returning how many were revoked. Each
-	 * value is a `post_id:token_hash` pair emitted by the checkbox column.
+	 * value is a `post_id:token_hash` pair emitted by the checkbox column. The
+	 * bulk nonce is shared by every row, so each pair is checked against the
+	 * viewer's right to edit its post rather than trusting the table to have
+	 * offered only those.
 	 */
 	private function revoke_selected(): int {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Nonce verified in process_request(); each pair is sanitised with sanitize_text_field() in the loop below.
@@ -480,7 +488,7 @@ final class PreviewLinksAdminPage {
 
 			$parts = explode( ':', sanitize_text_field( $pair ), 2 );
 
-			if ( 2 === count( $parts ) && $this->service->revoke( (int) $parts[0], $parts[1] ) ) {
+			if ( 2 === count( $parts ) && current_user_can( 'edit_post', (int) $parts[0] ) && $this->service->revoke( (int) $parts[0], $parts[1] ) ) {
 				++$count;
 			}
 		}
@@ -599,6 +607,7 @@ final class PreviewLinksAdminPage {
 		);
 
 		$reading  = '<p>' . esc_html__( 'The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor.', 'shareadraft' ) . '</p>';
+		$reading .= '<p>' . esc_html__( 'A link on a post you cannot edit is listed without its title, reviewers, or IP ranges, and cannot be revoked from its row.', 'shareadraft' ) . '</p>';
 		$reading .= '<p><strong>' . esc_html__( 'Status', 'shareadraft' ) . '</strong></p><ul>';
 		$reading .= '<li>' . esc_html__( 'Active: the link works.', 'shareadraft' ) . '</li>';
 		$reading .= '<li>' . esc_html__( 'Expired: past its expiry time.', 'shareadraft' ) . '</li>';
@@ -635,7 +644,7 @@ final class PreviewLinksAdminPage {
 				'id'      => 'shareadraft-revoking',
 				'title'   => __( 'Revoking', 'shareadraft' ),
 				'content' => '<p>' . esc_html__( 'Revoking a link stops it working immediately. For a short period the visitor sees a "no longer available" notice, and after that a plain "not found" page. Revoking cannot be undone: generate a new link to restore access. Use the row action to revoke one link, or tick several and choose the Revoke bulk action.', 'shareadraft' ) . '</p>'
-					. '<p>' . esc_html__( 'To revoke at scale, tick the checkbox in the table header. If more links exist than the page shows, you are offered "Select all" across every page — covering the whole site, or, if you first clicked a name in the Created by column, everything that person created (useful when someone leaves). Then apply the Revoke bulk action as usual. Selecting every link site-wide is limited to administrators. When a user account is deleted, their links are revoked automatically.', 'shareadraft' ) . '</p>'
+					. '<p>' . esc_html__( 'To revoke at scale, tick the checkbox in the table header. If more links exist than the page shows, you are offered "Select all" across every page — covering the whole site, or, if you first clicked a name in the Created by column, everything that person created, including links on posts you cannot edit (useful when someone leaves). Then apply the Revoke bulk action as usual. Selecting every link site-wide is limited to administrators. When a user account is deleted, their links are revoked automatically.', 'shareadraft' ) . '</p>'
 					. '<p>' . esc_html__( 'Not sure yet whether to revoke? Preview links can also be paused site-wide — see the Pausing all links tab.', 'shareadraft' ) . '</p>',
 			]
 		);

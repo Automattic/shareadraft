@@ -199,6 +199,47 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		static::assertEqualsCanonicalizing( [ $first, $second ], array_column( $result, 'post_id' ) );
 	}
 
+	/**
+	 * The site-wide gate is edit_others_posts, which a post type with its own
+	 * capabilities falls outside: an editor cannot edit a draft of this type,
+	 * so the listing leaves its links out.
+	 */
+	public function test_the_site_wide_listing_leaves_out_posts_the_caller_cannot_edit(): void {
+		register_post_type(
+			'sad_product',
+			[
+				'public'          => true,
+				'capability_type' => 'product',
+				'map_meta_cap'    => true,
+			]
+		);
+
+		$hidden  = self::factory()->post->create(
+			[
+				'post_type'   => 'sad_product',
+				'post_status' => 'draft',
+				'post_author' => self::factory()->user->create( [ 'role' => 'administrator' ] ),
+			]
+		);
+		$visible = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$service = new PreviewLinkService( new PostMetaTokenRepository(), new AccessPolicy(), new SystemClock() );
+		$service->mint( $hidden, HOUR_IN_SECONDS, null, 1 );
+		$service->mint( $visible, HOUR_IN_SECONDS, null, 1 );
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$list = wp_get_ability( PreviewAbilities::LIST_LINKS );
+		static::assertInstanceOf( WP_Ability::class, $list );
+
+		$result = $list->execute( [] );
+
+		unregister_post_type( 'sad_product' );
+
+		static::assertIsArray( $result );
+		static::assertSame( [ $visible ], array_column( $result, 'post_id' ) );
+	}
+
 	public function test_the_site_wide_listing_is_denied_without_edit_others_posts(): void {
 		// An author can list their own post's links but not the whole site's.
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'author' ] ) );

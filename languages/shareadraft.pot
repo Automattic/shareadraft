@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-01T14:33:01+00:00\n"
+"POT-Creation-Date: 2026-10-01T16:09:23+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -289,92 +289,92 @@ msgstr ""
 msgid "The preview link could not be revoked; try again."
 msgstr ""
 
-#: inc/class-previewgate.php:273
+#: inc/class-previewgate.php:277
 msgid "Invalid password."
 msgstr ""
 
-#: inc/class-previewgate.php:389
+#: inc/class-previewgate.php:393
 msgid "Private preview link"
 msgstr ""
 
-#: inc/class-previewgate.php:390
+#: inc/class-previewgate.php:394
 msgid "This is a private preview link. Open it in a browser to view the draft."
 msgstr ""
 
-#: inc/class-previewgate.php:399
+#: inc/class-previewgate.php:403
 msgid "This preview link is no longer available."
 msgstr ""
 
-#: inc/class-previewgate.php:402
+#: inc/class-previewgate.php:406
 msgid "This preview link has expired."
 msgstr ""
 
-#: inc/class-previewgate.php:403
+#: inc/class-previewgate.php:407
 msgid "This preview link has been revoked."
 msgstr ""
 
-#: inc/class-previewgate.php:404
+#: inc/class-previewgate.php:408
 msgid "This preview link has reached its viewing limit."
 msgstr ""
 
-#: inc/class-previewgate.php:405
+#: inc/class-previewgate.php:409
 msgid "Preview links are temporarily disabled on this site."
 msgstr ""
 
-#: inc/class-previewgate.php:433
+#: inc/class-previewgate.php:437
 msgid "Please try again later."
 msgstr ""
 
-#: inc/class-previewgate.php:434
+#: inc/class-previewgate.php:438
 msgid "Ask the author to share a new preview link."
 msgstr ""
 
-#: inc/class-previewgate.php:437
+#: inc/class-previewgate.php:441
 msgid "Preview unavailable"
 msgstr ""
 
 #. translators: %d: number of minutes.
-#: inc/class-previewgate.php:508
+#: inc/class-previewgate.php:512
 #, php-format
 msgid "That code did not match or has expired. Check it and use the most recent code, or send a new one. After several wrong tries, wait %d minutes first."
 msgstr ""
 
-#: inc/class-previewgate.php:524
+#: inc/class-previewgate.php:528
 msgid "This preview is for named reviewers. Enter your email address and, if it is on the reviewer list, we will send you a verification code."
 msgstr ""
 
-#: inc/class-previewgate.php:526
+#: inc/class-previewgate.php:530
 msgid "Email address"
 msgstr ""
 
-#: inc/class-previewgate.php:527
+#: inc/class-previewgate.php:531
 msgid "Email me a code"
 msgstr ""
 
-#: inc/class-previewgate.php:530
-#: inc/class-previewgate.php:570
+#: inc/class-previewgate.php:534
+#: inc/class-previewgate.php:574
 msgid "Verify your email"
 msgstr ""
 
 #. translators: %s: the email address the visitor entered.
-#: inc/class-previewgate.php:557
+#: inc/class-previewgate.php:561
 #, php-format
 msgid "If %s is on the reviewer list, we have emailed it a verification code. Enter the code below."
 msgstr ""
 
-#: inc/class-previewgate.php:562
+#: inc/class-previewgate.php:566
 msgid "Verification code"
 msgstr ""
 
-#: inc/class-previewgate.php:563
+#: inc/class-previewgate.php:567
 msgid "Verify"
 msgstr ""
 
-#: inc/class-previewgate.php:565
+#: inc/class-previewgate.php:569
 msgid "Send a new code"
 msgstr ""
 
-#: inc/class-previewgate.php:567
+#: inc/class-previewgate.php:571
 msgid "Use a different email address"
 msgstr ""
 
@@ -408,6 +408,10 @@ msgstr ""
 #: inc/class-previewlinkminter.php:122
 #, php-format
 msgid "\"%s\" is not a valid email address."
+msgstr ""
+
+#: inc/class-previewlinkminter.php:135
+msgid "The preview link could not be saved; try again."
 msgstr ""
 
 #: inc/class-previewlinksadminpage.php:90
@@ -725,13 +729,13 @@ msgid "No matching preview link to revoke."
 msgstr ""
 
 #. translators: 1: site name, 2: the verification code.
-#: inc/class-recipientverifier.php:124
+#: inc/class-recipientverifier.php:125
 #, php-format
 msgid "[%1$s] %2$s is your preview access code"
 msgstr ""
 
 #. translators: 1: the verification code, 2: the site's domain, 3: number of minutes the code stays valid.
-#: inc/class-recipientverifier.php:134
+#: inc/class-recipientverifier.php:135
 #, php-format
 msgid ""
 "Enter this code on %2$s to open the preview you were invited to review: %1$s\n"

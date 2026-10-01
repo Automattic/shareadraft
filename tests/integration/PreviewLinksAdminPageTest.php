@@ -48,6 +48,7 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 		unregister_post_type( 'sad_product' );
 		set_current_screen( 'front' );
 		BulkLinkRevoker::unschedule();
+		delete_option( 'shareadraft_bulk_revoke_jobs' );
 		wp_dequeue_script( 'shareadraft-admin' );
 		wp_deregister_script( 'shareadraft-admin' );
 

@@ -13,6 +13,8 @@ use WP_UnitTestCase;
  * @covers \Automattic\ShareADraft\BulkLinkRevoker
  */
 class BulkLinkRevokerTest extends WP_UnitTestCase {
+	private const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
+
 	private PostMetaTokenRepository $repository;
 	private PreviewLinkService $service;
 	private BulkLinkRevoker $revoker;
@@ -31,6 +33,7 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		BulkLinkRevoker::unschedule();
+		delete_option( self::JOBS_OPTION );
 		remove_all_actions( BulkLinkRevoker::REVOKED_USER_ACTION );
 		parent::tear_down();
 	}
@@ -155,6 +158,102 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		foreach ( $post_ids as $post_id ) {
 			static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
 		}
+	}
+
+	/**
+	 * Overlapping offboarding: a second user is deleted while the first user's
+	 * sweep is mid-batch. The first sweep must not write its stale copy of the
+	 * queue back over the second, and its completion event fires exactly once.
+	 */
+	public function test_a_sweep_queued_during_another_batch_is_not_dropped(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 8 );
+
+		$completed = new \ArrayObject();
+		add_action(
+			BulkLinkRevoker::REVOKED_USER_ACTION,
+			static function ( int $user_id ) use ( $completed ): void {
+				$completed->append( $user_id );
+			}
+		);
+
+		$revoker   = $this->revoker;
+		$interrupt = static function () use ( $revoker, &$interrupt ): void {
+			remove_action( 'updated_post_meta', $interrupt );
+			$revoker->revoke_by_creator( 8 );
+		};
+		add_action( 'updated_post_meta', $interrupt );
+
+		$this->revoker->revoke_by_creator( 7 );
+
+		static::assertTrue( $this->revoker->has_pending_work() );
+		static::assertNotFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
+
+		$this->revoker->run();
+
+		static::assertFalse( $this->revoker->has_pending_work() );
+		static::assertSame( [ 7, 8 ], $completed->getArrayCopy() );
+
+		foreach ( $this->repository->all_for_post( $post_id ) as $link ) {
+			static::assertTrue( $link->is_revoked() );
+		}
+	}
+
+	/**
+	 * Deactivating mid-sweep leaves the queue in place, and reactivating re-arms
+	 * the continuation so the posts it had not reached are swept.
+	 */
+	public function test_reactivating_resumes_a_sweep_deactivation_interrupted(): void {
+		$post_ids = [];
+		for ( $i = 0; $i < 101; $i++ ) {
+			$post_id    = $this->draft();
+			$post_ids[] = $post_id;
+			$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+		}
+
+		$this->revoker->revoke_by_creator( 7 );
+
+		BulkLinkRevoker::unschedule();
+
+		static::assertFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
+		static::assertTrue( $this->revoker->has_pending_work() );
+
+		BulkLinkRevoker::reschedule();
+
+		static::assertNotFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
+
+		$this->revoker->run();
+
+		foreach ( $post_ids as $post_id ) {
+			static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+		}
+	}
+
+	public function test_reactivating_with_no_pending_work_schedules_nothing(): void {
+		BulkLinkRevoker::reschedule();
+
+		static::assertFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
+	}
+
+	/**
+	 * A queued entry that has lost its `creator` key must not be read as a null
+	 * creator, which means "revoke every link on the site".
+	 */
+	public function test_a_queued_entry_without_a_creator_is_not_read_as_revoke_all(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		update_option( self::JOBS_OPTION, [
+			[
+				'id'     => 'corrupt',
+				'cursor' => 0,
+			],
+		], false );
+
+		static::assertFalse( $this->revoker->has_pending_work() );
+		static::assertSame( 0, $this->revoker->run() );
+		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
 	}
 
 	public function test_running_with_no_pending_work_is_a_no_op(): void {

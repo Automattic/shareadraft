@@ -137,15 +137,19 @@ final class PreviewGate {
 				continue;
 			}
 
-			// The site-wide switch pauses every link without touching its state:
-			// the row still says what it said, it just is not honoured right now.
-			if ( $this->toggle->is_disabled() ) {
-				$this->remember_denial( self::REASON_DISABLED );
-				continue;
-			}
-
 			$post_id  = (int) $post->ID;
 			$decision = $this->service->authorize( $post_id, $token, $this->holds_slot( $token ), $this->client_ip(), $this->verified_email );
+
+			// The site-wide switch pauses every link without touching its state:
+			// the row still says what it said, it just is not honoured right now.
+			// Only a link that would otherwise open (or email a verification
+			// code) is told so: an unknown token still 404s, so pausing cannot be
+			// used to probe which drafts exist, and a dead link still says why,
+			// since it will not work once links are back on either.
+			if ( $this->toggle->is_disabled() && ( $decision->is_allowed() || AccessDecision::REASON_EMAIL_UNVERIFIED === $decision->reason() ) ) {
+				$this->remember_denial( self::REASON_DISABLED, $post_id );
+				continue;
+			}
 
 			if ( ! $decision->is_allowed() ) {
 				// Remember a dead-but-real link so template_redirect can explain

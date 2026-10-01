@@ -47,8 +47,11 @@ final class Plugin {
 		);
 
 		// Central IP ranges from the VIP Dashboard, if any. Untrusted customer
-		// input: anything unusable is dropped rather than half-applied.
-		$central_ip_ranges = IpAllowlist::sanitize( Config::get_instance()->get( 'ip_allowlist' ) );
+		// input: anything unusable is dropped rather than half-applied, and
+		// named on the Preview Links screen so a typo is not silently ignored.
+		$raw_ip_ranges      = Config::get_instance()->get( 'ip_allowlist' );
+		$central_ip_ranges  = IpAllowlist::sanitize( $raw_ip_ranges );
+		$rejected_ip_ranges = IpAllowlist::rejected( $raw_ip_ranges );
 
 		// Composition root: assemble the domain graph once (no container) and
 		// share it between minting (REST) and enforcement (the gate). Swapping
@@ -81,7 +84,7 @@ final class Plugin {
 		$revoker->register();
 
 		// Site-wide audit + revoke table for editors.
-		( new PreviewLinksAdminPage( $service, $clock, $revoker, $toggle, $central_ip_ranges ) )->register();
+		( new PreviewLinksAdminPage( $service, $clock, $revoker, $toggle, $central_ip_ranges, $rejected_ip_ranges ) )->register();
 
 		// Expose link management to MCP, the AI Client, and the abilities REST
 		// runner, mirroring the `wp shareadraft` commands. Shares the same

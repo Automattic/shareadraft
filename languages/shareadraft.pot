@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-01T16:19:51+00:00\n"
+"POT-Creation-Date: 2026-10-01T16:33:36+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -414,223 +414,235 @@ msgstr ""
 msgid "The preview link could not be saved; try again."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:90
-#: inc/class-previewlinksadminpage.php:91
-#: inc/class-previewlinksadminpage.php:280
+#: inc/class-previewlinksadminpage.php:98
+#: inc/class-previewlinksadminpage.php:99
+#: inc/class-previewlinksadminpage.php:288
 msgid "Preview Links"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:202
+#: inc/class-previewlinksadminpage.php:210
 msgid "You are not allowed to change whether preview links work on this site."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:259
+#: inc/class-previewlinksadminpage.php:267
 msgid "You are not allowed to revoke all preview links."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:273
+#: inc/class-previewlinksadminpage.php:281
 msgid "You are not allowed to manage preview links."
 msgstr ""
 
 #. translators: 1: number of links, 2: user display name
-#: inc/class-previewlinksadminpage.php:353
+#: inc/class-previewlinksadminpage.php:362
 #, php-format
 msgid "Select all %1$d links created by %2$s"
 msgstr ""
 
 #. translators: 1: number of links, 2: user display name
-#: inc/class-previewlinksadminpage.php:355
+#: inc/class-previewlinksadminpage.php:364
 #, php-format
 msgid "All %1$d links created by %2$s are selected."
 msgstr ""
 
 #. translators: %d: number of links
-#: inc/class-previewlinksadminpage.php:358
+#: inc/class-previewlinksadminpage.php:367
 #, php-format
 msgid "Select all %d links across the whole site"
 msgstr ""
 
 #. translators: %d: number of links
-#: inc/class-previewlinksadminpage.php:360
+#: inc/class-previewlinksadminpage.php:369
 #, php-format
 msgid "All %d links across the whole site are selected."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:368
+#: inc/class-previewlinksadminpage.php:377
 msgid "All links on this page are selected."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:371
+#: inc/class-previewlinksadminpage.php:380
 msgid "Clear selection"
 msgstr ""
 
 #. translators: %d: user ID
-#: inc/class-previewlinksadminpage.php:383
+#: inc/class-previewlinksadminpage.php:392
 #: inc/class-previewlinkslisttable.php:205
 #, php-format
 msgid "User #%d"
 msgstr ""
 
 #. translators: 1: user display name, 2: date and time
-#: inc/class-previewlinksadminpage.php:410
+#: inc/class-previewlinksadminpage.php:419
 #, php-format
 msgid "Disabled by %1$s on %2$s."
 msgstr ""
 
 #. translators: %s: date and time
-#: inc/class-previewlinksadminpage.php:413
+#: inc/class-previewlinksadminpage.php:422
 #, php-format
 msgid "Disabled on %s."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:420
+#: inc/class-previewlinksadminpage.php:429
 msgid "Preview links are disabled site-wide."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:421
+#: inc/class-previewlinksadminpage.php:430
 msgid "No preview link works while this is off — including newly generated ones. Each link keeps its own expiry and usage, and links that are still valid start working again when re-enabled."
 msgstr ""
 
 #. translators: %s: user display name
-#: inc/class-previewlinksadminpage.php:443
+#: inc/class-previewlinksadminpage.php:452
 #, php-format
 msgid "Showing links created by %s."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:446
+#: inc/class-previewlinksadminpage.php:455
 msgid "Show all creators"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:520
+#: inc/class-previewlinksadminpage.php:528
+msgid "Some trusted IP ranges set in the VIP Dashboard are not valid IP addresses or CIDR ranges, so they are ignored:"
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:531
+msgid "No site-wide IP restriction applies until they are corrected."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:532
+msgid "Only the valid ranges below apply."
+msgstr ""
+
+#: inc/class-previewlinksadminpage.php:557
 msgid "Every link opens only from these IP ranges, set in the VIP Dashboard, plus any ranges shown on the link itself below:"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:542
+#: inc/class-previewlinksadminpage.php:579
 msgid "No preview links were revoked. Any you selected may already have been revoked."
 msgstr ""
 
 #. translators: %d: number of preview links revoked
-#: inc/class-previewlinksadminpage.php:550
+#: inc/class-previewlinksadminpage.php:587
 #, php-format
 msgid "%d preview link revoked."
 msgid_plural "%d preview links revoked."
 msgstr[0] ""
 msgstr[1] ""
 
-#: inc/class-previewlinksadminpage.php:555
+#: inc/class-previewlinksadminpage.php:592
 msgid "The remaining links are being revoked in the background."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:578
+#: inc/class-previewlinksadminpage.php:615
 msgid "Links per page"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:617
+#: inc/class-previewlinksadminpage.php:654
 msgid "Overview"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:618
+#: inc/class-previewlinksadminpage.php:655
 msgid "This screen lists every preview link across the site, so you can see at a glance which drafts are shared, how far each link has been used, and when it expires. It is read-only apart from revoking, and is shown to editors because they can already view the drafts these links point at."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:622
+#: inc/class-previewlinksadminpage.php:659
 msgid "The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:623
+#: inc/class-previewlinksadminpage.php:660
 msgid "A link on a post you cannot edit is listed without its title, reviewers, or IP ranges, and cannot be revoked from its row."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:624
+#: inc/class-previewlinksadminpage.php:661
 #: inc/class-previewlinkslisttable.php:105
 msgid "Status"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:625
+#: inc/class-previewlinksadminpage.php:662
 msgid "Active: the link works."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:626
+#: inc/class-previewlinksadminpage.php:663
 msgid "Expired: past its expiry time."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:627
+#: inc/class-previewlinksadminpage.php:664
 msgid "Exhausted: opened by as many people as it allows."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:628
+#: inc/class-previewlinksadminpage.php:665
 msgid "Revoked: switched off by hand."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:629
+#: inc/class-previewlinksadminpage.php:666
 msgid "Uses counts how many people have opened the link, against its maximum; an infinity sign means no maximum."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:630
+#: inc/class-previewlinksadminpage.php:667
 msgid "Each browser counts as one person. A reviewer who opens the link in another browser, on another device, or in a private window, or who clears their cookies, counts again, while people sharing one browser count once. A browser is remembered for a week, so on a link that lasts longer, a reviewer returning after a week counts again."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:635
+#: inc/class-previewlinksadminpage.php:672
 msgid "Reviewers shows the email addresses a link is bound to. Each reviewer proves control of their address with an emailed code before the draft opens, so the link works for the people it names rather than for anyone it gets forwarded to. A dash means anyone with the link can view. To change the reviewer list, revoke the link and generate a new one."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:642
+#: inc/class-previewlinksadminpage.php:679
 msgid "IP ranges shows the addresses a link is restricted to: a link with ranges opens only from them."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:643
+#: inc/class-previewlinksadminpage.php:680
 msgid "IP ranges shows the ranges a link has of its own. Every link opens only from the ranges set in the VIP Dashboard, and a link's own ranges let it open from further places too."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:644
+#: inc/class-previewlinksadminpage.php:681
 msgid "A dash means the link has no ranges of its own. A link cannot be edited once shared: to change its ranges, revoke it and generate a new one."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:650
+#: inc/class-previewlinksadminpage.php:687
 msgid "Reading a row"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:658
+#: inc/class-previewlinksadminpage.php:695
 msgid "Revoking"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:659
+#: inc/class-previewlinksadminpage.php:696
 msgid "Revoking a link stops it working immediately. For a short period the visitor sees a \"no longer available\" notice, and after that a plain \"not found\" page. Revoking cannot be undone: generate a new link to restore access. Use the row action to revoke one link, or tick several and choose the Revoke bulk action."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:660
+#: inc/class-previewlinksadminpage.php:697
 msgid "To revoke at scale, tick the checkbox in the table header. If more links exist than the page shows, you are offered \"Select all\" across every page — covering the whole site, or, if you first clicked a name in the Created by column, everything that person created, including links on posts you cannot edit (useful when someone leaves). Then apply the Revoke bulk action as usual. Selecting every link site-wide is limited to administrators. When a user account is deleted, their links are revoked automatically."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:661
+#: inc/class-previewlinksadminpage.php:698
 msgid "Not sure yet whether to revoke? Preview links can also be paused site-wide — see the Pausing all links tab."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:668
+#: inc/class-previewlinksadminpage.php:705
 msgid "Pausing all links"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:669
+#: inc/class-previewlinksadminpage.php:706
 msgid "The toggle next to the bulk actions switches every preview link off at once — the first response when links may be leaking but you are not yet sure. It is a reversible pause, not a revocation: nothing is deleted, each link keeps its own expiry and usage, and links that are still valid resume working the moment an administrator re-enables them."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:670
+#: inc/class-previewlinksadminpage.php:707
 msgid "While links are paused, this screen banners who paused them and when, the editor warns authors that new and existing links will not work, and visitors opening a link see a \"temporarily disabled\" notice. Only administrators can flip the switch."
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:688
+#: inc/class-previewlinksadminpage.php:725
 msgid "WordPress VIP documentation"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:689
+#: inc/class-previewlinksadminpage.php:726
 msgid "Contact VIP support"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:692
+#: inc/class-previewlinksadminpage.php:729
 msgid "Support forum"
 msgstr ""
 
-#: inc/class-previewlinksadminpage.php:695
+#: inc/class-previewlinksadminpage.php:732
 msgid "For more information"
 msgstr ""
 
@@ -733,13 +745,13 @@ msgid "No matching preview link to revoke."
 msgstr ""
 
 #. translators: 1: site name, 2: the verification code.
-#: inc/class-recipientverifier.php:125
+#: inc/class-recipientverifier.php:115
 #, php-format
 msgid "[%1$s] %2$s is your preview access code"
 msgstr ""
 
 #. translators: 1: the verification code, 2: the site's domain, 3: number of minutes the code stays valid.
-#: inc/class-recipientverifier.php:135
+#: inc/class-recipientverifier.php:125
 #, php-format
 msgid ""
 "Enter this code on %2$s to open the preview you were invited to review: %1$s\n"

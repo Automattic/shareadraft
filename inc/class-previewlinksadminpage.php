@@ -44,19 +44,27 @@ final class PreviewLinksAdminPage {
 	 */
 	private array $central_ip_ranges;
 
+	/**
+	 * @var list<string> Entries in the VIP Dashboard's ranges that are not valid
+	 *                   IP addresses or CIDR ranges, and so are not applied.
+	 */
+	private array $rejected_ip_ranges;
+
 	/** Built lazily on the screen load, then reused when rendering the page. */
 	private ?PreviewLinksListTable $table = null;
 
 	/**
-	 * @param list<string> $central_ip_ranges Central CIDR ranges applying to
-	 *                                        every link, or empty for none.
+	 * @param list<string> $central_ip_ranges  Central CIDR ranges applying to
+	 *                                         every link, or empty for none.
+	 * @param list<string> $rejected_ip_ranges Central entries ignored as invalid.
 	 */
-	public function __construct( PreviewLinkService $service, Clock $clock, BulkLinkRevoker $revoker, ?LinkToggle $toggle = null, array $central_ip_ranges = [] ) {
-		$this->service           = $service;
-		$this->clock             = $clock;
-		$this->revoker           = $revoker;
-		$this->toggle            = $toggle ?? new LinkToggle();
-		$this->central_ip_ranges = $central_ip_ranges;
+	public function __construct( PreviewLinkService $service, Clock $clock, BulkLinkRevoker $revoker, ?LinkToggle $toggle = null, array $central_ip_ranges = [], array $rejected_ip_ranges = [] ) {
+		$this->service            = $service;
+		$this->clock              = $clock;
+		$this->revoker            = $revoker;
+		$this->toggle             = $toggle ?? new LinkToggle();
+		$this->central_ip_ranges  = $central_ip_ranges;
+		$this->rejected_ip_ranges = $rejected_ip_ranges;
 	}
 
 	/**
@@ -281,6 +289,7 @@ final class PreviewLinksAdminPage {
 
 		$this->render_toggle_form();
 		$this->maybe_render_disabled_banner();
+		$this->maybe_render_rejected_ranges();
 		$this->maybe_render_central_ranges();
 		$this->maybe_render_notice();
 		$this->maybe_render_creator_filter();
@@ -494,6 +503,34 @@ final class PreviewLinksAdminPage {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Name any VIP Dashboard ranges that were ignored as malformed. The
+	 * Dashboard field is free text, and if every entry is a typo the site
+	 * silently has no IP restriction at all while its owner believes it does.
+	 */
+	private function maybe_render_rejected_ranges(): void {
+		if ( [] === $this->rejected_ip_ranges ) {
+			return;
+		}
+
+		$entries = implode(
+			', ',
+			array_map(
+				static fn ( string $entry ): string => sprintf( '<code>%s</code>', esc_html( $entry ) ),
+				$this->rejected_ip_ranges
+			)
+		);
+
+		printf(
+			'<div class="notice notice-warning"><p>%s %s %s</p></div>',
+			esc_html__( 'Some trusted IP ranges set in the VIP Dashboard are not valid IP addresses or CIDR ranges, so they are ignored:', 'shareadraft' ),
+			$entries, // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each entry is passed through esc_html() above; the only markup is static <code> tags.
+			[] === $this->central_ip_ranges
+				? esc_html__( 'No site-wide IP restriction applies until they are corrected.', 'shareadraft' )
+				: esc_html__( 'Only the valid ranges below apply.', 'shareadraft' )
+		);
 	}
 
 	/**

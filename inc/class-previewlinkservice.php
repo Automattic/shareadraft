@@ -53,12 +53,14 @@ final class PreviewLinkService {
 	 * @param list<string> $recipients  Lowercased emails of named reviewers to
 	 *                                  bind the link to, or empty for a bearer
 	 *                                  link anyone holding the URL may use.
+	 * @throws \RuntimeException When the link could not be stored, so a caller
+	 *                           never hands out a URL that will not open.
 	 */
 	public function mint( int $post_id, int $ttl_seconds, ?int $max_uses, int $created_by, array $allowed_ips = [], array $recipients = [] ): Token {
 		$token = Token::generate();
 		$now   = $this->clock->now();
 
-		$this->repository->save(
+		$saved = $this->repository->save(
 			PreviewLink::issue(
 				$post_id,
 				$token,
@@ -70,6 +72,10 @@ final class PreviewLinkService {
 				$recipients
 			)
 		);
+
+		if ( ! $saved ) {
+			throw new \RuntimeException( 'The preview link could not be saved.' );
+		}
 
 		return $token;
 	}

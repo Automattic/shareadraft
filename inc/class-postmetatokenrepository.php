@@ -73,9 +73,24 @@ final class PostMetaTokenRepository implements TokenRepository {
 		$this->read_rows = new \WeakMap();
 	}
 
-	public function save( PreviewLink $link ): void {
-		add_post_meta( $link->post_id(), self::META_KEY, $this->to_array( $link ) );
-		add_post_meta( $link->post_id(), self::USES_META_KEY, $this->uses_row( $link ) );
+	public function save( PreviewLink $link ): bool {
+		$token_mid = add_post_meta( $link->post_id(), self::META_KEY, $this->to_array( $link ) );
+
+		if ( false === $token_mid ) {
+			return false;
+		}
+
+		if ( false !== add_post_meta( $link->post_id(), self::USES_META_KEY, $this->uses_row( $link ) ) ) {
+			return true;
+		}
+
+		// Without its uses row a capped link could never be claimed, so take the
+		// link's own row back out by ID rather than leave a half-written link.
+		// Should that delete fail too, the row is one nobody holds a URL for,
+		// and the garbage collector reaps it once it expires.
+		delete_metadata_by_mid( 'post', $token_mid );
+
+		return false;
 	}
 
 	public function find( int $post_id, Token $candidate ): ?PreviewLink {

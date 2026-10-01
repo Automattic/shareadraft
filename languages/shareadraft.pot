@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-30T22:57:13+00:00\n"
+"POT-Creation-Date: 2026-10-01T14:33:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -334,38 +334,48 @@ msgid "Preview unavailable"
 msgstr ""
 
 #. translators: %d: number of minutes.
-#: inc/class-previewgate.php:512
+#: inc/class-previewgate.php:508
 #, php-format
-msgid "That code did not match or has expired. Check it, or reload this page to request a new one. After several wrong tries, wait %d minutes first."
+msgid "That code did not match or has expired. Check it and use the most recent code, or send a new one. After several wrong tries, wait %d minutes first."
 msgstr ""
 
-#: inc/class-previewgate.php:528
+#: inc/class-previewgate.php:524
 msgid "This preview is for named reviewers. Enter your email address and, if it is on the reviewer list, we will send you a verification code."
 msgstr ""
 
-#: inc/class-previewgate.php:530
+#: inc/class-previewgate.php:526
 msgid "Email address"
 msgstr ""
 
-#: inc/class-previewgate.php:531
+#: inc/class-previewgate.php:527
 msgid "Email me a code"
 msgstr ""
 
-#: inc/class-previewgate.php:534
-#: inc/class-previewgate.php:553
+#: inc/class-previewgate.php:530
+#: inc/class-previewgate.php:570
 msgid "Verify your email"
 msgstr ""
 
-#: inc/class-previewgate.php:545
-msgid "If that address is on the reviewer list, we have emailed it a verification code. Enter the code below."
+#. translators: %s: the email address the visitor entered.
+#: inc/class-previewgate.php:557
+#, php-format
+msgid "If %s is on the reviewer list, we have emailed it a verification code. Enter the code below."
 msgstr ""
 
-#: inc/class-previewgate.php:549
+#: inc/class-previewgate.php:562
 msgid "Verification code"
 msgstr ""
 
-#: inc/class-previewgate.php:550
+#: inc/class-previewgate.php:563
 msgid "Verify"
+msgstr ""
+
+#: inc/class-previewgate.php:565
+msgid "Send a new code"
+msgstr ""
+
+#: inc/class-previewgate.php:567
+msgid "Use a different email address"
 msgstr ""
 
 #: inc/class-previewlinkminter.php:54
@@ -694,23 +704,23 @@ msgstr ""
 msgid "Active"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:49
+#: inc/class-previewrestcontroller.php:52
 msgid "1 hour"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:53
+#: inc/class-previewrestcontroller.php:56
 msgid "8 hours"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:57
+#: inc/class-previewrestcontroller.php:60
 msgid "24 hours"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:61
+#: inc/class-previewrestcontroller.php:64
 msgid "7 days"
 msgstr ""
 
-#: inc/class-previewrestcontroller.php:199
+#: inc/class-previewrestcontroller.php:241
 msgid "No matching preview link to revoke."
 msgstr ""
 

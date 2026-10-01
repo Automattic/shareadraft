@@ -3,6 +3,7 @@ declare(strict_types = 1);
 
 namespace Automattic\ShareADraft;
 
+use MockPHPMailer;
 use WP_Post;
 use WP_Query;
 use WP_UnitTestCase;
@@ -17,6 +18,7 @@ use WP_UnitTestCase;
 class PreviewGateTest extends WP_UnitTestCase {
 	private PreviewLinkService $service;
 	private PostMetaTokenRepository $repository;
+	private string $request_uri;
 
 	public function set_up(): void {
 		parent::set_up();
@@ -30,13 +32,20 @@ class PreviewGateTest extends WP_UnitTestCase {
 
 		// A human, not a crawler, so visits count.
 		$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 (Test Human)';
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Saved verbatim only to restore it in tear_down().
+		$this->request_uri = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] ) ? $_SERVER['REQUEST_URI'] : '';
+		reset_phpmailer_instance();
 	}
 
 	public function tear_down(): void {
 		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_GET['shareadraft-postpass'], $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_SEC_PURPOSE'] );
 		$_SERVER['REQUEST_METHOD'] = 'GET';
 		$_COOKIE                   = [];
+		$_POST                     = [];
 		$_SERVER['REMOTE_ADDR']    = '127.0.0.1';
+		$_SERVER['REQUEST_URI']    = $this->request_uri;
+		reset_phpmailer_instance();
 		parent::tear_down();
 	}
 
@@ -489,6 +498,75 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( 'draft', $this->visit( $post_id, $token ) );
 	}
 
+	public function test_a_wrong_code_offers_a_new_code_instead_of_a_reload(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$this->finish_request();
+
+		$page = $this->post_verification( $post_id, $token, 'verify-code', 'legal@example.com', '000000' );
+
+		// Reloading this page would re-post the wrong code and spend a guess.
+		static::assertStringNotContainsString( 'reload', $page );
+		static::assertStringContainsString( 'value="request-code"', $page );
+		static::assertStringContainsString( 'Use a different email address', $page );
+		static::assertStringNotContainsString( 'id="_wpnonce"', $page, 'Two forms must not share an ID.' );
+
+		$this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$this->finish_request();
+
+		$mailer = tests_retrieve_phpmailer_instance();
+		static::assertInstanceOf( MockPHPMailer::class, $mailer );
+		static::assertCount( 2, $mailer->mock_sent );
+		static::assertSame( 1, preg_match( '/\b([0-9]{6})\b/', $mailer->mock_sent[1]['body'], $matches ) );
+		static::assertTrue( ( new RecipientVerifier() )->verify_code( $token, 'legal@example.com', $matches[1] ) );
+	}
+
+	public function test_the_first_code_page_offers_a_new_code_and_a_way_back(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$page = $this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+
+		// The "it never arrived" path: no error yet, but a typo is visible and
+		// both ways out are there.
+		static::assertStringContainsString( '<strong>legal@example.com</strong>', $page );
+		static::assertStringContainsString( 'value="request-code"', $page );
+		static::assertMatchesRegularExpression( '/<a href="[^"]*' . preg_quote( $token->value(), '/' ) . '[^"]*">Use a different email address/', $page );
+	}
+
+	public function test_the_code_page_does_not_reveal_whether_an_address_is_listed(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$listed   = $this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$unlisted = $this->post_verification( $post_id, $token, 'request-code', 'stranger@example.com' );
+
+		static::assertSame( $listed, str_replace( 'stranger@example.com', 'legal@example.com', $unlisted ) );
+	}
+
+	public function test_a_new_code_is_not_sent_once_the_guesses_are_spent(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$this->finish_request();
+
+		for ( $i = 0; $i < 5; $i++ ) {
+			$this->post_verification( $post_id, $token, 'verify-code', 'legal@example.com', '000000' );
+		}
+
+		// The button stays (hiding it would reveal the address is listed), but
+		// a code that could not be redeemed is not worth sending.
+		$this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$this->finish_request();
+
+		$mailer = tests_retrieve_phpmailer_instance();
+		static::assertInstanceOf( MockPHPMailer::class, $mailer );
+		static::assertCount( 1, $mailer->mock_sent );
+	}
+
 	public function test_a_password_form_sends_a_token_holder_back_to_the_preview(): void {
 		$post_id = self::factory()->post->create(
 			[
@@ -667,6 +745,42 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$gate->unlock_valid_previews( [ get_post( $post_id ) ], $this->preview_query() );
 
 		return $gate;
+	}
+
+	/**
+	 * End the simulated request: run the deferred code send, then drop it so
+	 * the next simulated request does not send it again.
+	 */
+	private function finish_request(): void {
+		do_action( 'shutdown' );
+		remove_all_actions( 'shutdown' );
+	}
+
+	/**
+	 * Post one step of the email-verification interstitial, as the visitor's
+	 * browser would, and return the page the gate renders in reply.
+	 */
+	private function post_verification( int $post_id, Token $token, string $action, string $email, string $code = '' ): string {
+		// Core's own shutdown work (flushing output buffers) has no place in
+		// a test; only the gate's deferred send should run in finish_request().
+		remove_all_actions( 'shutdown' );
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = add_query_arg( PreviewGate::TOKEN_QUERY_VAR, $token->value(), '/?p=' . $post_id );
+		$_POST                     = [
+			'_wpnonce'                  => wp_create_nonce( 'shareadraft_verify' ),
+			'shareadraft-verify-action' => $action,
+			'shareadraft-email'         => $email,
+			'shareadraft-code'          => $code,
+		];
+
+		try {
+			$this->denied_main_query( $post_id, $token )->maybe_render_notice();
+		} catch ( \WPDieException $page ) {
+			return $page->getMessage();
+		}
+
+		static::fail( 'The gate rendered no page.' );
 	}
 
 	/**

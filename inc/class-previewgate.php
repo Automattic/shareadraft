@@ -501,11 +501,7 @@ final class PreviewGate {
 
 				// Redirect back to the same preview URL as a GET, so the page
 				// loads with the fresh cookie and a refresh cannot re-post.
-				// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REQUEST_URI__ -- Uncached preview request (unique token query string + nocache headers); redirecting to the URL just requested.
-				$target = isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] )
-					? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
-					: home_url( '/' );
-				wp_safe_redirect( $target, 303 );
+				wp_safe_redirect( $this->current_url(), 303 );
 				exit;
 			}
 
@@ -513,7 +509,7 @@ final class PreviewGate {
 				$email,
 				sprintf(
 					/* translators: %d: number of minutes. */
-					__( 'That code did not match or has expired. Check it, or reload this page to request a new one. After several wrong tries, wait %d minutes first.', 'shareadraft' ),
+					__( 'That code did not match or has expired. Check it and use the most recent code, or send a new one. After several wrong tries, wait %d minutes first.', 'shareadraft' ),
 					RecipientVerifier::WINDOW / MINUTE_IN_SECONDS
 				)
 			);
@@ -542,19 +538,51 @@ final class PreviewGate {
 	 * Step two: swap the emailed code for access. The copy stays neutral about
 	 * whether mail was actually sent — see {@see PreviewGate::handle_verification()}.
 	 * Ends the request.
+	 *
+	 * Both ways out are offered here, because reloading this page would re-post
+	 * the last form: a second form re-requests a code for the same address, and
+	 * a plain link back to the preview URL restarts at the email form, which
+	 * reopening the link would do anyway. Naming the address lets a reviewer
+	 * spot a typo; it only echoes their own input.
 	 */
 	private function render_code_form( string $email, string $error = '' ): void {
+		// Written by hand, not with wp_nonce_field(): that adds id="_wpnonce",
+		// which two forms on one page would duplicate.
+		$hidden = sprintf(
+			'<input type="hidden" name="_wpnonce" value="%s" /><input type="hidden" name="shareadraft-email" value="%s" />',
+			esc_attr( wp_create_nonce( 'shareadraft_verify' ) ),
+			esc_attr( $email )
+		);
+
 		$html = sprintf(
-			'<p>%s</p>%s<form method="post">%s<input type="hidden" name="shareadraft-verify-action" value="verify-code" /><input type="hidden" name="shareadraft-email" value="%s" /><p><label for="shareadraft-code">%s</label><input type="text" name="shareadraft-code" id="shareadraft-code" class="shareadraft-code" required inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></p><p><button type="submit" class="button-primary">%s</button></p></form>',
-			esc_html__( 'If that address is on the reviewer list, we have emailed it a verification code. Enter the code below.', 'shareadraft' ),
+			'<p>%s</p>%s<form method="post">%s<input type="hidden" name="shareadraft-verify-action" value="verify-code" /><p><label for="shareadraft-code">%s</label><input type="text" name="shareadraft-code" id="shareadraft-code" class="shareadraft-code" required inputmode="numeric" autocomplete="one-time-code" maxlength="6" /></p><p><button type="submit" class="button-primary">%s</button></p></form><form method="post" class="shareadraft-alt-actions">%s<input type="hidden" name="shareadraft-verify-action" value="request-code" /><button type="submit" class="button-link">%s</button><a href="%s">%s</a></form>',
+			sprintf(
+				/* translators: %s: the email address the visitor entered. */
+				esc_html__( 'If %s is on the reviewer list, we have emailed it a verification code. Enter the code below.', 'shareadraft' ),
+				'<strong>' . esc_html( $email ) . '</strong>'
+			),
 			'' === $error ? '' : sprintf( '<p role="alert"><strong>%s</strong></p>', esc_html( $error ) ),
-			wp_nonce_field( 'shareadraft_verify', '_wpnonce', false, false ),
-			esc_attr( $email ),
+			$hidden,
 			esc_html__( 'Verification code', 'shareadraft' ),
-			esc_html__( 'Verify', 'shareadraft' )
+			esc_html__( 'Verify', 'shareadraft' ),
+			$hidden,
+			esc_html__( 'Send a new code', 'shareadraft' ),
+			esc_url( $this->current_url() ),
+			esc_html__( 'Use a different email address', 'shareadraft' )
 		);
 
 		NoticePage::render( __( 'Verify your email', 'shareadraft' ), $html, 200 );
+	}
+
+	/**
+	 * The preview URL this request was made to, token included, falling back
+	 * to the home page.
+	 */
+	private function current_url(): string {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REQUEST_URI__ -- Uncached preview request (unique token query string + nocache headers); pointing back at the URL just requested.
+		return isset( $_SERVER['REQUEST_URI'] ) && is_string( $_SERVER['REQUEST_URI'] )
+			? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) )
+			: home_url( '/' );
 	}
 
 	/**

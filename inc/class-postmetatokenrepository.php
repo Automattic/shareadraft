@@ -133,7 +133,7 @@ final class PostMetaTokenRepository implements TokenRepository {
 			return false;
 		}
 
-		return (bool) update_post_meta(
+		return $this->compare_and_swap(
 			$link->post_id(),
 			self::USES_META_KEY,
 			$this->uses_row( $link->with_use() ),
@@ -252,14 +252,7 @@ final class PostMetaTokenRepository implements TokenRepository {
 	private function replace_row( PreviewLink $read, PreviewLink $replacement ): bool {
 		$stored = $this->stored_row( $read );
 
-		$updated = update_post_meta(
-			$read->post_id(),
-			self::META_KEY,
-			$this->to_array( $replacement ),
-			$stored
-		);
-
-		if ( false === $updated ) {
+		if ( ! $this->compare_and_swap( $read->post_id(), self::META_KEY, $this->to_array( $replacement ), $stored ) ) {
 			return false;
 		}
 
@@ -268,6 +261,27 @@ final class PostMetaTokenRepository implements TokenRepository {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Write `$value` over the row holding `$prev_value`, returning whether one matched.
+	 *
+	 * WordPress only clears the post's meta cache after a write that changed a
+	 * row, so a lost race would leave this request holding the stale value and
+	 * every re-read would lose again. Clearing it here makes the caller's
+	 * re-read see the write that won.
+	 *
+	 * @param array<string, mixed> $value
+	 * @param array<string, mixed> $prev_value
+	 */
+	private function compare_and_swap( int $post_id, string $meta_key, array $value, array $prev_value ): bool {
+		if ( false !== update_post_meta( $post_id, $meta_key, $value, $prev_value ) ) {
+			return true;
+		}
+
+		wp_cache_delete( (string) $post_id, 'post_meta' );
+
+		return false;
 	}
 
 	public function delete_all_for_post( int $post_id ): void {

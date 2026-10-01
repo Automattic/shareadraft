@@ -283,6 +283,51 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		static::assertSame( $second->token_hash(), $reloaded[1]->token_hash() );
 	}
 
+	public function test_a_claim_that_loses_to_another_process_retries_against_its_write(): void {
+		$post  = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token = $this->save_capped_link( $post, 3 );
+
+		// Another process spends a slot after this request cached the post's meta.
+		$this->overwrite_behind_the_cache( $post, PostMetaTokenRepository::USES_META_KEY, $this->uses_row( $token, 1 ) );
+
+		static::assertTrue( $this->service()->claim_slot( $post, $token ) );
+		static::assertSame( 2, $this->repository->find( $post, $token )?->use_count() );
+	}
+
+	public function test_a_claim_that_loses_the_last_slot_to_another_process_is_denied(): void {
+		$post  = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token = $this->save_capped_link( $post, 1 );
+
+		$this->overwrite_behind_the_cache( $post, PostMetaTokenRepository::USES_META_KEY, $this->uses_row( $token, 1 ) );
+
+		static::assertFalse( $this->service()->claim_slot( $post, $token ) );
+
+		// Read the stored count, not this request's cache: the cap must hold.
+		wp_cache_delete( (string) $post, 'post_meta' );
+		static::assertSame( 1, $this->repository->find( $post, $token )?->use_count() );
+	}
+
+	public function test_a_revoke_that_loses_to_another_process_retries_against_its_write(): void {
+		$post  = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token = $this->save_capped_link( $post, 3 );
+		$link  = $this->repository->find( $post, $token );
+		static::assertNotNull( $link );
+
+		// Another process changes the row (keeping its hash) after this read.
+		$row = get_post_meta( $post, PostMetaTokenRepository::META_KEY, true );
+		static::assertIsArray( $row );
+
+		$row['expires_at'] = 9999999999;
+		$this->overwrite_behind_the_cache( $post, PostMetaTokenRepository::META_KEY, $row );
+
+		static::assertTrue( $this->repository->revoke( $link, 1234 ) );
+
+		$reloaded = $this->repository->find( $post, $token );
+		static::assertNotNull( $reloaded );
+		static::assertSame( 1234, $reloaded->revoked_at() );
+		static::assertSame( 9999999999, $reloaded->expires_at() );
+	}
+
 	public function test_listing_carries_each_links_use_count(): void {
 		$post = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 
@@ -395,6 +440,52 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 				],
 				$overrides
 			)
+		);
+	}
+
+	private function service(): PreviewLinkService {
+		return new PreviewLinkService( $this->repository, new AccessPolicy(), new SystemClock() );
+	}
+
+	/**
+	 * @return array{token_hash: string, uses: int}
+	 */
+	private function uses_row( Token $token, int $uses ): array {
+		return [
+			'token_hash' => $token->hash(),
+			'uses'       => $uses,
+		];
+	}
+
+	private function save_capped_link( int $post_id, int $max_uses ): Token {
+		$token = Token::generate();
+
+		$this->repository->save( PreviewLink::issue( $post_id, $token, time() + HOUR_IN_SECONDS, $max_uses, 1, time() ) );
+
+		return $token;
+	}
+
+	/**
+	 * Rewrite a post's only row for this key straight in the database, as
+	 * another process would, leaving this request's (freshly primed) meta cache
+	 * holding the old value.
+	 *
+	 * @param array<mixed> $row
+	 */
+	private function overwrite_behind_the_cache( int $post_id, string $meta_key, array $row ): void {
+		global $wpdb;
+		static::assertInstanceOf( \wpdb::class, $wpdb );
+
+		get_post_meta( $post_id );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- The point is to bypass the cache.
+		$wpdb->update(
+			$wpdb->postmeta,
+			[ 'meta_value' => maybe_serialize( $row ) ], // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- A write, not a query.
+			[
+				'post_id'  => $post_id,
+				'meta_key' => $meta_key,
+			]
 		);
 	}
 

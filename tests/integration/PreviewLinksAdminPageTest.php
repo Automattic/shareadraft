@@ -33,6 +33,8 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 			$_GET['post'],
 			$_GET['token'],
 			$_GET['creator'],
+			$_GET['shareadraft_revoked'],
+			$_GET['shareadraft_pending'],
 			$_GET['_wpnonce'],
 			$_REQUEST['action'],
 			$_REQUEST['_wpnonce'],
@@ -93,6 +95,43 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 
 	public function test_no_central_line_renders_without_configured_ranges(): void {
 		static::assertStringNotContainsString( 'VIP Dashboard', $this->rendered( $this->page ) );
+	}
+
+	/**
+	 * A revoke that changed nothing (the links were already revoked, or none
+	 * were ticked) must not wear the green of success.
+	 */
+	public function test_a_revoke_of_nothing_renders_a_warning_not_a_success(): void {
+		$_GET['shareadraft_revoked'] = '0';
+
+		$output = $this->rendered( $this->page );
+
+		static::assertStringContainsString( 'notice-warning', $output );
+		static::assertStringNotContainsString( 'notice-success', $output );
+	}
+
+	public function test_a_revoke_of_some_links_renders_a_success(): void {
+		$_GET['shareadraft_revoked'] = '2';
+
+		$output = $this->rendered( $this->page );
+
+		static::assertStringContainsString( 'notice-success', $output );
+		static::assertStringContainsString( '2 preview links revoked.', $output );
+		static::assertStringNotContainsString( 'notice-warning', $output );
+	}
+
+	/**
+	 * A sweep that handed everything to cron is still working, so a zero count
+	 * alongside the pending flag stays a success.
+	 */
+	public function test_a_revoke_of_nothing_yet_with_work_pending_renders_a_success(): void {
+		$_GET['shareadraft_revoked'] = '0';
+		$_GET['shareadraft_pending'] = '1';
+
+		$output = $this->rendered( $this->page );
+
+		static::assertStringContainsString( 'notice-success', $output );
+		static::assertStringContainsString( 'being revoked in the background', $output );
 	}
 
 	private function rendered( PreviewLinksAdminPage $page ): string {

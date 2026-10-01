@@ -530,6 +530,20 @@ final class PreviewLinksAdminPage {
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- See above.
 		$count = is_scalar( $_GET['shareadraft_revoked'] ) ? (int) $_GET['shareadraft_revoked'] : 0;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Set by our own post-revoke redirect; read only to phrase the notice.
+		$pending = isset( $_GET['shareadraft_pending'] );
+
+		// Nothing revoked and nothing still running: the links were already gone
+		// (a double click, a second tab, a colleague) or none were ticked. Not a
+		// success, so not green.
+		if ( 0 === $count && ! $pending ) {
+			printf(
+				'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+				esc_html__( 'No preview links were revoked. Any you selected may already have been revoked.', 'shareadraft' )
+			);
+
+			return;
+		}
 
 		$message = sprintf(
 			/* translators: %d: number of preview links revoked */
@@ -537,8 +551,7 @@ final class PreviewLinksAdminPage {
 			$count
 		);
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Set by our own post-revoke redirect; read only to phrase the notice.
-		if ( isset( $_GET['shareadraft_pending'] ) ) {
+		if ( $pending ) {
 			$message .= ' ' . __( 'The remaining links are being revoked in the background.', 'shareadraft' );
 		}
 

@@ -102,11 +102,46 @@ test.describe( 'Preview links', () => {
 		const generateModal = page.getByRole( 'dialog', { name: 'Generate preview link' } );
 		await expect( generateModal ).toBeVisible();
 
+		// Hold the mint request (a POST to the collection, not to a link's
+		// id-bearing path) so the dialog can be checked while it is in flight.
+		let mintRequests = 0;
+		let releaseMint = (): void => {};
+		const mintHeld = new Promise<void>( ( resolve ) => {
+			releaseMint = resolve;
+		} );
+		const isMint = ( url: URL ): boolean =>
+			/shareadraft\/v1\/preview-links(?!\/)/u.test( decodeURIComponent( url.href ) );
+		await page.route( isMint, async ( route ) => {
+			if ( route.request().method() !== 'POST' ) {
+				return route.fallback();
+			}
+			mintRequests++;
+			await mintHeld;
+			return route.fallback();
+		} );
+
 		await generateModal.getByRole( 'button', { name: 'Generate link' } ).click();
+
+		// Closing now would lose the only copy of a link the server still
+		// creates, and editing a field would make the form disagree with it.
+		// Focus has to stay in the dialog for Escape to reach it at all. Reduced
+		// motion skips the modal's exit animation, so a wrongful close shows
+		// up at once rather than after the dialog has passed as visible.
+		await page.emulateMedia( { reducedMotion: 'reduce' } );
+		await expect( generateModal.getByRole( 'button', { name: 'Close' } ) ).toHaveCount( 0 );
+		await expect( generateModal.getByRole( 'button', { name: 'Generate link' } ) ).toBeFocused();
+		await page.keyboard.press( 'Escape' );
+		await expect( generateModal ).toBeVisible();
+		await expect( generateModal.getByLabel( 'Link expiration' ) ).toBeDisabled();
+		await expect( generateModal.getByLabel( 'Maximum uses' ) ).toBeDisabled();
+
+		releaseMint();
 
 		// The minted URL is surfaced in a read-only field once the request lands.
 		const linkField = generateModal.getByRole( 'textbox', { name: 'Preview link' } );
 		await expect( linkField ).toBeVisible();
+		await page.unroute( isMint );
+		expect( mintRequests ).toBe( 1 );
 		const previewUrl = await linkField.inputValue();
 		expect( previewUrl ).toContain( 'shareadraft-token=' );
 

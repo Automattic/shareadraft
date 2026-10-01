@@ -128,9 +128,13 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 
 	const hasRecipients = splitList( recipients ).length > 0;
 
+	// Lock the settings while the link is being created and once it exists,
+	// so they always describe the link that was actually issued.
+	const isLocked = isBusy || !! url;
+
 	// Core greys out a disabled select but not a disabled text input, and
 	// neither changes the cursor; make every locked field read as locked.
-	const lockedStyle = url
+	const lockedStyle = isLocked
 		? { cursor: 'not-allowed', backgroundColor: '#f0f0f0' }
 		: undefined;
 
@@ -188,6 +192,11 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 		<Modal
 			title={ __( 'Generate preview link', 'shareadraft' ) }
 			onRequestClose={ onClose }
+			// Closing mid-request would discard the only copy of a link the
+			// server still creates, so the dialog stays open until it lands.
+			isDismissible={ ! isBusy }
+			shouldCloseOnEsc={ ! isBusy }
+			shouldCloseOnClickOutside={ ! isBusy }
 			size="medium"
 		>
 			{ /* Space the fields as core's own modals do (16px between each). */ }
@@ -218,9 +227,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 					value={ expiration }
 					options={ expirationOptions }
 					onChange={ setExpiration }
-					// Lock the settings once the link exists, so they always
-					// describe the link that was actually issued.
-					disabled={ !! url }
+					disabled={ isLocked }
 					style={ lockedStyle }
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
@@ -237,7 +244,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 					) }
 					value={ maxUses }
 					onChange={ setMaxUses }
-					disabled={ !! url }
+					disabled={ isLocked }
 					style={ lockedStyle }
 					__next40pxDefaultSize
 					__nextHasNoMarginBottom
@@ -252,7 +259,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 						) }
 						value={ recipients }
 						onChange={ setRecipients }
-						disabled={ !! url }
+						disabled={ isLocked }
 						style={ lockedStyle }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
@@ -275,7 +282,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 						}
 						value={ allowedIps }
 						onChange={ setAllowedIps }
-						disabled={ !! url }
+						disabled={ isLocked }
 						style={ lockedStyle }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
@@ -328,6 +335,9 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 						onClick={ copyLink }
 						isBusy={ isBusy }
 						disabled={ isBusy || ! postId }
+						// Keep focus on the button while busy rather than letting
+						// the browser drop it out of the dialog.
+						accessibleWhenDisabled
 						__next40pxDefaultSize
 					>
 						{ url

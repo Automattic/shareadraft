@@ -34,6 +34,7 @@ require_once __DIR__ . '/inc/autoload.php';
 
 register_deactivation_hook( __FILE__, [ LinkGarbageCollector::class, 'unschedule' ] );
 register_deactivation_hook( __FILE__, [ BulkLinkRevoker::class, 'unschedule' ] );
+register_activation_hook( __FILE__, [ BulkLinkRevoker::class, 'reschedule' ] );
 
 Plugin::get_instance()->register();
 

@@ -59,15 +59,30 @@ final class BulkLinkRevoker {
 	}
 
 	/**
-	 * Remove the continuation event and any unfinished sweep state. Called on
-	 * deactivation.
+	 * Remove the continuation event. Called on deactivation.
+	 *
+	 * The queue itself is kept: a half-finished sweep has left live links on the
+	 * posts it hadn't reached, so {@see BulkLinkRevoker::reschedule()} resumes it
+	 * on reactivation. Uninstalling the plugin is what deletes it.
 	 *
 	 * @param bool $_network_wide Passed by register_deactivation_hook; unused.
 	 */
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Signature is dictated by register_deactivation_hook, which passes the network flag.
 	public static function unschedule( bool $_network_wide = false ): void {
 		wp_clear_scheduled_hook( self::HOOK );
-		delete_option( self::JOBS_OPTION );
+	}
+
+	/**
+	 * Re-arm the continuation for a sweep that deactivation interrupted. Called
+	 * on activation.
+	 *
+	 * @param bool $_network_wide Passed by register_activation_hook; unused.
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Signature is dictated by register_activation_hook, which passes the network flag.
+	public static function reschedule( bool $_network_wide = false ): void {
+		if ( false !== get_option( self::JOBS_OPTION ) && false === wp_next_scheduled( self::HOOK ) ) {
+			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::HOOK );
+		}
 	}
 
 	/**
@@ -115,6 +130,7 @@ final class BulkLinkRevoker {
 	private function start( ?int $creator ): int {
 		$jobs   = $this->jobs();
 		$jobs[] = [
+			'id'      => wp_generate_uuid4(),
 			'creator' => $creator,
 			'cursor'  => 0,
 			'count'   => 0,
@@ -131,6 +147,10 @@ final class BulkLinkRevoker {
 	/**
 	 * Advance the oldest unfinished sweep by one batch of posts, scheduling a
 	 * continuation if anything is left.
+	 *
+	 * The batch is slow, and other requests may queue sweeps (or finish this
+	 * one) while it runs, so the queue is re-read afterwards and only this
+	 * sweep's entry is touched.
 	 *
 	 * @return int Links revoked in this batch.
 	 */
@@ -151,13 +171,29 @@ final class BulkLinkRevoker {
 				: $this->service->revoke_for_post_by_creator( $post_id, $job['creator'] );
 		}
 
-		$job['count'] += $revoked;
+		$done = count( $post_ids ) < self::BATCH_SIZE;
 
-		if ( count( $post_ids ) < self::BATCH_SIZE ) {
-			// Walked past the last post carrying links: this sweep is done.
-			array_shift( $jobs );
+		// ponytail: re-read-then-write narrows the race to the moment between
+		// the two, not the whole batch; a lock if that window ever matters.
+		$jobs  = $this->jobs();
+		$index = array_search( $job['id'], array_column( $jobs, 'id' ), true );
 
-			if ( null !== $job['creator'] ) {
+		if ( false !== $index ) {
+			$count = $jobs[ $index ]['count'] + $revoked;
+
+			if ( $done ) {
+				// Walked past the last post carrying links: this sweep is done.
+				array_splice( $jobs, $index, 1 );
+			} else {
+				$entry           = $jobs[ $index ];
+				$entry['cursor'] = max( $entry['cursor'], (int) end( $post_ids ) );
+				$entry['count']  = $count;
+				$jobs[ $index ]  = $entry;
+			}
+
+			$this->save_jobs( $jobs );
+
+			if ( $done && null !== $job['creator'] ) {
 				/**
 				 * Fires after every link a user created has been revoked, so
 				 * customers can log offboarding or extend it.
@@ -166,14 +202,9 @@ final class BulkLinkRevoker {
 				 * @param int $count   How many links were revoked.
 				 * @param int $actor   Who initiated it (0 when system-initiated).
 				 */
-				do_action( self::REVOKED_USER_ACTION, $job['creator'], $job['count'], $job['actor'] );
+				do_action( self::REVOKED_USER_ACTION, $job['creator'], $count, $job['actor'] );
 			}
-		} else {
-			$job['cursor'] = (int) end( $post_ids );
-			$jobs[0]       = $job;
 		}
-
-		$this->save_jobs( $jobs );
 
 		if ( [] !== $jobs && false === wp_next_scheduled( self::HOOK ) ) {
 			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::HOOK );
@@ -184,9 +215,11 @@ final class BulkLinkRevoker {
 
 	/**
 	 * The queued sweeps, oldest first, rebuilt defensively: a corrupt option must
-	 * degrade to "no work", never fatal.
+	 * degrade to "no work", never fatal. An entry without an ID or a usable
+	 * `creator` is dropped rather than read as a null creator, which would turn
+	 * it into a revoke-all.
 	 *
-	 * @return list<array{creator: int|null, cursor: int, count: int, actor: int}>
+	 * @return list<array{id: string, creator: int|null, cursor: int, count: int, actor: int}>
 	 */
 	private function jobs(): array {
 		/** @var mixed $stored */
@@ -200,12 +233,18 @@ final class BulkLinkRevoker {
 
 		/** @var mixed $job */
 		foreach ( $stored as $job ) {
-			if ( ! is_array( $job ) ) {
+			if (
+				! is_array( $job )
+				|| ! isset( $job['id'] ) || ! is_string( $job['id'] )
+				|| ! array_key_exists( 'creator', $job )
+				|| ( null !== $job['creator'] && ! is_numeric( $job['creator'] ) )
+			) {
 				continue;
 			}
 
 			$jobs[] = [
-				'creator' => isset( $job['creator'] ) && is_numeric( $job['creator'] ) ? (int) $job['creator'] : null,
+				'id'      => $job['id'],
+				'creator' => null === $job['creator'] ? null : (int) $job['creator'],
 				'cursor'  => isset( $job['cursor'] ) && is_numeric( $job['cursor'] ) ? (int) $job['cursor'] : 0,
 				'count'   => isset( $job['count'] ) && is_numeric( $job['count'] ) ? (int) $job['count'] : 0,
 				'actor'   => isset( $job['actor'] ) && is_numeric( $job['actor'] ) ? (int) $job['actor'] : 0,
@@ -216,7 +255,7 @@ final class BulkLinkRevoker {
 	}
 
 	/**
-	 * @param list<array{creator: int|null, cursor: int, count: int, actor: int}> $jobs
+	 * @param list<array{id: string, creator: int|null, cursor: int, count: int, actor: int}> $jobs
 	 */
 	private function save_jobs( array $jobs ): void {
 		if ( [] === $jobs ) {

@@ -57,6 +57,19 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		static::assertTrue( $this->verifier->verify_code( $this->token, self::EMAIL, $this->sent_code() ) );
 	}
 
+	public function test_a_failed_send_keeps_the_earlier_code(): void {
+		$this->verifier->send_code( $this->token, self::EMAIL );
+		$code = $this->sent_code();
+
+		add_filter( 'pre_wp_mail', '__return_false' );
+
+		static::assertFalse( $this->verifier->send_code( $this->token, self::EMAIL ) );
+		static::assertTrue(
+			$this->verifier->verify_code( $this->token, self::EMAIL, $code ),
+			'A code that never left must not replace one already in the inbox.'
+		);
+	}
+
 	/**
 	 * @dataProvider data_counter_stores
 	 */

@@ -85,8 +85,9 @@ final class RecipientVerifier {
 	}
 
 	/**
-	 * Email a fresh code for this link to the address, replacing any code still
-	 * outstanding.
+	 * Email a fresh code for this link to the address. Once the mail is handed
+	 * off, it replaces any code still outstanding; a failed handoff leaves the
+	 * earlier code redeemable.
 	 *
 	 * The caller is responsible for only asking on behalf of a listed recipient
 	 * (see {@see PreviewLinkService::is_recipient()}); this method's own guard
@@ -108,17 +109,6 @@ final class RecipientVerifier {
 		}
 
 		$code = str_pad( (string) random_int( 0, 10 ** self::CODE_DIGITS - 1 ), self::CODE_DIGITS, '0', STR_PAD_LEFT );
-
-		set_transient(
-			$this->challenge_key( $token, $email ),
-			[
-				// Hashed at rest, like the token itself: a peek at the options
-				// table must not hand over a working code.
-				'code_hash'  => $this->hmac( $code ),
-				'expires_at' => $now + self::CODE_TTL,
-			],
-			self::CODE_TTL
-		);
 
 		$subject = sprintf(
 			/* translators: 1: site name, 2: the verification code. */
@@ -170,7 +160,24 @@ The code is valid for %3$d minutes and only works on the page where you requeste
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- One short code email per human request, capped by the per-address window above; nothing bulk. On VIP wp_mail already routes through the platform's managed mail path.
-		return wp_mail( $email, $subject, $message );
+		if ( ! wp_mail( $email, $subject, $message ) ) {
+			// Keep any earlier code: it may already be in the reviewer's inbox,
+			// and replacing it with one that never left would strand them.
+			return false;
+		}
+
+		set_transient(
+			$this->challenge_key( $token, $email ),
+			[
+				// Hashed at rest, like the token itself: a peek at the options
+				// table must not hand over a working code.
+				'code_hash'  => $this->hmac( $code ),
+				'expires_at' => $now + self::CODE_TTL,
+			],
+			self::CODE_TTL
+		);
+
+		return true;
 	}
 
 	/**

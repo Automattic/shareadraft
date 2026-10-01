@@ -40,7 +40,10 @@ final class PreviewRestController {
 	 * never-expiring links can add options through the filter (e.g. a very large
 	 * number of seconds for an effectively indefinite link).
 	 *
-	 * @return list<array{seconds: int, label: string}>
+	 * Options without a positive whole number of `seconds` and a string `label`
+	 * are dropped; if none survive, the built-in set is used.
+	 *
+	 * @return non-empty-list<array{seconds: int, label: string}>
 	 */
 	public static function expiration_options(): array {
 		$options = [
@@ -71,16 +74,37 @@ final class PreviewRestController {
 		/** @var mixed $filtered */
 		$filtered = apply_filters( 'shareadraft_expiration_options', $options );
 
-		if ( ! is_array( $filtered ) || [] === $filtered ) {
+		if ( ! is_array( $filtered ) ) {
 			return $options;
 		}
 
-		/** @var list<array{seconds: int, label: string}> $filtered */
-		return $filtered;
+		$valid = [];
+
+		/** @var mixed $option */
+		foreach ( $filtered as $option ) {
+			if ( ! is_array( $option ) || ! isset( $option['label'] ) || ! is_string( $option['label'] ) ) {
+				continue;
+			}
+
+			$seconds = self::positive_int( $option['seconds'] ?? null );
+
+			if ( null !== $seconds ) {
+				$valid[] = [
+					'seconds' => $seconds,
+					'label'   => $option['label'],
+				];
+			}
+		}
+
+		return [] === $valid ? $options : $valid;
 	}
 
 	/**
 	 * The lifetime pre-selected in the editor, in seconds.
+	 *
+	 * Always one of {@see allowed_expirations()}: a default the site no longer
+	 * offers falls back to the first option, so the editor, WP-CLI and the
+	 * abilities never default to a lifetime the endpoint would reject.
 	 */
 	public static function default_expiration(): int {
 		/**
@@ -88,7 +112,25 @@ final class PreviewRestController {
 		 *
 		 * @param int $default Default lifetime in seconds (8 hours).
 		 */
-		return (int) apply_filters( 'shareadraft_default_expiration', 8 * HOUR_IN_SECONDS );
+		$default = self::positive_int( apply_filters( 'shareadraft_default_expiration', 8 * HOUR_IN_SECONDS ) );
+		$allowed = self::allowed_expirations();
+
+		return null !== $default && in_array( $default, $allowed, true ) ? $default : $allowed[0];
+	}
+
+	/**
+	 * A positive whole number from filtered input, or null. Accepts integers and
+	 * numeric strings such as "3600"; rejects booleans, fractions, zero and
+	 * negatives.
+	 */
+	private static function positive_int( mixed $value ): ?int {
+		if ( is_bool( $value ) ) {
+			return null;
+		}
+
+		$int = filter_var( $value, FILTER_VALIDATE_INT, [ 'options' => [ 'min_range' => 1 ] ] );
+
+		return false === $int ? null : $int;
 	}
 
 	public function register_routes(): void {
@@ -268,7 +310,7 @@ final class PreviewRestController {
 	 * filterable {@see expiration_options()}. Shared with the abilities layer so
 	 * REST and MCP honour the same set.
 	 *
-	 * @return list<int>
+	 * @return non-empty-list<int>
 	 */
 	public static function allowed_expirations(): array {
 		return array_map(

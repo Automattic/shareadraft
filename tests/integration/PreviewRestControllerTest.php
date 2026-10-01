@@ -246,12 +246,102 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 	}
 
 	public function test_default_expiration_is_filterable(): void {
+		$callback = static fn (): int => DAY_IN_SECONDS;
+		add_filter( 'shareadraft_default_expiration', $callback );
+		$default  = PreviewRestController::default_expiration();
+		remove_filter( 'shareadraft_default_expiration', $callback );
+
+		static::assertSame( DAY_IN_SECONDS, $default );
+	}
+
+	public function test_default_expiration_not_offered_falls_back_to_first_option(): void {
+		$callback = static fn (): array => [
+			[
+				'seconds' => DAY_IN_SECONDS,
+				'label'   => '24 hours',
+			],
+			[
+				'seconds' => WEEK_IN_SECONDS,
+				'label'   => '7 days',
+			],
+		];
+		add_filter( 'shareadraft_expiration_options', $callback );
+		$default  = PreviewRestController::default_expiration();
+		remove_filter( 'shareadraft_expiration_options', $callback );
+
+		static::assertSame( DAY_IN_SECONDS, $default, 'The built-in 8-hour default is not offered, so the first option is used.' );
+	}
+
+	public function test_filtered_default_not_offered_falls_back_to_first_option(): void {
 		$callback = static fn (): int => 42;
 		add_filter( 'shareadraft_default_expiration', $callback );
 		$default  = PreviewRestController::default_expiration();
 		remove_filter( 'shareadraft_default_expiration', $callback );
 
-		static::assertSame( 42, $default );
+		static::assertSame( HOUR_IN_SECONDS, $default );
+	}
+
+	public function test_malformed_expiration_options_fall_back_to_built_in_set(): void {
+		$callback = static fn (): array => [ HOUR_IN_SECONDS, DAY_IN_SECONDS ];
+		add_filter( 'shareadraft_expiration_options', $callback );
+		$allowed  = PreviewRestController::allowed_expirations();
+		remove_filter( 'shareadraft_expiration_options', $callback );
+
+		static::assertSame( [ HOUR_IN_SECONDS, 8 * HOUR_IN_SECONDS, DAY_IN_SECONDS, WEEK_IN_SECONDS ], $allowed );
+	}
+
+	public function test_invalid_expiration_options_are_dropped(): void {
+		$callback = static fn (): array => [
+			'first' => [
+				'seconds' => '3600',
+				'label'   => 'Numeric string',
+			],
+			[
+				'seconds' => 0,
+				'label'   => 'Zero',
+			],
+			[
+				'seconds' => -60,
+				'label'   => 'Negative',
+			],
+			[
+				'seconds' => '1.5',
+				'label'   => 'Fraction',
+			],
+			[
+				'seconds' => true,
+				'label'   => 'Boolean',
+			],
+			[
+				'seconds' => DAY_IN_SECONDS,
+			],
+			[
+				'seconds' => DAY_IN_SECONDS,
+				'label'   => 24,
+			],
+			[
+				'seconds' => WEEK_IN_SECONDS,
+				'label'   => '7 days',
+			],
+		];
+		add_filter( 'shareadraft_expiration_options', $callback );
+		$options  = PreviewRestController::expiration_options();
+		remove_filter( 'shareadraft_expiration_options', $callback );
+
+		static::assertSame(
+			[
+				[
+					'seconds' => HOUR_IN_SECONDS,
+					'label'   => 'Numeric string',
+				],
+				[
+					'seconds' => WEEK_IN_SECONDS,
+					'label'   => '7 days',
+				],
+			],
+			$options,
+			'Only valid options survive, as a list (so it JSON-encodes as an array) with int seconds.'
+		);
 	}
 
 	public function test_a_link_can_be_revoked_and_then_denied(): void {

@@ -26,6 +26,8 @@ Only lifetimes in this list are accepted, whether a link is created in the edito
 add_filter( 'shareadraft_default_expiration', fn () => DAY_IN_SECONDS );
 ```
 
+The default must be one of the offered lifetimes. If it is not (for example, you remove 8 hours from the list but leave the default alone), the first option in the list is selected instead. Options without a positive whole number of seconds and a text label are ignored, and if none are left the built-in list is used.
+
 ## Turn off named reviewer or IP restriction features
 
 Binding a link to named reviewers, and restricting it to IP ranges, are both optional. If your site never wants one of them, switch it off: its fields disappear from the editor, the Preview Links screen, and the Abilities API, and WP-CLI refuses to use it.

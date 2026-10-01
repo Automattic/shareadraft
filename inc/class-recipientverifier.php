@@ -57,17 +57,6 @@ final class RecipientVerifier {
 	private const CACHE_GROUP      = 'shareadraft';
 
 	/**
-	 * Email a fresh code for this link to the address, replacing any code still
-	 * outstanding.
-	 *
-	 * The caller is responsible for only asking on behalf of a listed recipient
-	 * (see {@see PreviewLinkService::is_recipient()}); this method's own guard
-	 * is the per-address request cap, and it sends nothing while the address is
-	 * out of guesses, since that code could not be redeemed. Returns false when
-	 * either said no or the mail could not be handed off — callers must show the same neutral message
-	 * either way, so the form never confirms which addresses are listed.
-	 */
-	/**
 	 * Send a code, but only after the response has left for the client.
 	 *
 	 * The email form answers a listed and an unlisted address with identical
@@ -95,6 +84,18 @@ final class RecipientVerifier {
 		);
 	}
 
+	/**
+	 * Email a fresh code for this link to the address, replacing any code still
+	 * outstanding.
+	 *
+	 * The caller is responsible for only asking on behalf of a listed recipient
+	 * (see {@see PreviewLinkService::is_recipient()}); this method's own guard
+	 * is the per-address request cap, and it sends nothing while the address is
+	 * out of guesses, since that code could not be redeemed. Returns false when
+	 * either said no or the mail could not be handed off — callers must show
+	 * the same neutral message either way, so the form never confirms which
+	 * addresses are listed.
+	 */
 	public function send_code( Token $token, string $email ): bool {
 		$email = strtolower( $email );
 		$now   = time();

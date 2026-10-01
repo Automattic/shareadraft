@@ -144,6 +144,8 @@ class RecipientVerifierTest extends WP_UnitTestCase {
 		// unlisted address answer the form in the same time.
 		static::assertSame( [], self::mailer()->mock_sent );
 
+		// Core's own shutdown hook would close PHPUnit's output buffer too.
+		remove_action( 'shutdown', 'wp_ob_end_flush_all', 1 );
 		do_action( 'shutdown' );
 
 		static::assertCount( 1, self::mailer()->mock_sent );

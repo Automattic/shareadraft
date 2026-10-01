@@ -25,8 +25,17 @@ final class InMemoryTokenRepository implements TokenRepository {
 	 */
 	private $before_add_use;
 
-	public function save( PreviewLink $link ): void {
+	/** Whether {@see self::save()} reports a failed write, as a vetoed insert would. */
+	private bool $fail_saves = false;
+
+	public function save( PreviewLink $link ): bool {
+		if ( $this->fail_saves ) {
+			return false;
+		}
+
 		$this->links[ $link->post_id() ][] = $link;
+
+		return true;
 	}
 
 	public function find( int $post_id, Token $candidate ): ?PreviewLink {
@@ -191,6 +200,13 @@ final class InMemoryTokenRepository implements TokenRepository {
 	 */
 	public function on_next_add_use( callable $hook ): void {
 		$this->before_add_use = $hook;
+	}
+
+	/**
+	 * Make every later save fail, as a database error or a vetoed insert would.
+	 */
+	public function fail_saves(): void {
+		$this->fail_saves = true;
 	}
 
 	private function find_stored( PreviewLink $link ): ?PreviewLink {

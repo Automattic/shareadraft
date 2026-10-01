@@ -49,6 +49,14 @@ final class PreviewLinkServiceTest extends TestCase {
 		self::assertSame( $token->hash(), $stored[0]->token_hash() );
 	}
 
+	public function test_a_link_that_could_not_be_saved_is_never_handed_out(): void {
+		$this->repository->fail_saves();
+
+		$this->expectException( \RuntimeException::class );
+
+		$this->service->mint( self::POST_ID, 3600, null, 1 );
+	}
+
 	public function test_an_unknown_token_is_denied(): void {
 		$this->service->mint( self::POST_ID, 3600, null, 1 );
 

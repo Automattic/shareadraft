@@ -42,8 +42,8 @@ final class PreviewLinkMinter {
 	 *                                  post does not exist, its type has no
 	 *                                  front-end view, it is published, private,
 	 *                                  or trashed, a range or address is
-	 *                                  invalid, or the restriction is disabled on
-	 *                                  this site.
+	 *                                  invalid, the restriction is disabled on
+	 *                                  this site, or the link could not be saved.
 	 */
 	public function mint( int $post_id, int $expiration, ?int $max_uses, string $channel, array $allowed_ips = [], array $recipients = [] ) {
 		$post = get_post( $post_id );
@@ -127,7 +127,15 @@ final class PreviewLinkMinter {
 			}
 		}
 
-		$token = $this->service->mint( $post_id, $expiration, $max_uses, get_current_user_id(), $allowed_ips, $recipients );
+		try {
+			$token = $this->service->mint( $post_id, $expiration, $max_uses, get_current_user_id(), $allowed_ips, $recipients );
+		} catch ( \RuntimeException ) {
+			return new WP_Error(
+				'shareadraft_link_not_saved',
+				__( 'The preview link could not be saved; try again.', 'shareadraft' ),
+				[ 'status' => 500 ]
+			);
+		}
 
 		// Reuse WordPress's own preview URL (adds preview=true) and carry the
 		// token on it, so the gate can unlock the draft for a logged-out visitor.

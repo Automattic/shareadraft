@@ -108,6 +108,46 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		static::assertSame( 0, $properties['max_uses'] );
 	}
 
+	/**
+	 * Either of a link's two rows failing to write must fail the whole create:
+	 * no URL, no event, and nothing left behind on the post.
+	 *
+	 * @dataProvider data_link_meta_keys
+	 */
+	public function test_a_link_that_could_not_be_saved_is_reported_and_leaves_nothing_behind( string $vetoed_key ): void {
+		VIP_Telemetry::reset();
+
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		// Another plugin vetoing the insert, which add_post_meta() reports
+		// exactly as it would a database error.
+		add_filter(
+			'add_post_metadata',
+			static fn ( ?bool $check, int $object_id, string $meta_key ): ?bool => $vetoed_key === $meta_key ? false : $check,
+			10,
+			3
+		);
+
+		$response = $this->create_link( $post_id, HOUR_IN_SECONDS, 5 );
+
+		static::assertSame( 500, $response->get_status() );
+		static::assertSame( 'shareadraft_link_not_saved', ( (array) $response->get_data() )['code'] );
+		static::assertSame( [], get_post_meta( $post_id, PostMetaTokenRepository::META_KEY, false ) );
+		static::assertSame( [], get_post_meta( $post_id, PostMetaTokenRepository::USES_META_KEY, false ) );
+		static::assertCount( 0, VIP_Telemetry::$events );
+	}
+
+	/**
+	 * @return array<string, array{string}>
+	 */
+	public static function data_link_meta_keys(): array {
+		return [
+			'token row' => [ PostMetaTokenRepository::META_KEY ],
+			'uses row'  => [ PostMetaTokenRepository::USES_META_KEY ],
+		];
+	}
+
 	public function test_a_user_without_edit_rights_is_forbidden(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );

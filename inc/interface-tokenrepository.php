@@ -15,9 +15,10 @@ namespace Automattic\ShareADraft;
  */
 interface TokenRepository {
 	/**
-	 * Persist a newly issued link.
+	 * Persist a newly issued link. Returns whether it was stored in full; false
+	 * means nothing was kept, and the link must not be handed out.
 	 */
-	public function save( PreviewLink $link ): void;
+	public function save( PreviewLink $link ): bool;
 
 	/**
 	 * Find the link on record for this post that the presented token unlocks, or

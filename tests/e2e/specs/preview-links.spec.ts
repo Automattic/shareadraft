@@ -47,6 +47,15 @@ async function dismissWelcomeGuide( page: Page ): Promise<void> {
 	}
 }
 
+/** Show the Share a Draft panel under the document (Post) tab of the editor sidebar. */
+async function openSharePanel( page: Page ): Promise<void> {
+	// Match on the tab's visible text rather than its computed accessible name,
+	// which WP leaves empty.
+	await page.locator( '[role="tab"]' ).filter( { hasText: 'Post' } ).click();
+	await ensureExpanded( page.getByRole( 'button', { name: 'Settings', exact: true } ), 'aria-pressed' );
+	await ensureExpanded( page.getByRole( 'button', { name: 'Share a Draft' } ), 'aria-expanded' );
+}
+
 /** Open a fresh, logged-out browser context and read the given preview URL as a visitor would. */
 async function visitAsAnonymous( browser: Browser, url: string ): Promise<Page> {
 	const context = await browser.newContext( { storageState: undefined, userAgent: HUMAN_USER_AGENT } );
@@ -86,11 +95,8 @@ test.describe( 'Preview links', () => {
 
 		// --- The Share a Draft sidebar panel --------------------------------
 		// Editing the paragraph switched the sidebar to the Block tab; the plugin
-		// panel lives under the document (Post) tab. Match on the tab's visible
-		// text rather than its computed accessible name, which WP leaves empty.
-		await page.locator( '[role="tab"]' ).filter( { hasText: 'Post' } ).click();
-		await ensureExpanded( page.getByRole( 'button', { name: 'Settings', exact: true } ), 'aria-pressed' );
-		await ensureExpanded( page.getByRole( 'button', { name: 'Share a Draft' } ), 'aria-expanded' );
+		// panel lives under the document (Post) tab.
+		await openSharePanel( page );
 
 		const generateButton = page.getByRole( 'button', { name: 'Generate preview link' } );
 		const manageButton = page.getByRole( 'button', { name: 'Manage preview links' } );
@@ -186,5 +192,67 @@ test.describe( 'Preview links', () => {
 		await expect( visitor.getByText( BODY_MARKER ) ).toHaveCount( 0 );
 
 		await visitor.context().close();
+	} );
+
+	test( 'a failed link load leaves Manage usable', async ( { page } ) => {
+		test.setTimeout( 90000 );
+
+		// --- A draft with a live link, minted over REST ----------------------
+		await page.goto( './wp-admin/' );
+		const nonce = await page.evaluate<string>( 'wpApiSettings.nonce' );
+		const headers = { 'X-WP-Nonce': nonce };
+
+		const created = await page.request.post( './wp-json/wp/v2/posts', {
+			headers,
+			data: { title: 'Failed load E2E draft', status: 'draft' },
+		} );
+		expect( created.ok() ).toBeTruthy();
+		const { id } = ( await created.json() ) as { id: number };
+
+		const minted = await page.request.post( './wp-json/shareadraft/v1/preview-links', {
+			headers,
+			data: { post_id: id, expiration: 3600 },
+		} );
+		expect( minted.ok() ).toBeTruthy();
+
+		// --- The panel's own check succeeds, enabling Manage -----------------
+		await page.goto( `./wp-admin/post.php?post=${ id }&action=edit` );
+		await expect(
+			page.frameLocator( 'iframe[name="editor-canvas"]' ).getByRole( 'textbox', { name: 'Add title' } )
+		).toBeVisible();
+		await dismissWelcomeGuide( page );
+		await openSharePanel( page );
+
+		const manageButton = page.getByRole( 'button', { name: 'Manage preview links' } );
+		await expect( manageButton ).toBeEnabled();
+
+		// --- Then the modal's load fails --------------------------------------
+		// Only the list request (no link id in the path), so nothing else breaks.
+		await page.route(
+			( url ) => /shareadraft\/v1\/preview-links(?!\/)/u.test( decodeURIComponent( url.href ) ),
+			( route ) =>
+				'GET' === route.request().method()
+					? route.fulfill( {
+							status: 500,
+							json: { code: 'e2e_failure', message: 'Simulated load failure.' },
+						} )
+					: route.fallback()
+		);
+
+		await manageButton.click();
+		const manageModal = page.getByRole( 'dialog', { name: 'Manage preview links' } );
+		const notice = manageModal.locator( '.components-notice.is-error' );
+		await expect( notice ).toContainText( 'Simulated load failure.' );
+
+		// Unknown is not empty: no "no links" claim, and no endless spinner
+		// left behind by dismissing the only thing on screen.
+		await expect( manageModal.getByText( 'No active preview links.' ) ).toHaveCount( 0 );
+		await expect( notice.locator( '.components-notice__dismiss' ) ).toHaveCount( 0 );
+		await expect( manageModal.locator( '.components-spinner' ) ).toHaveCount( 0 );
+
+		// Closing and reopening is the retry, so Manage must stay usable.
+		await manageModal.getByRole( 'button', { name: 'Close' } ).click();
+		await expect( manageModal ).toBeHidden();
+		await expect( manageButton ).toBeEnabled();
 	} );
 } );

@@ -368,7 +368,9 @@ function ManageModal( { postId, onLinksChange, onClose } ) {
 				requestError.message ||
 					__( 'Could not load links.', 'shareadraft' )
 			);
-			setLinks( [] );
+			// The links are unknown, not gone: keep Manage usable to retry.
+			setLinks( null );
+			onLinksChange( true );
 		}
 	};
 
@@ -424,7 +426,12 @@ function ManageModal( { postId, onLinksChange, onClose } ) {
 			) }
 
 			{ error && (
-				<Notice status="error" onRemove={ () => setError( '' ) }>
+				<Notice
+					status="error"
+					// With no list to fall back on, the error is all there is to show.
+					isDismissible={ null !== links }
+					onRemove={ () => setError( '' ) }
+				>
 					{ error }
 				</Notice>
 			) }
@@ -438,7 +445,7 @@ function ManageModal( { postId, onLinksChange, onClose } ) {
 				</p>
 			) }
 
-			{ null === links && <Spinner /> }
+			{ null === links && ! error && <Spinner /> }
 
 			{ null !== links && 0 === links.length && (
 				<p>{ __( 'No active preview links.', 'shareadraft' ) }</p>

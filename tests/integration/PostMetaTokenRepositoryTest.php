@@ -292,6 +292,37 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		static::assertSame( 1, $this->repository->page_of_links( 0, 10 )[0]->use_count() );
 	}
 
+	/**
+	 * Every caller of a page loads each row's post (a capability check, a
+	 * title), so the page primes the posts and their meta up front; on a cold
+	 * cache that is two queries per page rather than one per post.
+	 */
+	public function test_a_page_primes_its_posts_and_their_meta(): void {
+		/** @var \wpdb $wpdb */
+		global $wpdb;
+
+		$posts = [
+			self::factory()->post->create( [ 'post_status' => 'draft' ] ),
+			self::factory()->post->create( [ 'post_status' => 'draft' ] ),
+			self::factory()->post->create( [ 'post_status' => 'draft' ] ),
+		];
+
+		foreach ( $posts as $post ) {
+			$this->save_link( $post, 'aaaa' );
+		}
+
+		wp_cache_flush();
+		$this->repository->page_of_links( 0, 10 );
+		$queries = $wpdb->num_queries;
+
+		foreach ( $posts as $post ) {
+			get_post( $post );
+			get_post_meta( $post );
+		}
+
+		static::assertSame( $queries, $wpdb->num_queries );
+	}
+
 	public function test_deleting_links_removes_their_uses_rows(): void {
 		$dead = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$gone = self::factory()->post->create( [ 'post_status' => 'draft' ] );

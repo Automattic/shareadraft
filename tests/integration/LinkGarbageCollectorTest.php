@@ -172,6 +172,38 @@ class LinkGarbageCollectorTest extends WP_UnitTestCase {
 		static::assertSame( 'daily', wp_get_schedule( LinkGarbageCollector::HOOK ) );
 	}
 
+	/**
+	 * The daily event is registered throughout, because during a real cron run
+	 * core and Cron Control have already rescheduled it before calling run().
+	 */
+	public function test_a_full_batch_queues_a_follow_up_run(): void {
+		$this->collector->register();
+		$this->seed_posts_with_links( 100 );
+
+		$this->collector->run();
+
+		static::assertSame( 1, $this->near_term_sweeps() );
+	}
+
+	public function test_a_full_batch_queues_only_one_follow_up_run(): void {
+		$this->collector->register();
+		$this->seed_posts_with_links( 200 );
+
+		$this->collector->run();
+		$this->collector->run();
+
+		static::assertSame( 1, $this->near_term_sweeps() );
+	}
+
+	public function test_a_partial_batch_waits_for_the_daily_run(): void {
+		$this->collector->register();
+		$this->seed_posts_with_links( 99 );
+
+		$this->collector->run();
+
+		static::assertSame( 0, $this->near_term_sweeps() );
+	}
+
 	public function test_unscheduling_clears_the_event(): void {
 		$this->collector->register();
 		LinkGarbageCollector::unschedule();
@@ -201,6 +233,27 @@ class LinkGarbageCollectorTest extends WP_UnitTestCase {
 	private function set_config( ?Config $config ): void {
 		$property = new \ReflectionProperty( Config::class, 'instance' );
 		$property->setValue( null, $config );
+	}
+
+	private function seed_posts_with_links( int $count ): void {
+		for ( $i = 0; $i < $count; $i++ ) {
+			$this->save_link( self::factory()->post->create( [ 'post_status' => 'draft' ] ), time() - HOUR_IN_SECONDS );
+		}
+	}
+
+	/**
+	 * Sweeps due within the next few minutes, as opposed to the daily one.
+	 */
+	private function near_term_sweeps(): int {
+		$count = 0;
+
+		foreach ( _get_cron_array() as $timestamp => $hooks ) {
+			if ( $timestamp <= time() + 5 * MINUTE_IN_SECONDS && isset( $hooks[ LinkGarbageCollector::HOOK ] ) ) {
+				$count += count( $hooks[ LinkGarbageCollector::HOOK ] );
+			}
+		}
+
+		return $count;
 	}
 
 	/**

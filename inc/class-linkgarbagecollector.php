@@ -109,9 +109,12 @@ final class LinkGarbageCollector {
 
 		update_option( self::CURSOR_OPTION, end( $post_ids ), false );
 
-		if ( count( $post_ids ) === self::BATCH_SIZE && false === wp_next_scheduled( self::HOOK ) ) {
+		if ( count( $post_ids ) === self::BATCH_SIZE ) {
 			// A full batch means there is probably more; continue shortly rather
-			// than waiting a day per hundred posts.
+			// than waiting a day per hundred posts. No wp_next_scheduled() guard:
+			// cron reschedules the daily event before running it, so one always
+			// exists. Core and Cron Control already refuse a second follow-up
+			// within ten minutes of a pending one.
 			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::HOOK );
 		}
 

@@ -127,6 +127,10 @@ final class NoticePage {
 			}
 			.shareadraft-notice .button-primary:hover { background: #135e96; }
 			.shareadraft-notice .button-primary:focus-visible { outline: 2px solid #2271b1; outline-offset: 2px; }
+			.shareadraft-alt-actions { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem 1rem; font-size: 0.875rem; }
+			.shareadraft-notice a,
+			.shareadraft-notice .button-link { padding: 0; font: inherit; color: #2271b1; text-decoration: underline; background: none; border: 0; cursor: pointer; }
+			.shareadraft-notice .button-link:focus-visible { outline: 2px solid #2271b1; outline-offset: 2px; }
 			@media (prefers-color-scheme: dark) {
 				html { background: #1d2327; }
 				body#error-page { background: #2c3338; border-color: #3c434a; color: #f0f0f1; }
@@ -134,7 +138,8 @@ final class NoticePage {
 				.shareadraft-notice p { color: #c3c4c7; }
 				.shareadraft-notice input[type="email"],
 				.shareadraft-notice input[type="text"] { background: #1d2327; border-color: #8c8f94; }
-				.shareadraft-notice a { color: #72aee6; }
+				.shareadraft-notice a,
+				.shareadraft-notice .button-link { color: #72aee6; }
 			}
 		</style>';
 	}

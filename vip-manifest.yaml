@@ -57,7 +57,8 @@ runtime_config:
         from these ranges. An author can let a link open from further ranges
         of its own when they create it, which widens where that one link
         opens. Leave empty to apply no site-wide IP restriction. IP
-        restrictions limit where a link opens from, not who opens it.
+        restrictions limit where a link opens from, not who opens it. Links
+        made with Share a Draft 1.x ignore these ranges.
 
 telemetry:
   # Single word, no underscores: the leading token is the Tracks source, which

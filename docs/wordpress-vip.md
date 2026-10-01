@@ -16,7 +16,7 @@ The [hosting requirements](hosting.md) that need checking elsewhere are taken ca
 Enabling the integration makes two optional settings available in the VIP Dashboard. Share a Draft works without either of them.
 
 - **Expired link retention.** How long an expired or revoked link is kept, so a reviewer who returns to it is told why it stopped working. The default is 21 days. A site can still change it in code with the [`shareadraft_dead_link_grace_period` filter](customizing.md#keep-expired-and-revoked-links-for-more-or-less-time), which has the final say.
-- **Trusted IP ranges.** Addresses or ranges, such as your office networks. Once set, every preview link opens only from these ranges. An author can add ranges of their own to a link when they create it, which lets that one link open from those places too. Without central ranges, a link opens from anywhere until its author gives it ranges of its own. The Preview Links screen and the editor show which ranges apply.
+- **Trusted IP ranges.** Addresses or ranges, such as your office networks. Once set, every preview link opens only from these ranges. An author can add ranges of their own to a link when they create it, which lets that one link open from those places too. Without central ranges, a link opens from anywhere until its author gives it ranges of its own. The Preview Links screen and the editor show which ranges apply. Links made with Share a Draft 1.x ignore these ranges until they expire or 2.1.0 removes them.
 
 ## Usage statistics
 

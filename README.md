@@ -38,6 +38,8 @@ Share a Draft works on any host, with nothing to configure. On [WordPress VIP](h
 
 Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the block editor. Support for 1.x links will be removed in 2.1.0.
 
+None of 2.0's controls apply to 1.x links. Pausing every link, trusted IP ranges, viewer limits, named reviewers, the Preview Links screen, bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a 1.x link keeps working even if its post is made private. Only the person who made a 1.x link can delete it, so if one leaks, ask them to delete it under **Posts → Share a Draft (Old)**.
+
 ## Installation
 
 1. Install and activate Share a Draft from **Plugins → Add New Plugin**.
@@ -62,7 +64,7 @@ No. A link's lifetime and limits are fixed when it is created. To change them, r
 
 ### I think a link has leaked. What should I do?
 
-Revoke it from the editor or the Preview Links screen. If you are not sure which link leaked, an administrator can pause every link on the site at once from the Preview Links screen, and switch them back on when the dust settles. Pausing doesn't revoke or change any link: once links are switched back on, each one works again until its own expiry.
+Revoke it from the editor or the Preview Links screen. If you are not sure which link leaked, an administrator can pause every link on the site at once from the Preview Links screen, and switch them back on when the dust settles. Pausing doesn't revoke or change any link: once links are switched back on, each one works again until its own expiry. Pausing does not cover links made with 1.x: only the person who made one can delete it, under **Posts → Share a Draft (Old)**.
 
 ### Does it work with page caching?
 
@@ -106,4 +108,4 @@ All of the detailed changes are listed in [CHANGELOG.md](https://github.com/Auto
 
 ### 2.0.0
 
-A rewrite. Create links from the block editor and manage them under Preview Links. Links made with 1.x keep working until they expire, and can be reviewed or deleted under Posts → Share a Draft (Old), until 2.1.0.
+A rewrite. Create links from the block editor and manage them under Preview Links. Links made with 1.x keep working until they expire, and can be reviewed or deleted under Posts → Share a Draft (Old), until 2.1.0. 2.0's controls, such as pausing links and trusted IP ranges, do not apply to them.

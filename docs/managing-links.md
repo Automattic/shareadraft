@@ -2,6 +2,8 @@
 
 Every preview link can limit how many people open it and can be revoked on its own, and administrators can also pause every link on the site at once, revoke links in bulk, and make sure links do not outlive the people who created them. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
 
+None of this applies to links made with Share a Draft 1.x. Each of those keeps working until it expires, and only the person who made it can delete it, under Posts → Share a Draft (Old). Support for 1.x links is removed in 2.1.0.
+
 ## Limiting how many people can open a link
 
 When you generate a link, **Maximum uses** sets how many people can open it. Leave it empty for no limit. Once that many people have opened the link, anyone new is told it has been used up, while the people who already opened it can keep coming back until it expires.

@@ -18,7 +18,9 @@ but runs on any host.
 Links made with 1.x keep working until they expire. Their owners can review and
 delete them under Posts → Share a Draft (Old), which only appears while they
 have one; new links are made from the block editor. Support for 1.x links is
-removed in 2.1.0.
+removed in 2.1.0. None of 2.0's controls apply to 1.x links: pausing links,
+trusted IP ranges, viewer limits, named reviewers, the Preview Links screen,
+bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only.
 
 ### Added
 
@@ -55,7 +57,7 @@ removed in 2.1.0.
 
 ### Security
 
-- Store only a hash of each token, enforce every link limit server-side, and keep drafts visible to link holders alone — preview requests are also marked no-index so a shared link cannot be indexed by search engines. ([#18](https://github.com/Automattic/live-previews/pull/18))
+- Store only a hash of each 2.0 link's token, enforce every link limit server-side, and keep drafts visible to link holders alone — preview requests are also marked no-index so a shared link cannot be indexed by search engines. ([#18](https://github.com/Automattic/live-previews/pull/18))
 - Send reviewer verification codes only after the response has been flushed to the visitor, so a listed and an unlisted address answer the email form in the same time and response timing cannot enumerate a link's reviewer list. The code email also names the site's domain and warns never to share the code, giving reviewers concrete checks against phishing imitations. ([#63](https://github.com/Automattic/live-previews/pull/63))
 - Treat a Private post as closed to preview links, as a trashed one already was: making a post Private discards its links, the editor panel does not appear on it, every minting surface refuses it, and a link left over from before still will not open it. Private means staff only, and a link must not reopen it to anonymous visitors.
 - Cap guesses at a reviewer verification code per reviewer address rather than per code, so requesting a fresh code no longer brings fresh guesses, and count each guess before checking it, so parallel guesses cannot slip past the cap. With a persistent object cache, as on VIP, the counters are atomic.

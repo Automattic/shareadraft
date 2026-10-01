@@ -33,6 +33,7 @@ class LinkToggleTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		unset( $_GET[ PreviewGate::TOKEN_QUERY_VAR ], $_SERVER['HTTP_USER_AGENT'] );
+		$_SERVER['REMOTE_ADDR'] = '127.0.0.1';
 		$this->toggle->enable();
 		parent::tear_down();
 	}
@@ -88,6 +89,85 @@ class LinkToggleTest extends WP_UnitTestCase {
 		// again the moment the switch is back on.
 		$this->toggle->enable();
 		static::assertSame( 'publish', $this->visit( $post_id, $token ) );
+	}
+
+	public function test_a_live_link_is_told_links_are_paused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+		$this->toggle->disable();
+
+		$gate = $this->paused_gate( $post_id, $token );
+
+		$this->expectException( \WPDieException::class );
+		$this->expectExceptionCode( 410 );
+		$this->expectExceptionMessageMatches( '/temporarily disabled/i' );
+		$gate->maybe_render_notice();
+	}
+
+	public function test_an_unknown_token_still_shows_no_notice_while_paused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+		$this->toggle->disable();
+
+		// Pausing must not turn a made-up token into proof the draft exists.
+		$gate = $this->paused_gate( $post_id, Token::from_string( 'not-a-real-token' ) );
+
+		$this->expectOutputString( '' );
+		$gate->maybe_render_notice();
+	}
+
+	public function test_a_blocked_ip_still_shows_no_notice_while_paused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [ '203.0.113.0/24' ] );
+		$this->toggle->disable();
+
+		$_SERVER['REMOTE_ADDR'] = '198.51.100.7';
+		$gate                   = $this->paused_gate( $post_id, $token );
+
+		$this->expectOutputString( '' );
+		$gate->maybe_render_notice();
+	}
+
+	public function test_a_dead_link_says_why_rather_than_that_links_are_paused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1 );
+		$this->service->revoke( $post_id, $token->hash() );
+		$this->toggle->disable();
+
+		// It will not work once links are back on, so "try again later" would
+		// send the reviewer on a pointless errand.
+		$gate = $this->paused_gate( $post_id, $token );
+
+		$this->expectException( \WPDieException::class );
+		$this->expectExceptionMessageMatches( '/revoked/i' );
+		$gate->maybe_render_notice();
+	}
+
+	public function test_a_recipient_bound_link_is_not_offered_verification_while_paused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+		$this->toggle->disable();
+
+		// Verifying would email a code for a link that cannot open yet.
+		$gate = $this->paused_gate( $post_id, $token );
+
+		$this->expectException( \WPDieException::class );
+		$this->expectExceptionMessageMatches( '/temporarily disabled/i' );
+		$gate->maybe_render_notice();
+	}
+
+	private function paused_gate( int $post_id, Token $token ): PreviewGate {
+		$_GET[ PreviewGate::TOKEN_QUERY_VAR ] = $token->value();
+
+		clean_post_cache( $post_id );
+
+		$query             = new WP_Query();
+		$query->is_preview = true;
+
+		$gate = new PreviewGate( $this->service );
+		$gate->unlock_valid_previews( [ get_post( $post_id ) ], $query );
+
+		return $gate;
 	}
 
 	private function visit( int $post_id, Token $token ): string {

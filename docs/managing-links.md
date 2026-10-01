@@ -37,7 +37,7 @@ If you suspect a link has leaked but do not know which one, an administrator can
 
 Pausing does not change any link. While links are paused, none of them work, and new links cannot be used either. When you switch them back on, each link works exactly as it did before: its expiry, its usage limit, and its reviewers are untouched, and links that expired in the meantime stay expired. That makes pausing safe to use on suspicion, and safe to undo after a false alarm, unlike revoking everything, which would mean creating and resending every link people are still using.
 
-While links are paused, the Preview Links screen shows who paused them and when, the block editor warns anyone creating or managing links that they will not work, and reviewers who open a link are told that preview links are temporarily disabled on the site.
+While links are paused, the Preview Links screen shows who paused them and when, the block editor warns anyone creating or managing links that they will not work, and reviewers who open a link are told that preview links are temporarily disabled on the site. A link that has expired, been revoked, or reached its viewing limit says so instead, since it will not work once links are back on either.
 
 ## Revoking in bulk
 

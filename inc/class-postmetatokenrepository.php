@@ -380,8 +380,12 @@ final class PostMetaTokenRepository implements TokenRepository {
 			$rows
 		);
 
-		// One query for every post's use counts, rather than one per row.
+		// One query for every post's use counts, and one for the posts every
+		// caller loads per row (capability check, title), rather than one each
+		// per row. The meta call stays: priming the posts skips the meta of any
+		// post that was already cached.
 		update_meta_cache( 'post', array_unique( $post_ids ) );
+		_prime_post_caches( array_unique( $post_ids ), false, false );
 
 		$links = [];
 

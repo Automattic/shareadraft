@@ -135,6 +135,36 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 		static::assertStringContainsString( 'being revoked in the background', $output );
 	}
 
+	/**
+	 * The Dashboard field is free text, so one typo on a single-range site
+	 * would otherwise lift the restriction with nothing to say so.
+	 */
+	public function test_ignored_central_ranges_are_named_in_a_warning(): void {
+		$page = new PreviewLinksAdminPage( $this->service, new SystemClock(), new BulkLinkRevoker( $this->service ), null, [], [ '203.0.113.*' ] );
+
+		$output = $this->rendered( $page );
+
+		static::assertStringContainsString( 'notice-warning', $output );
+		static::assertStringContainsString( '<code>203.0.113.*</code>', $output );
+		static::assertStringContainsString( 'No site-wide IP restriction applies', $output );
+	}
+
+	public function test_ignored_ranges_alongside_valid_ones_say_only_the_valid_ones_apply(): void {
+		$page = new PreviewLinksAdminPage( $this->service, new SystemClock(), new BulkLinkRevoker( $this->service ), null, [ '203.0.113.0/24' ], [ '198.51.100.*' ] );
+
+		$output = $this->rendered( $page );
+
+		static::assertStringContainsString( '<code>198.51.100.*</code>', $output );
+		static::assertStringContainsString( 'Only the valid ranges below apply.', $output );
+		static::assertStringNotContainsString( 'No site-wide IP restriction applies', $output );
+	}
+
+	public function test_no_warning_renders_when_every_central_range_is_valid(): void {
+		$page = new PreviewLinksAdminPage( $this->service, new SystemClock(), new BulkLinkRevoker( $this->service ), null, [ '203.0.113.0/24' ] );
+
+		static::assertStringNotContainsString( 'not valid IP addresses', $this->rendered( $page ) );
+	}
+
 	private function rendered( PreviewLinksAdminPage $page ): string {
 		// The list table needs the admin screen machinery the test bootstrap
 		// does not load by default.

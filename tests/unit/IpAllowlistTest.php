@@ -135,12 +135,24 @@ final class IpAllowlistTest extends TestCase {
 		);
 	}
 
+	public function test_rejected_names_the_entries_sanitize_drops(): void {
+		self::assertSame(
+			[ '203.0.113.*', '10.0.0.0/255.255.255.0' ],
+			IpAllowlist::rejected( "203.0.113.0/24, 203.0.113.*\n10.0.0.0/255.255.255.0, 203.0.113.*" )
+		);
+	}
+
+	public function test_rejected_is_empty_when_every_entry_is_valid(): void {
+		self::assertSame( [], IpAllowlist::rejected( '203.0.113.0/24, 2001:db8::/32' ) );
+	}
+
 	/**
 	 * @dataProvider unusable_config_values
 	 * @param mixed $raw
 	 */
 	public function test_sanitize_treats_unusable_values_as_empty( $raw ): void {
 		self::assertSame( [], IpAllowlist::sanitize( $raw ) );
+		self::assertSame( [], IpAllowlist::rejected( $raw ) );
 	}
 
 	/**

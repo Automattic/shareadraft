@@ -86,6 +86,32 @@ final class IpAllowlist {
 	 * @return list<string>
 	 */
 	public static function sanitize( $raw ): array {
+		return array_values( array_filter( self::entries( $raw ), [ self::class, 'is_valid_range' ] ) );
+	}
+
+	/**
+	 * The entries in an untrusted value that {@see self::sanitize()} drops as
+	 * malformed, so a screen can say which ones are being ignored rather than
+	 * leave a typo to silently lift the restriction.
+	 *
+	 * @param mixed $raw
+	 * @return list<string>
+	 */
+	public static function rejected( $raw ): array {
+		return array_values(
+			array_filter( self::entries( $raw ), static fn ( string $entry ): bool => ! self::is_valid_range( $entry ) )
+		);
+	}
+
+	/**
+	 * The distinct, non-empty, trimmed string entries in an untrusted value,
+	 * valid or not. Anything that is not a string is dropped here: a text
+	 * field cannot produce one, so there is nothing useful to report about it.
+	 *
+	 * @param mixed $raw
+	 * @return list<string>
+	 */
+	private static function entries( $raw ): array {
 		if ( is_string( $raw ) ) {
 			$raw = preg_split( '/[\s,]+/', $raw );
 		}
@@ -94,7 +120,7 @@ final class IpAllowlist {
 			return [];
 		}
 
-		$ranges = [];
+		$entries = [];
 
 		/** @var mixed $entry */
 		foreach ( $raw as $entry ) {
@@ -104,12 +130,12 @@ final class IpAllowlist {
 
 			$entry = trim( $entry );
 
-			if ( '' !== $entry && self::is_valid_range( $entry ) && ! in_array( $entry, $ranges, true ) ) {
-				$ranges[] = $entry;
+			if ( '' !== $entry && ! in_array( $entry, $entries, true ) ) {
+				$entries[] = $entry;
 			}
 		}
 
-		return $ranges;
+		return $entries;
 	}
 
 	/**

@@ -113,8 +113,10 @@ VIP, so anything platform-specific is gated:
 - **Platform-only APIs** (VIP Telemetry, the Abilities API) go behind
   `class_exists()` / `function_exists()` and no-op when absent.
 - **Nothing renders on the front end, and nothing nags.** No footer signature, no
-  branding, and no `admin_notices` at all today. Anything the plugin needs to say
-  belongs on its own screen (`PreviewLinksAdminPage::SCREEN_ID`).
+  branding, and no `admin_notices` beyond one dev-only exception: the missing-build
+  warning in `inc/class-buildnotice.php`, which can only fire in a development
+  checkout because releases always ship `build/`. Anything else the plugin needs
+  to say belongs on its own screen (`PreviewLinksAdminPage::SCREEN_ID`).
 - Do not assume anything the platform guarantees but a standalone host does not
   — object caching, cron actually firing, or preview requests bypassing a page
   cache. Where the plugin depends on one, make the dependency observable

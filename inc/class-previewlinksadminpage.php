@@ -656,7 +656,7 @@ final class PreviewLinksAdminPage {
 			]
 		);
 
-		$reading  = '<p>' . esc_html__( 'The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor.', 'shareadraft' ) . '</p>';
+		$reading  = '<p>' . esc_html__( 'The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token and its last four characters are stored, never the whole token. If a link is lost, revoke it and generate a fresh one from the post editor.', 'shareadraft' ) . '</p>';
 		$reading .= '<p>' . esc_html__( 'A link on a post you cannot edit is listed without its title, reviewers, or IP ranges, and cannot be revoked from its row.', 'shareadraft' ) . '</p>';
 		$reading .= '<p><strong>' . esc_html__( 'Status', 'shareadraft' ) . '</strong></p><ul>';
 		$reading .= '<li>' . esc_html__( 'Active: the link works.', 'shareadraft' ) . '</li>';

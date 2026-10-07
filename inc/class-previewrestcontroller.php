@@ -19,8 +19,8 @@ final class PreviewRestController {
 	public const ROUTE     = '/preview-links';
 
 	/**
-	 * Upper bound on a link's viewer cap, guarding against absurd values. The
-	 * editor offers a free number input, so this is validated server-side.
+	 * The built-in ceiling on a link's viewer cap, before
+	 * {@see max_uses_limit()} lets a site change or lift it.
 	 */
 	public const MAX_USES_LIMIT = 1000;
 
@@ -119,6 +119,27 @@ final class PreviewRestController {
 	}
 
 	/**
+	 * The most viewers a link may allow, or null when the site sets no ceiling.
+	 *
+	 * Under a ceiling a link is always capped: a link minted without a cap gets
+	 * the ceiling. With no ceiling, any positive cap is accepted and a link
+	 * minted without one is unlimited. Enforced by {@see PreviewLinkMinter},
+	 * so every channel honours the same limit. A value that is neither null
+	 * nor a positive whole number falls back to the built-in ceiling.
+	 */
+	public static function max_uses_limit(): ?int {
+		/**
+		 * Filters the most viewers a preview link may allow. Return null to
+		 * allow any number, and unlimited links.
+		 *
+		 * @param int|null $limit Maximum viewer cap (1000).
+		 */
+		$limit = apply_filters( 'shareadraft_max_uses_limit', self::MAX_USES_LIMIT );
+
+		return null === $limit ? null : ( self::positive_int( $limit ) ?? self::MAX_USES_LIMIT );
+	}
+
+	/**
 	 * A positive whole number from filtered input, or null. Accepts integers and
 	 * numeric strings such as "3600"; rejects booleans, fractions, zero and
 	 * negatives.
@@ -134,6 +155,8 @@ final class PreviewRestController {
 	}
 
 	public function register_routes(): void {
+		$max_uses_limit = self::max_uses_limit();
+
 		$post_id_arg = [
 			'post_id' => [
 				'required' => true,
@@ -148,14 +171,18 @@ final class PreviewRestController {
 				'enum'     => self::allowed_expirations(),
 			],
 			'max_uses'   => [
-				// Null (or omitted) means unlimited; otherwise a positive
-				// integer up to the guard limit.
+				// Omitted (or null) means the site's ceiling, or unlimited
+				// when it has none. Left null here so the minter resolves it
+				// when the link is minted, and enforces the ceiling.
 				'type'    => [ 'integer', 'null' ],
 				'default' => null,
 				'minimum' => 1,
-				'maximum' => self::MAX_USES_LIMIT,
 			],
 		];
+
+		if ( null !== $max_uses_limit ) {
+			$create_args['max_uses']['maximum'] = $max_uses_limit;
+		}
 
 		// A restriction the site has switched off is left out of the schema so
 		// it never shows in the endpoint's OPTIONS description; the minter also

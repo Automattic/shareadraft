@@ -68,10 +68,22 @@ Feature: Preview links can be created from the command line
 			"""
 
 	Scenario: Reject an out-of-range viewer cap
-		When I try `wp shareadraft create 1 --max-uses=0`
+		When I run `wp post create --post_status=draft --post_title="A draft" --porcelain`
+		And save STDOUT as {POST_ID}
+		When I try `wp shareadraft create {POST_ID} --max-uses=1001`
 		Then STDERR should be:
 			"""
-			Error: --max-uses must be between 1 and 1000.
+			Error: Maximum uses must be between 1 and 1000.
+			"""
+
+	Scenario: A link created without a viewer cap gets the site's maximum
+		When I run `wp post create --post_status=draft --post_title="A draft" --porcelain`
+		And save STDOUT as {POST_ID}
+		When I run `wp shareadraft create {POST_ID}`
+		And I run `wp shareadraft list {POST_ID} --field=max_uses`
+		Then STDOUT should be:
+			"""
+			1000
 			"""
 
 	Scenario: Reject an invalid IP range

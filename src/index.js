@@ -34,6 +34,7 @@ const REST_BASE = '/shareadraft/v1/preview-links';
 const settings = window.shareADraft || {
 	expirationOptions: [],
 	defaultExpiration: 28800,
+	maxUsesLimit: 1000,
 	hasCentralIpRanges: false,
 	linksDisabled: false,
 	ipAllowlistEnabled: true,
@@ -236,12 +237,24 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 				<TextControl
 					type="number"
 					min={ 1 }
+					max={ settings.maxUsesLimit ?? undefined }
 					step={ 1 }
 					label={ __( 'Maximum uses', 'shareadraft' ) }
-					help={ __(
-						'How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited.',
-						'shareadraft'
-					) }
+					help={
+						null === settings.maxUsesLimit
+							? __(
+									'How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited.',
+									'shareadraft'
+								)
+							: sprintf(
+									/* translators: %1$d: the most viewers a link may allow, e.g. 1000. */
+									__(
+										'How many people can open this link, up to %1$d. Opening it in another browser or device counts as a new person. Leave empty for %1$d.',
+										'shareadraft'
+									),
+									settings.maxUsesLimit
+								)
+					}
 					value={ maxUses }
 					onChange={ setMaxUses }
 					disabled={ isLocked }

@@ -602,6 +602,12 @@ final class PreviewGate {
 		}
 
 		nocache_headers();
+		// Sent directly as well: on VIP, a `nocache_headers` filter drops
+		// Cache-Control from 404 queries, and every notice the gate shows is on
+		// one, because it withheld the post. The edge would then cache the
+		// verification form for minutes, and serve it again in place of the
+		// draft to a reviewer who has just verified.
+		header( 'Cache-Control: no-cache, must-revalidate, max-age=0, no-store, private', true );
 		header( 'X-Robots-Tag: noindex, nofollow, noarchive, nosnippet', true );
 		header( 'Referrer-Policy: no-referrer', true );
 	}

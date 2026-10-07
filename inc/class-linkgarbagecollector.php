@@ -84,11 +84,6 @@ final class LinkGarbageCollector {
 	 * @return int Links deleted in this batch.
 	 */
 	public function run(): int {
-		// Recorded first, and for every run rather than only productive ones: the
-		// question it answers is "did cron fire?", to which "yes, and there was
-		// nothing to delete" is still a yes.
-		update_option( self::LAST_RUN_OPTION, time(), false );
-
 		$cursor   = get_option( self::CURSOR_OPTION, 0 );
 		$cursor   = is_numeric( $cursor ) ? (int) $cursor : 0;
 		$post_ids = $this->service->post_ids_with_links( $cursor, self::BATCH_SIZE );
@@ -96,6 +91,7 @@ final class LinkGarbageCollector {
 		if ( [] === $post_ids ) {
 			// Swept to the end; start from the top on the next scheduled run.
 			delete_option( self::CURSOR_OPTION );
+			$this->mark_completed();
 
 			return 0;
 		}
@@ -108,6 +104,7 @@ final class LinkGarbageCollector {
 		}
 
 		update_option( self::CURSOR_OPTION, end( $post_ids ), false );
+		$this->mark_completed();
 
 		if ( count( $post_ids ) === self::BATCH_SIZE ) {
 			// A full batch means there is probably more; continue shortly rather
@@ -152,6 +149,16 @@ final class LinkGarbageCollector {
 
 			$cursor = (int) end( $post_ids );
 		}
+	}
+
+	/**
+	 * Stamp the last-run marker. Called only once a run's work is done, so a
+	 * batch that fatals every time leaves the marker ageing and Site Health
+	 * reports the sweep as stuck. Stamped for every completed run, not only
+	 * productive ones: "it ran, and there was nothing to delete" still counts.
+	 */
+	private function mark_completed(): void {
+		update_option( self::LAST_RUN_OPTION, time(), false );
 	}
 
 	private function grace_period(): int {

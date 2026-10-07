@@ -228,6 +228,27 @@ class LinkGarbageCollectorTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A batch that fails every time never advances the cursor, so the sweep is
+	 * stuck. The marker must not claim otherwise, or Site Health stays green.
+	 */
+	public function test_a_run_that_fails_mid_batch_is_not_stamped(): void {
+		$this->save_link( self::factory()->post->create( [ 'post_status' => 'draft' ] ), time() - 90 * DAY_IN_SECONDS );
+		add_action(
+			'delete_post_meta',
+			static function (): void {
+				throw new \RuntimeException( 'Batch failed.' );
+			}
+		);
+
+		try {
+			$this->collector->run();
+			static::fail( 'The run should have thrown.' );
+		} catch ( \RuntimeException $e ) {
+			static::assertNull( LinkGarbageCollector::last_run() );
+		}
+	}
+
+	/**
 	 * Swap the Config singleton so a test can mimic a platform-injected value.
 	 */
 	private function set_config( ?Config $config ): void {

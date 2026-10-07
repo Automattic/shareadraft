@@ -78,6 +78,30 @@ final class PreviewLinksAdminPage {
 		return $creator > 0 ? $creator : null;
 	}
 
+	/**
+	 * The creator filter and page being viewed, so a revoke lands back on the
+	 * same view instead of page 1 of the whole site's list.
+	 *
+	 * @return array<string, int>
+	 */
+	public static function view_args(): array {
+		$args    = [];
+		$creator = self::requested_creator();
+
+		if ( null !== $creator ) {
+			$args['creator'] = $creator;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only display state, as above.
+		$paged = isset( $_REQUEST['paged'] ) && is_scalar( $_REQUEST['paged'] ) ? (int) $_REQUEST['paged'] : 0;
+
+		if ( $paged > 1 ) {
+			$args['paged'] = $paged;
+		}
+
+		return $args;
+	}
+
 	public function register(): void {
 		add_action( 'admin_menu', [ $this, 'add_menu' ] );
 		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_assets' ] );
@@ -176,7 +200,7 @@ final class PreviewLinksAdminPage {
 			return;
 		}
 
-		$args = [ 'shareadraft_revoked' => $revoked ];
+		$args = [ 'shareadraft_revoked' => $revoked ] + self::view_args();
 
 		if ( $this->revoker->has_pending_work() ) {
 			// A sweep overflowed this run and continues on cron; say so rather

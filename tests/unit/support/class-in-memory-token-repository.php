@@ -93,19 +93,19 @@ final class InMemoryTokenRepository implements TokenRepository {
 		return true;
 	}
 
-	public function revoke_all_for_post( int $post_id, int $revoked_at ): int {
-		return $this->revoke_matching( $post_id, null, $revoked_at );
+	public function revoke_all_for_post( int $post_id, int $revoked_at, int $created_until ): int {
+		return $this->revoke_matching( $post_id, null, $revoked_at, $created_until );
 	}
 
-	public function revoke_by_creator_for_post( int $post_id, int $created_by, int $revoked_at ): int {
-		return $this->revoke_matching( $post_id, $created_by, $revoked_at );
+	public function revoke_by_creator_for_post( int $post_id, int $created_by, int $revoked_at, int $created_until ): int {
+		return $this->revoke_matching( $post_id, $created_by, $revoked_at, $created_until );
 	}
 
-	private function revoke_matching( int $post_id, ?int $created_by, int $revoked_at ): int {
+	private function revoke_matching( int $post_id, ?int $created_by, int $revoked_at, int $created_until ): int {
 		$revoked = 0;
 
 		foreach ( $this->links[ $post_id ] ?? [] as $link ) {
-			if ( $link->is_revoked() ) {
+			if ( $link->is_revoked() || $link->created_at() > $created_until ) {
 				continue;
 			}
 

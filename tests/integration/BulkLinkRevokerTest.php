@@ -254,6 +254,47 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
 	}
 
+	/**
+	 * A sweep covers the links that existed when it started. One made while it
+	 * runs survives, even on a post the cursor has not yet reached.
+	 */
+	public function test_a_sweep_spares_links_created_after_it_started(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
+			[
+				'id'      => 'in-flight',
+				'creator' => null,
+				'cursor'  => 0,
+				'started' => time() - MINUTE_IN_SECONDS,
+			],
+		], false );
+
+		static::assertSame( 0, $this->revoker->run() );
+		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+	}
+
+	/**
+	 * A sweep queued before `started` was recorded keeps its old reach rather
+	 * than sparing everything.
+	 */
+	public function test_a_sweep_queued_without_a_start_time_revokes_every_link(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
+			[
+				'id'      => 'legacy',
+				'creator' => null,
+				'cursor'  => 0,
+			],
+		], false );
+
+		static::assertSame( 1, $this->revoker->run() );
+		static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+	}
+
 	public function test_running_with_no_pending_work_is_a_no_op(): void {
 		static::assertSame( 0, $this->revoker->run() );
 	}

@@ -107,9 +107,15 @@ final class PreviewLinkService {
 	/**
 	 * Revoke every not-yet-revoked link on a post, returning how many were
 	 * revoked. One per-post step of the site-wide break-glass sweep.
+	 *
+	 * @param int|null $created_until Skip links created after this time, so a
+	 *                                sweep spares links made while it runs.
+	 *                                Null means now.
 	 */
-	public function revoke_all_for_post( int $post_id ): int {
-		return $this->repository->revoke_all_for_post( $post_id, $this->clock->now() );
+	public function revoke_all_for_post( int $post_id, ?int $created_until = null ): int {
+		$now = $this->clock->now();
+
+		return $this->repository->revoke_all_for_post( $post_id, $now, $created_until ?? $now );
 	}
 
 	/**
@@ -164,9 +170,13 @@ final class PreviewLinkService {
 	/**
 	 * Revoke every not-yet-revoked link on a post that the given user created,
 	 * returning how many were revoked. One per-post step of the offboarding sweep.
+	 *
+	 * @param int|null $created_until As for {@see PreviewLinkService::revoke_all_for_post()}.
 	 */
-	public function revoke_for_post_by_creator( int $post_id, int $created_by ): int {
-		return $this->repository->revoke_by_creator_for_post( $post_id, $created_by, $this->clock->now() );
+	public function revoke_for_post_by_creator( int $post_id, int $created_by, ?int $created_until = null ): int {
+		$now = $this->clock->now();
+
+		return $this->repository->revoke_by_creator_for_post( $post_id, $created_by, $now, $created_until ?? $now );
 	}
 
 	/**

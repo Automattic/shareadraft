@@ -82,6 +82,8 @@ final class PreviewAbilities {
 	}
 
 	public function register_abilities(): void {
+		$max_uses_limit = PreviewRestController::max_uses_limit();
+
 		$create_properties = [
 			'post_id'    => [
 				'type'        => 'integer',
@@ -99,10 +101,20 @@ final class PreviewAbilities {
 				'type'        => [ 'integer', 'null' ],
 				'default'     => null,
 				'minimum'     => 1,
-				'maximum'     => PreviewRestController::MAX_USES_LIMIT,
-				'description' => __( 'How many people can open the link, or null for unlimited. Each browser or device counts as a new person.', 'shareadraft' ),
+				'description' => null === $max_uses_limit
+					? __( 'How many people can open the link, or null for unlimited. Each browser or device counts as a new person.', 'shareadraft' )
+					: sprintf(
+						/* translators: %1$d: the most viewers a link may allow, e.g. 1000. */
+						__( 'How many people can open the link, up to %1$d. Omitted or null means %1$d. Each browser or device counts as a new person.', 'shareadraft' ),
+						$max_uses_limit
+					),
 			],
 		];
+
+		// Mirror the REST schema: the site's ceiling, when it has one.
+		if ( null !== $max_uses_limit ) {
+			$create_properties['max_uses']['maximum'] = $max_uses_limit;
+		}
 
 		// Mirror the REST schema: a restriction the site has switched off is
 		// not described to agents at all. The minter also rejects a value sent

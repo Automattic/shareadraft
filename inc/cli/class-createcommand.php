@@ -41,7 +41,7 @@ final class CreateCommand {
 	 * : How long the link stays valid, in seconds. Must be one of the allowed lifetimes (3600, 28800, 86400, or 604800 unless the site filters `shareadraft_expiration_options`). Defaults to the site's default lifetime (8 hours unless filtered).
 	 *
 	 * [--max-uses=<count>]
-	 * : How many people can open the link, between 1 and 1000. Each browser or device counts as a new person. Defaults to unlimited.
+	 * : How many people can open the link, between 1 and the site's maximum (1000 unless the site filters `shareadraft_max_uses_limit`). Each browser or device counts as a new person. Defaults to the site's maximum, or unlimited if the site has none.
 	 *
 	 * [--allowed-ips=<ranges>]
 	 * : Comma-separated IP addresses or CIDR ranges (IPv4 or IPv6) the link may be opened from. Defaults to no IP restriction.
@@ -93,18 +93,8 @@ final class CreateCommand {
 			return;
 		}
 
-		$max_uses = null;
-
-		if ( isset( $assoc_args['max-uses'] ) ) {
-			$max_uses = (int) $assoc_args['max-uses'];
-
-			if ( $max_uses < 1 || $max_uses > PreviewRestController::MAX_USES_LIMIT ) {
-				WP_CLI::error(
-					sprintf( '--max-uses must be between 1 and %d.', PreviewRestController::MAX_USES_LIMIT )
-				);
-				return;
-			}
-		}
+		// The minter resolves an omitted cap and enforces the site's ceiling.
+		$max_uses = isset( $assoc_args['max-uses'] ) ? (int) $assoc_args['max-uses'] : null;
 
 		$allowed_ips = [];
 

@@ -28,6 +28,22 @@ add_filter( 'shareadraft_default_expiration', fn () => DAY_IN_SECONDS );
 
 The default must be one of the offered lifetimes. If it is not (for example, you remove 8 hours from the list but leave the default alone), the first option in the list is selected instead. Options without a positive whole number of seconds and a text label are ignored, and if none are left the built-in list is used.
 
+## Change how many viewers a link may allow
+
+A link allows at most 1,000 viewers, and a link created without a limit gets 1,000. To set a different ceiling, return it from `shareadraft_max_uses_limit`:
+
+```php
+add_filter( 'shareadraft_max_uses_limit', fn () => 50 );
+```
+
+To allow any number of viewers, and links with no limit at all, return null:
+
+```php
+add_filter( 'shareadraft_max_uses_limit', '__return_null' );
+```
+
+The ceiling applies whether a link is created in the editor, with WP-CLI, or through the Abilities API. Anything other than null or a positive whole number is ignored, and the ceiling stays at 1,000. Changing it only affects new links: existing links keep the limit they were created with.
+
 ## Turn off named reviewer or IP restriction features
 
 Binding a link to named reviewers, and restricting it to IP ranges, are both optional. If your site never wants one of them, switch it off: its fields disappear from the editor, the Preview Links screen, and the Abilities API, and WP-CLI refuses to use it.

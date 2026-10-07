@@ -26,7 +26,9 @@ final class PreviewLinkMinter {
 	 *
 	 * @param int          $post_id     Post to preview.
 	 * @param int          $expiration  How long the link stays valid, in seconds.
-	 * @param int|null     $max_uses    Maximum distinct viewers, or null for unlimited.
+	 * @param int|null     $max_uses    Maximum distinct viewers, or null for the
+	 *                                  site's ceiling ({@see PreviewRestController::max_uses_limit()}),
+	 *                                  which is unlimited only when there is none.
 	 * @param string       $channel     How the link was requested (`rest`, `ability`).
 	 *                                  Recorded as telemetry so agent-driven previews
 	 *                                  are distinguishable from editor ones.
@@ -41,8 +43,9 @@ final class PreviewLinkMinter {
 	 * @return array{url: string, expires_at: int}|WP_Error A WP_Error when the
 	 *                                  post does not exist, its type has no
 	 *                                  front-end view, it is published, private,
-	 *                                  or trashed, a range or address is
-	 *                                  invalid, the restriction is disabled on
+	 *                                  or trashed, the viewer cap is out of
+	 *                                  range, a range or address is invalid,
+	 *                                  the restriction is disabled on
 	 *                                  this site, or the link could not be saved.
 	 */
 	public function mint( int $post_id, int $expiration, ?int $max_uses, string $channel, array $allowed_ips = [], array $recipients = [] ) {
@@ -73,6 +76,25 @@ final class PreviewLinkMinter {
 			return new WP_Error(
 				'shareadraft_post_not_shareable',
 				__( 'Preview links are not available for published, private, or trashed content.', 'shareadraft' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// Every channel funnels through here, so the site's ceiling is
+		// enforced once, whatever the caller's own schema said.
+		$max_uses_limit = PreviewRestController::max_uses_limit();
+		$max_uses     ??= $max_uses_limit;
+
+		if ( null !== $max_uses && ( $max_uses < 1 || ( null !== $max_uses_limit && $max_uses > $max_uses_limit ) ) ) {
+			return new WP_Error(
+				'shareadraft_invalid_max_uses',
+				null === $max_uses_limit
+					? __( 'Maximum uses must be at least 1.', 'shareadraft' )
+					: sprintf(
+						/* translators: %d: the most viewers a link may allow, e.g. 1000. */
+						__( 'Maximum uses must be between 1 and %d.', 'shareadraft' ),
+						$max_uses_limit
+					),
 				[ 'status' => 400 ]
 			);
 		}

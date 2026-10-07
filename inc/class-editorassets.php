@@ -79,6 +79,7 @@ final class EditorAssets {
 			[
 				'expirationOptions'  => PreviewRestController::expiration_options(),
 				'defaultExpiration'  => PreviewRestController::default_expiration(),
+				'maxUsesLimit'       => PreviewRestController::max_uses_limit(),
 				'hasCentralIpRanges' => $this->has_central_ip_ranges,
 				'linksDisabled'      => $this->links_disabled,
 				'ipAllowlistEnabled' => Features::ip_allowlist_enabled(),

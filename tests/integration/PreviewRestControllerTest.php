@@ -15,14 +15,22 @@ use WP_Test_REST_TestCase;
 class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 	private const ROUTE = '/' . PreviewRestController::NAMESPACE . PreviewRestController::ROUTE;
 
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->register_routes();
+	}
+
 	/**
+	 * Register the routes on a fresh server. Their schema reads the filters at
+	 * this moment, so a test that changes a filter the schema depends on calls
+	 * this again.
+	 *
 	 * @global WP_REST_Server|null $wp_rest_server
 	 */
-	public function setUp(): void {
+	private function register_routes(): void {
 		/** @var WP_REST_Server $wp_rest_server */
 		global $wp_rest_server;
-
-		parent::setUp();
 
 		$wp_rest_server = new Spy_REST_Server();
 		do_action( 'rest_api_init', $wp_rest_server );
@@ -98,8 +106,12 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
 
-		static::assertSame( 200, $this->create_link( $post_id, HOUR_IN_SECONDS )->get_status() );
+		// Only a site with no ceiling can mint an uncapped link.
+		add_filter( 'shareadraft_max_uses_limit', '__return_null' );
+		$status = $this->create_link( $post_id, HOUR_IN_SECONDS )->get_status();
+		remove_filter( 'shareadraft_max_uses_limit', '__return_null' );
 
+		static::assertSame( 200, $status );
 		static::assertCount( 1, VIP_Telemetry::$events );
 		$properties = VIP_Telemetry::$events[0]['properties'];
 
@@ -382,6 +394,87 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 			$options,
 			'Only valid options survive, as a list (so it JSON-encodes as an array) with int seconds.'
 		);
+	}
+
+	public function test_a_link_minted_without_a_cap_gets_the_ceiling(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		static::assertSame( 200, $this->create_link( $post_id, HOUR_IN_SECONDS )->get_status() );
+
+		$links = ( new PostMetaTokenRepository() )->all_for_post( $post_id );
+		static::assertSame( PreviewRestController::MAX_USES_LIMIT, $links[0]->max_uses() );
+	}
+
+	public function test_a_cap_above_the_filtered_ceiling_is_refused(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$callback = static fn (): int => 5;
+		add_filter( 'shareadraft_max_uses_limit', $callback );
+		$refused  = $this->create_link( $post_id, HOUR_IN_SECONDS, 6 );
+		$allowed  = $this->create_link( $post_id, HOUR_IN_SECONDS, 5 );
+		remove_filter( 'shareadraft_max_uses_limit', $callback );
+
+		static::assertSame( 400, $refused->get_status() );
+		static::assertSame( 'shareadraft_invalid_max_uses', ( (array) $refused->get_data() )['code'] );
+		static::assertSame( 200, $allowed->get_status() );
+	}
+
+	public function test_without_a_ceiling_any_cap_is_accepted(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		add_filter( 'shareadraft_max_uses_limit', '__return_null' );
+		// The schema's maximum is fixed when routes register, so register
+		// them again under the lifted ceiling.
+		$this->register_routes();
+		$response = $this->create_link( $post_id, HOUR_IN_SECONDS, PreviewRestController::MAX_USES_LIMIT + 1 );
+		remove_filter( 'shareadraft_max_uses_limit', '__return_null' );
+
+		static::assertSame( 200, $response->get_status() );
+	}
+
+	/**
+	 * @dataProvider data_unusable_max_uses_limits
+	 */
+	public function test_an_unusable_ceiling_falls_back_to_the_built_in_one( mixed $limit ): void {
+		$callback = static fn (): mixed => $limit;
+		add_filter( 'shareadraft_max_uses_limit', $callback );
+		$resolved = PreviewRestController::max_uses_limit();
+		remove_filter( 'shareadraft_max_uses_limit', $callback );
+
+		static::assertSame( PreviewRestController::MAX_USES_LIMIT, $resolved );
+	}
+
+	/**
+	 * @return array<string, array{mixed}>
+	 */
+	public static function data_unusable_max_uses_limits(): array {
+		return [
+			'zero'     => [ 0 ],
+			'negative' => [ -5 ],
+			'fraction' => [ '1.5' ],
+			'text'     => [ 'lots' ],
+			'boolean'  => [ true ],
+		];
+	}
+
+	public function test_changing_the_ceiling_leaves_existing_links_alone(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		add_filter( 'shareadraft_max_uses_limit', '__return_null' );
+		$this->create_link( $post_id, HOUR_IN_SECONDS );
+		remove_filter( 'shareadraft_max_uses_limit', '__return_null' );
+
+		$callback = static fn (): int => 5;
+		add_filter( 'shareadraft_max_uses_limit', $callback );
+		$links    = ( new PostMetaTokenRepository() )->all_for_post( $post_id );
+		remove_filter( 'shareadraft_max_uses_limit', $callback );
+
+		static::assertCount( 1, $links );
+		static::assertNull( $links[0]->max_uses(), 'A link minted unlimited stays unlimited under a new ceiling.' );
 	}
 
 	public function test_a_link_can_be_revoked_and_then_denied(): void {

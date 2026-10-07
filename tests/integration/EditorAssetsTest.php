@@ -52,6 +52,7 @@ class EditorAssetsTest extends WP_UnitTestCase {
 		$data = $this->inline_settings();
 
 		static::assertSame( PreviewRestController::default_expiration(), $data['defaultExpiration'] );
+		static::assertSame( PreviewRestController::max_uses_limit(), $data['maxUsesLimit'] );
 		static::assertSame( PreviewRestController::expiration_options(), $data['expirationOptions'] );
 	}
 

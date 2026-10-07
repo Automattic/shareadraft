@@ -19,13 +19,13 @@ final class LinkGarbageCollector {
 	public const HOOK = 'shareadraft_prune_links';
 
 	/** Where the last sweep got to, so the next run resumes rather than restarts. */
-	private const CURSOR_OPTION = 'shareadraft_gc_cursor';
+	public const CURSOR_OPTION = 'shareadraft_gc_cursor';
 
 	/**
 	 * When a sweep last ran. Nothing in the sweep needs it; it exists so
 	 * {@see SiteHealth} can tell "scheduled" apart from "actually running".
 	 */
-	private const LAST_RUN_OPTION = 'shareadraft_gc_last_run';
+	public const LAST_RUN_OPTION = 'shareadraft_gc_last_run';
 
 	/** Posts examined per run. Small enough to finish well inside a cron slot. */
 	private const BATCH_SIZE = 100;

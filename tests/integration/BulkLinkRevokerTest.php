@@ -13,8 +13,6 @@ use WP_UnitTestCase;
  * @covers \Automattic\ShareADraft\BulkLinkRevoker
  */
 class BulkLinkRevokerTest extends WP_UnitTestCase {
-	private const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
-
 	private PostMetaTokenRepository $repository;
 	private PreviewLinkService $service;
 	private BulkLinkRevoker $revoker;
@@ -33,7 +31,7 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		BulkLinkRevoker::unschedule();
-		delete_option( self::JOBS_OPTION );
+		delete_option( BulkLinkRevoker::JOBS_OPTION );
 		remove_all_actions( BulkLinkRevoker::REVOKED_USER_ACTION );
 		parent::tear_down();
 	}
@@ -244,7 +242,7 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		$post_id = $this->draft();
 		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
 
-		update_option( self::JOBS_OPTION, [
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
 			[
 				'id'     => 'corrupt',
 				'cursor' => 0,

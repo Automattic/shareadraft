@@ -36,7 +36,7 @@ final class BulkLinkRevoker {
 	public const REVOKED_USER_ACTION = 'shareadraft_revoked_user_links';
 
 	/** Queue of unfinished sweeps, oldest first. */
-	private const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
+	public const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
 
 	/** Posts examined per run; mirrors the garbage collector's batch size. */
 	private const BATCH_SIZE = 100;

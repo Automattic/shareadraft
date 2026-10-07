@@ -38,7 +38,7 @@ Share a Draft works on any host, with nothing to configure. On [WordPress VIP](h
 
 Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the block editor. Support for 1.x links will be removed in 2.1.0.
 
-None of 2.0's controls apply to 1.x links. Pausing every link, trusted IP ranges, viewer limits, named reviewers, the Preview Links screen, bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a 1.x link keeps working even if its post is made private. Only the person who made a 1.x link can delete it, so if one leaks, ask them to delete it under **Posts → Share a Draft (Old)**.
+None of 2.0's controls apply to 1.x links. Pausing every link, trusted IP ranges, viewer limits, named reviewers, the Preview Links screen, bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a 1.x link keeps working even if its post is made private or trashed. Only the person who made a 1.x link can delete it, so if one leaks, ask them to delete it under **Posts → Share a Draft (Old)**.
 
 ## Installation
 

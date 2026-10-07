@@ -18,7 +18,8 @@ namespace Automattic\ShareADraft;
  * when it started: one created while it runs survives, wherever its post falls
  * relative to the cursor.
  *
- * Offboarding is default-on for hard deletion only (`deleted_user`). Role
+ * Offboarding is default-on for hard deletion only (`deleted_user`, plus
+ * `wpmu_delete_user` for the user's other sites on a network). Role
  * changes are deliberately not automatic — demoting an editor should not
  * necessarily kill in-flight reviews — but customers can wire any hook to the
  * `shareadraft_revoke_user_links` action; see the README recipe.
@@ -55,6 +56,7 @@ final class BulkLinkRevoker {
 
 		// Offboarding hygiene: a hard-deleted user's links stop working.
 		add_action( 'deleted_user', [ $this, 'handle_user_hook' ] );
+		add_action( 'wpmu_delete_user', [ $this, 'handle_network_deletion' ] );
 
 		// The documented extension point for customer-wired offboarding.
 		add_action( self::REVOKE_USER_ACTION, [ $this, 'handle_user_hook' ] );
@@ -96,6 +98,36 @@ final class BulkLinkRevoker {
 	public function handle_user_hook( $user_id ): void {
 		if ( is_numeric( $user_id ) && (int) $user_id > 0 ) {
 			$this->revoke_by_creator( (int) $user_id );
+		}
+	}
+
+	/**
+	 * Revoke a network-deleted user's links on every other site they belong to.
+	 *
+	 * `deleted_user` fires once, on the site the deletion started from, so that
+	 * site is skipped here rather than swept twice (which would also fire the
+	 * completion event twice). This hook runs before core removes the user from
+	 * any site, so their memberships are still readable. A super admin's links
+	 * on sites they are not a member of are not reached.
+	 *
+	 * @param mixed $user_id The user being deleted from the network.
+	 */
+	public function handle_network_deletion( $user_id ): void {
+		if ( ! is_numeric( $user_id ) || (int) $user_id <= 0 ) {
+			return;
+		}
+
+		// Archived and spam sites too: their links work again if they are restored.
+		foreach ( array_keys( get_blogs_of_user( (int) $user_id, true ) ) as $site_id ) {
+			if ( get_current_blog_id() === $site_id ) {
+				continue;
+			}
+
+			// ponytail: one synchronous batch per site; queue without running if
+			// a leaver on hundreds of sites ever makes deletion time out.
+			switch_to_blog( $site_id );
+			$this->revoke_by_creator( (int) $user_id );
+			restore_current_blog();
 		}
 	}
 

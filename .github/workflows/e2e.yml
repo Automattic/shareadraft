@@ -61,7 +61,8 @@ jobs:
         run: sudo -E npx playwright install-deps chrome
 
       - name: Install VIP CLI
-        run: npm install -g @automattic/vip
+        # Pinned, and Dependabot cannot see it, so bump it by hand.
+        run: npm install -g @automattic/vip@4.1.5
 
       - name: Create development environment
         run: vip dev-env create --wordpress ${{ matrix.wordpress }} < /dev/null

@@ -34,4 +34,5 @@ jobs:
           node-version: lts/*
 
       - name: Run conformance checker
-        run: npx --yes @automattic/vip-integration validate
+        # Pinned, and Dependabot cannot see it, so bump it by hand.
+        run: npx --yes @automattic/vip-integration@0.1.2 validate

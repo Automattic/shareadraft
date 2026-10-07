@@ -364,6 +364,29 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Only the exact sentinel the banner sets upgrades a bulk revoke; any other
+	 * value revokes just the ticked rows.
+	 */
+	public function test_a_select_all_value_other_than_one_revokes_only_the_selection(): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 8 );
+		$selected = $this->repository->all_for_post( $post_id )[0];
+
+		$this->submit_bulk_revoke( false );
+		$_POST['shareadraft_all'] = '0';
+		$_POST['links']           = [ $post_id . ':' . $selected->token_hash() ];
+
+		static::assertSame( 1, $this->page->process_request() );
+
+		foreach ( $this->repository->all_for_post( $post_id ) as $link ) {
+			static::assertSame( $link->token_hash() === $selected->token_hash(), $link->is_revoked() );
+		}
+	}
+
+	/**
 	 * Unfiltered select-all is the break-glass "revoke everything", whose
 	 * blast radius exceeds the table's own gate: editor is not enough.
 	 */

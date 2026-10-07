@@ -52,6 +52,14 @@ final class PreviewLinkServiceBulkRevokeTest extends TestCase {
 		self::assertSame( 0, $this->service->revoke_all_for_post( 10 ) );
 	}
 
+	public function test_bulk_revokes_spare_links_created_after_the_cutoff(): void {
+		$this->service->mint( 10, 3600, null, 1 );
+
+		self::assertSame( 0, $this->service->revoke_all_for_post( 10, self::NOW - 1 ) );
+		self::assertSame( 0, $this->service->revoke_for_post_by_creator( 10, 1, self::NOW - 1 ) );
+		self::assertFalse( $this->repository->all_for_post( 10 )[0]->is_revoked() );
+	}
+
 	public function test_revoke_active_links_for_post_leaves_dead_links_untouched(): void {
 		$this->service->mint( 10, 3600, null, 1 ); // Live.
 		$this->service->mint( 10, 0, null, 1 );    // Already expired at NOW.

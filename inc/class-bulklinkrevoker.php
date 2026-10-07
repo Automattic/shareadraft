@@ -14,7 +14,9 @@ namespace Automattic\ShareADraft;
  * A sweep reuses the garbage collector's post-ID cursor: bounded batches, and a
  * scheduled continuation when a site overflows one run. While a sweep runs,
  * links on not-yet-swept posts still work for a short window — an accepted
- * trade rather than an oversight.
+ * trade rather than an oversight. A sweep covers only the links that existed
+ * when it started: one created while it runs survives, wherever its post falls
+ * relative to the cursor.
  *
  * Offboarding is default-on for hard deletion only (`deleted_user`). Role
  * changes are deliberately not automatic — demoting an editor should not
@@ -36,7 +38,7 @@ final class BulkLinkRevoker {
 	public const REVOKED_USER_ACTION = 'shareadraft_revoked_user_links';
 
 	/** Queue of unfinished sweeps, oldest first. */
-	private const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
+	public const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
 
 	/** Posts examined per run; mirrors the garbage collector's batch size. */
 	private const BATCH_SIZE = 100;
@@ -135,6 +137,7 @@ final class BulkLinkRevoker {
 			'cursor'  => 0,
 			'count'   => 0,
 			'actor'   => get_current_user_id(),
+			'started' => time(),
 		];
 		$this->save_jobs( $jobs );
 
@@ -167,8 +170,8 @@ final class BulkLinkRevoker {
 
 		foreach ( $post_ids as $post_id ) {
 			$revoked += null === $job['creator']
-				? $this->service->revoke_all_for_post( $post_id )
-				: $this->service->revoke_for_post_by_creator( $post_id, $job['creator'] );
+				? $this->service->revoke_all_for_post( $post_id, $job['started'] )
+				: $this->service->revoke_for_post_by_creator( $post_id, $job['creator'], $job['started'] );
 		}
 
 		$done = count( $post_ids ) < self::BATCH_SIZE;
@@ -219,7 +222,7 @@ final class BulkLinkRevoker {
 	 * `creator` is dropped rather than read as a null creator, which would turn
 	 * it into a revoke-all.
 	 *
-	 * @return list<array{id: string, creator: int|null, cursor: int, count: int, actor: int}>
+	 * @return list<array{id: string, creator: int|null, cursor: int, count: int, actor: int, started: int}>
 	 */
 	private function jobs(): array {
 		/** @var mixed $stored */
@@ -248,6 +251,8 @@ final class BulkLinkRevoker {
 				'cursor'  => isset( $job['cursor'] ) && is_numeric( $job['cursor'] ) ? (int) $job['cursor'] : 0,
 				'count'   => isset( $job['count'] ) && is_numeric( $job['count'] ) ? (int) $job['count'] : 0,
 				'actor'   => isset( $job['actor'] ) && is_numeric( $job['actor'] ) ? (int) $job['actor'] : 0,
+				// A sweep queued before this field existed keeps its old reach.
+				'started' => isset( $job['started'] ) && is_numeric( $job['started'] ) ? (int) $job['started'] : PHP_INT_MAX,
 			];
 		}
 
@@ -255,7 +260,7 @@ final class BulkLinkRevoker {
 	}
 
 	/**
-	 * @param list<array{id: string, creator: int|null, cursor: int, count: int, actor: int}> $jobs
+	 * @param list<array{id: string, creator: int|null, cursor: int, count: int, actor: int, started: int}> $jobs
 	 */
 	private function save_jobs( array $jobs ): void {
 		if ( [] === $jobs ) {

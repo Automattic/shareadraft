@@ -223,14 +223,14 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$this->save_link( $post, 'aaaa' );
 		$this->save_link( $post, 'bbbb' );
 
-		static::assertSame( 2, $this->repository->revoke_all_for_post( $post, 1234 ) );
+		static::assertSame( 2, $this->repository->revoke_all_for_post( $post, 1234, PHP_INT_MAX ) );
 
 		foreach ( $this->repository->all_for_post( $post ) as $link ) {
 			static::assertSame( 1234, $link->revoked_at() );
 		}
 
 		// Idempotent: already-revoked links are not counted again.
-		static::assertSame( 0, $this->repository->revoke_all_for_post( $post, 5678 ) );
+		static::assertSame( 0, $this->repository->revoke_all_for_post( $post, 5678, PHP_INT_MAX ) );
 	}
 
 	public function test_a_viewer_claiming_mid_revoke_does_not_stop_the_revoke(): void {
@@ -391,7 +391,7 @@ class PostMetaTokenRepositoryTest extends WP_UnitTestCase {
 		$this->save_link( $post, 'aaaa', 7 );
 		$this->save_link( $post, 'bbbb', 8 );
 
-		static::assertSame( 1, $this->repository->revoke_by_creator_for_post( $post, 7, 1234 ) );
+		static::assertSame( 1, $this->repository->revoke_by_creator_for_post( $post, 7, 1234, PHP_INT_MAX ) );
 
 		foreach ( $this->repository->all_for_post( $post ) as $link ) {
 			static::assertSame( 7 === $link->created_by(), $link->is_revoked() );

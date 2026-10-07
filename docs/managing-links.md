@@ -1,6 +1,6 @@
 # Managing preview links
 
-Every preview link can limit how many people open it and can be revoked on its own, and administrators can also pause every link on the site at once, revoke links in bulk, and make sure links do not outlive the people who created them. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
+Every preview link can limit how many people open it and can be revoked on its own. Editors and administrators can also revoke links in bulk and make sure links do not outlive the people who created them, and administrators can pause every link on the site at once. This page covers each of those. Everything here can also be done from the shell with [WP-CLI](wp-cli.md), or by AI assistants through the [Abilities API](abilities.md).
 
 None of this applies to links made with Share a Draft 1.x. Each of those keeps working until it expires, and only the person who made it can delete it, under Posts → Share a Draft (Old). Support for 1.x links is removed in 2.1.0.
 
@@ -45,7 +45,7 @@ To revoke more than one page of links at once, select the checkbox at the top of
 
 To revoke everything one person created, click their name in the **Created by** column first, so the table shows only their links, then select all. Revoking every link on the whole site, for a confirmed leak, is limited to administrators.
 
-Bulk revoking works through links in batches. On a site with a very large number of shared posts, the remainder is finished in the background within a few minutes, and links not yet reached keep working until then.
+Bulk revoking works through links in batches. On a site with a very large number of shared posts, the remainder is finished in the background within a few minutes, and links not yet reached keep working until then. A bulk revoke covers the links that existed when it started, so a link created while it is still finishing is not revoked.
 
 ## When someone leaves
 

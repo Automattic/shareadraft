@@ -251,7 +251,7 @@ final class PreviewLinksAdminPage {
 			// "Select all across pages" upgrades the bulk revoke from the ticked
 			// rows to the whole filtered set, the way Gmail's select-all does.
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified above.
-			if ( isset( $_POST['shareadraft_all'] ) && '' !== $_POST['shareadraft_all'] ) {
+			if ( isset( $_POST['shareadraft_all'] ) && '1' === $_POST['shareadraft_all'] ) {
 				$creator = self::requested_creator();
 
 				// Deliberately not scoped to posts the viewer can edit: this is
@@ -324,7 +324,6 @@ final class PreviewLinksAdminPage {
 			.shareadraft-switch input:checked ~ .shareadraft-track { background: #2271b1; }
 			.shareadraft-switch input:checked ~ .shareadraft-track::before { transform: translateX(16px); }
 			.shareadraft-switch input:focus-visible ~ .shareadraft-track { outline: 2px solid #2271b1; outline-offset: 2px; }
-			#shareadraft-select-all { background: #f6f7f7; border: 1px solid #c3c4c7; padding: 8px 12px; margin: 4px 0 8px; }
 		</style>';
 
 		echo '<form method="post" id="shareadraft-toggle" action="' . esc_url( $this->page_url() ) . '">';
@@ -369,8 +368,10 @@ final class PreviewLinksAdminPage {
 			$active = sprintf( __( 'All %d links across the whole site are selected.', 'shareadraft' ), $total );
 		}
 
+		// Styled here rather than with the toggle's rules, which editors never get.
 		printf(
-			'<div id="shareadraft-select-all" hidden>
+			'<style>#shareadraft-select-all { background: #f6f7f7; border: 1px solid #c3c4c7; padding: 8px 12px; margin: 4px 0 8px; }</style>
+			<div id="shareadraft-select-all" hidden>
 				<span id="shareadraft-select-all-offer">%s <button type="button" class="button-link" id="shareadraft-select-all-btn">%s</button></span>
 				<span id="shareadraft-select-all-active" hidden>%s <button type="button" class="button-link" id="shareadraft-clear-selection-btn">%s</button></span>
 			</div>',
@@ -656,7 +657,7 @@ final class PreviewLinksAdminPage {
 			]
 		);
 
-		$reading  = '<p>' . esc_html__( 'The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token is stored, never the token itself. If a link is lost, revoke it and generate a fresh one from the post editor.', 'shareadraft' ) . '</p>';
+		$reading  = '<p>' . esc_html__( 'The table identifies a link by the last four characters of its token and can revoke it, but it never shows or re-copies the shareable URL: only a hash of the token and its last four characters are stored, never the whole token. If a link is lost, revoke it and generate a fresh one from the post editor.', 'shareadraft' ) . '</p>';
 		$reading .= '<p>' . esc_html__( 'A link on a post you cannot edit is listed without its title, reviewers, or IP ranges, and cannot be revoked from its row.', 'shareadraft' ) . '</p>';
 		$reading .= '<p><strong>' . esc_html__( 'Status', 'shareadraft' ) . '</strong></p><ul>';
 		$reading .= '<li>' . esc_html__( 'Active: the link works.', 'shareadraft' ) . '</li>';

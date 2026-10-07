@@ -11,6 +11,7 @@
 	<!-- For VIP PHPCS severity levels: https://docs.wpvip.com/technical-references/vip-code-analysis-bot/phpcs-report/ -->
 
 	<!-- What to scan -->
+	<file>./shareadraft.php</file>
 	<file>./inc/</file>
 	<file>./vestigial.php</file>
 	<file>./uninstall.php</file>

@@ -17,15 +17,17 @@ class UninstallTest extends WP_UnitTestCase {
 
 		add_post_meta( $post_id, PostMetaTokenRepository::META_KEY, [ 'recipients' => [ 'reviewer@example.com' ] ] );
 		add_post_meta( $post_id, PostMetaTokenRepository::USES_META_KEY, [ 'uses' => 1 ] );
-		update_option( 'shareadraft_disabled', [ 'disabled' => true ] );
+		update_option( LinkToggle::OPTION, [ 'disabled' => true ] );
+		update_option( LinkGarbageCollector::CURSOR_OPTION, 42 );
+		update_option( LinkGarbageCollector::LAST_RUN_OPTION, time() );
 		update_option( 'ShareADraft_options', [ 1 => [] ] );
-		update_option( 'shareadraft_bulk_revoke_jobs', [
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
 			[
 				'id'      => 'a',
 				'creator' => 7,
 			],
 		] );
-		update_user_meta( $user_id, 'shareadraft_links_per_page', 50 );
+		update_user_meta( $user_id, PreviewLinksAdminPage::PER_PAGE_OPTION, 50 );
 		wp_schedule_single_event( time() + HOUR_IN_SECONDS, LinkGarbageCollector::HOOK );
 		wp_schedule_single_event( time() + HOUR_IN_SECONDS, BulkLinkRevoker::HOOK );
 
@@ -37,10 +39,12 @@ class UninstallTest extends WP_UnitTestCase {
 
 		static::assertSame( [], get_post_meta( $post_id, PostMetaTokenRepository::META_KEY, false ) );
 		static::assertSame( [], get_post_meta( $post_id, PostMetaTokenRepository::USES_META_KEY, false ) );
-		static::assertFalse( get_option( 'shareadraft_disabled' ) );
+		static::assertFalse( get_option( LinkToggle::OPTION ) );
+		static::assertFalse( get_option( LinkGarbageCollector::CURSOR_OPTION ) );
+		static::assertFalse( get_option( LinkGarbageCollector::LAST_RUN_OPTION ) );
 		static::assertFalse( get_option( 'ShareADraft_options' ) );
-		static::assertFalse( get_option( 'shareadraft_bulk_revoke_jobs' ) );
-		static::assertSame( '', get_user_meta( $user_id, 'shareadraft_links_per_page', true ) );
+		static::assertFalse( get_option( BulkLinkRevoker::JOBS_OPTION ) );
+		static::assertSame( '', get_user_meta( $user_id, PreviewLinksAdminPage::PER_PAGE_OPTION, true ) );
 		static::assertFalse( wp_next_scheduled( LinkGarbageCollector::HOOK ) );
 		static::assertFalse( wp_next_scheduled( BulkLinkRevoker::HOOK ) );
 	}

@@ -60,6 +60,17 @@ final class PreviewLinkServiceListingTest extends TestCase {
 		self::assertCount( 150, $this->service->all_links() );
 	}
 
+	public function test_all_links_walks_past_a_page_short_of_a_malformed_row(): void {
+		for ( $i = 0; $i < 150; $i++ ) {
+			$this->service->mint( $i + 1, 3600, null, 1 );
+		}
+
+		// The newest row, so the first page comes back one short of 100.
+		$this->repository->add_malformed_row();
+
+		self::assertCount( 150, $this->service->all_links() );
+	}
+
 	public function test_returns_preview_links_for_the_issuing_posts(): void {
 		$this->service->mint( 10, 3600, null, 1 );
 		$this->service->mint( 20, 3600, null, 1 );

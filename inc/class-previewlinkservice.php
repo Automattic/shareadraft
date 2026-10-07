@@ -342,15 +342,14 @@ final class PreviewLinkService {
 	 * @return list<PreviewLink>
 	 */
 	public function all_links( ?int $created_by = null ): array {
-		$links  = [];
-		$offset = 0;
+		$links = [];
+		$total = $this->count_links( $created_by );
 
-		do {
-			$page       = $this->page_of_links( $offset, self::LISTING_PAGE_SIZE, $created_by );
-			$page_count = count( $page );
-			$links      = [ ...$links, ...$page ];
-			$offset    += self::LISTING_PAGE_SIZE;
-		} while ( self::LISTING_PAGE_SIZE === $page_count );
+		// Walk by the row count, not by stopping at the first short page: the
+		// repository drops a row it cannot read, so a short page is not the end.
+		for ( $offset = 0; $offset < $total; $offset += self::LISTING_PAGE_SIZE ) {
+			$links = [ ...$links, ...$this->page_of_links( $offset, self::LISTING_PAGE_SIZE, $created_by ) ];
+		}
 
 		return $links;
 	}

@@ -459,6 +459,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$gate = $this->denied_main_query( $post_id, $token );
 
 		$this->expectException( \WPDieException::class );
+		$this->expectExceptionCode( 403 );
 		$this->expectExceptionMessageMatches( '/named reviewers/i' );
 		$gate->maybe_render_notice();
 	}
@@ -777,6 +778,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 		try {
 			$this->denied_main_query( $post_id, $token )->maybe_render_notice();
 		} catch ( \WPDieException $page ) {
+			static::assertSame( 403, $page->getCode(), 'Each verification step withholds the draft.' );
 			return $page->getMessage();
 		}
 

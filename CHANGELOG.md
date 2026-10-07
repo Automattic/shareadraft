@@ -5,28 +5,28 @@ All notable changes to Share a Draft are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2026-10-07
+
+**Requires WordPress 6.9 or later and PHP 8.2 or later.**
 
 Share a Draft 2.0 is a rewrite, built from the Live Previews plugin: safe-to-share,
 time- and usage-limited preview links that let a reviewer without a WordPress
 account view a draft, created from the block editor and managed from a new
-top-level Preview Links screen.
-
-Requires WordPress 6.9 or later and PHP 8.2 or later. Designed for WordPress VIP
-but runs on any host.
+top-level Preview Links screen. Designed for WordPress VIP but runs on any host.
 
 Links made with 1.x keep working until they expire. Their owners can review and
 delete them under Posts → Share a Draft (Old), which only appears while they
 have one; new links are made from the block editor. Support for 1.x links is
 removed in 2.1.0. None of 2.0's controls apply to 1.x links: pausing links,
 trusted IP ranges, viewer limits, named reviewers, the Preview Links screen,
-bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only.
+bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a
+1.x link keeps working even if its post is made private or trashed.
 
 ### Added
 
 - Generate a safe-to-share preview link for a draft from the block editor, reusing WordPress's own preview flow so a logged-out reviewer sees the draft as it will publish. ([#9](https://github.com/Automattic/live-previews/pull/9), [#10](https://github.com/Automattic/live-previews/pull/10))
 - Set how long each link lasts, from a configurable, filterable set of expiration options, including an optional effectively-indefinite lifetime. The editor pre-selects 8 hours, changeable with the `shareadraft_default_expiration` filter. ([#10](https://github.com/Automattic/live-previews/pull/10), [#17](https://github.com/Automattic/live-previews/pull/17))
-- Limit a link by the number of distinct viewers, including one-time links; crawler and unfurler requests never spend a view. A link allows at most 1,000 viewers, which is also what a link gets when no limit is entered. The `shareadraft_max_uses_limit` filter lowers or raises that ceiling, or removes it to allow unlimited links. ([#11](https://github.com/Automattic/live-previews/pull/11))
+- Limit a link by the number of distinct viewers, including one-time links; crawlers, chat unfurlers, link checkers' `HEAD` requests, and browser prefetches never spend a view. A link allows at most 1,000 viewers, which is also what a link gets when no limit is entered. The `shareadraft_max_uses_limit` filter lowers or raises that ceiling, or removes it to allow unlimited links. ([#11](https://github.com/Automattic/live-previews/pull/11))
 - Manage a post's preview links from the editor — see each link's usage and time remaining, identify it by a token hint, and revoke it. ([#12](https://github.com/Automattic/live-previews/pull/12), [#17](https://github.com/Automattic/live-previews/pull/17))
 - Audit and revoke every preview link on the site from a top-level Preview Links screen, with per-page screen options and contextual help. ([#34](https://github.com/Automattic/live-previews/pull/34))
 - Revoke preview links in bulk: filter the Preview Links screen to one creator and revoke everything they made, or — as an administrator — revoke every link on the site in one guarded action. Links a user created are revoked automatically when their account is deleted, other offboarding flows can trigger the same sweep through the `shareadraft_revoke_user_links` action, and `shareadraft_revoked_user_links` fires afterwards for audit logging. Sweeps run in bounded batches and finish in the background on large sites. ([#46](https://github.com/Automattic/live-previews/pull/46))
@@ -43,12 +43,17 @@ bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only.
 - Respect a draft's post password on a preview link: the reviewer is asked for it as usual, then returned to the preview rather than a 404, and a wrong password is announced as an error instead of silently showing the form again.
 - Report whether the cleanup sweep is scheduled and actually running, as a Site Health check under Tools → Site Health.
 - Find and remove named reviewers' email addresses with WordPress's own Export Personal Data and Erase Personal Data tools. The export lists every preview link an address is bound to; erasing removes the address from each link, and revokes any link left with no reviewers rather than letting it open to anyone.
+- Remove everything the plugin stored when it is deleted, on every site of a network: preview links and the reviewer emails bound to them, settings, and scheduled jobs.
 - Ship translatable strings with a bundled POT; translations are delivered as language packs from [translate.wordpress.org](https://translate.wordpress.org/projects/wp-plugins/shareadraft/).
 
 ### Changed
 
 - Creating and managing shared drafts moves from the Posts → Share a Draft screen to the block editor's Share a Draft panel and the Preview Links screen. The 1.x screen remains only for reviewing and deleting 1.x links, as Share a Draft (Old).
 - Links carry their token as `?shareadraft-token=` on WordPress's own preview URL, and last for a chosen lifetime rather than a number of minutes, hours, days, or weeks.
+
+### Fixed
+
+- A draft split into pages with page breaks lets a link holder follow the links to its later pages, rather than stopping at the first.
 
 ### Removed
 
@@ -206,7 +211,8 @@ bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only.
 
 - First public release: share a time-limited link to a draft with anyone, with internationalization support.
 
-[Unreleased]: https://github.com/Automattic/shareadraft/compare/1.7...develop
+[Unreleased]: https://github.com/Automattic/shareadraft/compare/2.0.0...develop
+[2.0.0]: https://github.com/Automattic/shareadraft/compare/1.7...2.0.0
 [1.7]: https://github.com/Automattic/shareadraft/compare/1.6...1.7
 [1.6]: https://github.com/Automattic/shareadraft/compare/1.5...1.6
 [1.5]: https://github.com/Automattic/shareadraft/compare/1.4...1.5

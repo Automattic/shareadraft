@@ -519,8 +519,12 @@ final class PreviewGate {
 	}
 
 	/**
-	 * Step one: ask which address the visitor claims to be. Served with a 200 —
-	 * this is the page working as designed, not an error. Ends the request.
+	 * Step one: ask which address the visitor claims to be. Ends the request.
+	 *
+	 * Both steps are served as 403: the draft is withheld until the visitor
+	 * verifies. Unlike a 200, no shared cache stores a 403 unless told to,
+	 * and VIP's edge does not cache one at all, so a cached form can never be
+	 * replayed in place of the draft once the visitor has verified.
 	 */
 	private function render_email_form(): void {
 		$html = sprintf(
@@ -531,7 +535,7 @@ final class PreviewGate {
 			esc_html__( 'Email me a code', 'shareadraft' )
 		);
 
-		NoticePage::render( __( 'Verify your email', 'shareadraft' ), $html, 200 );
+		NoticePage::render( __( 'Verify your email', 'shareadraft' ), $html, 403 );
 	}
 
 	/**
@@ -571,7 +575,7 @@ final class PreviewGate {
 			esc_html__( 'Use a different email address', 'shareadraft' )
 		);
 
-		NoticePage::render( __( 'Verify your email', 'shareadraft' ), $html, 200 );
+		NoticePage::render( __( 'Verify your email', 'shareadraft' ), $html, 403 );
 	}
 
 	/**
@@ -602,6 +606,12 @@ final class PreviewGate {
 		}
 
 		nocache_headers();
+		// Sent directly as well: on VIP, a `nocache_headers` filter drops
+		// Cache-Control from 404 queries, and every notice the gate shows is on
+		// one, because it withheld the post. The edge would then cache the
+		// verification form for minutes, and serve it again in place of the
+		// draft to a reviewer who has just verified.
+		header( 'Cache-Control: no-cache, must-revalidate, max-age=0, no-store, private', true );
 		header( 'X-Robots-Tag: noindex, nofollow, noarchive, nosnippet', true );
 		header( 'Referrer-Policy: no-referrer', true );
 	}

@@ -28,6 +28,9 @@ final class InMemoryTokenRepository implements TokenRepository {
 	/** Whether {@see self::save()} reports a failed write, as a vetoed insert would. */
 	private bool $fail_saves = false;
 
+	/** How many stored rows do not unserialise to a link; see {@see self::add_malformed_row()}. */
+	private int $malformed_rows = 0;
+
 	public function save( PreviewLink $link ): bool {
 		if ( $this->fail_saves ) {
 			return false;
@@ -176,6 +179,29 @@ final class InMemoryTokenRepository implements TokenRepository {
 	}
 
 	public function page_of_links( int $offset, int $limit, ?int $created_by = null ): array {
+		// The adapter drops a row it cannot unserialise, so the page comes back short.
+		return array_values( array_filter( array_slice( $this->rows( $created_by ), $offset, $limit ) ) );
+	}
+
+	public function count_links( ?int $created_by = null ): int {
+		return count( $this->rows( $created_by ) );
+	}
+
+	/**
+	 * Store a row that does not unserialise to a link, as database corruption
+	 * or another plugin writing the meta key would. It is counted, and takes a
+	 * slot in its page, but never comes back as a link.
+	 */
+	public function add_malformed_row(): void {
+		++$this->malformed_rows;
+	}
+
+	/**
+	 * Every stored row, newest first, with null standing in for a malformed one.
+	 *
+	 * @return list<PreviewLink|null>
+	 */
+	private function rows( ?int $created_by ): array {
 		$all = [];
 
 		foreach ( $this->links as $links ) {
@@ -188,11 +214,7 @@ final class InMemoryTokenRepository implements TokenRepository {
 
 		// The adapter returns newest first; the fake keeps insertion order, so
 		// reverse to approximate it.
-		return array_slice( array_reverse( $all ), $offset, $limit );
-	}
-
-	public function count_links( ?int $created_by = null ): int {
-		return count( $this->page_of_links( 0, PHP_INT_MAX, $created_by ) );
+		return array_reverse( [ ...$all, ...array_fill( 0, $this->malformed_rows, null ) ] );
 	}
 
 	/**

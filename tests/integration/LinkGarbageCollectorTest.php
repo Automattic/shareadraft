@@ -248,6 +248,25 @@ class LinkGarbageCollectorTest extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_a_budgeted_sweep_stops_and_reports_the_rest_as_pending(): void {
+		$this->seed_posts_with_links( 101 );
+
+		static::assertSame(
+			[
+				'pruned'  => 100,
+				'pending' => true,
+			],
+			$this->collector->sweep_all( 0, 1 )
+		);
+		static::assertSame(
+			[
+				'pruned'  => 1,
+				'pending' => false,
+			],
+			$this->collector->sweep_all( 0, 1 )
+		);
+	}
+
 	/**
 	 * Swap the Config singleton so a test can mimic a platform-injected value.
 	 */

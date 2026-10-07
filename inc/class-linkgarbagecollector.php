@@ -119,7 +119,8 @@ final class LinkGarbageCollector {
 	}
 
 	/**
-	 * Sweep every post in one call, for the CLI's `prune` command.
+	 * Sweep every post in one call, for the CLI's `prune` command and the
+	 * prune ability.
 	 *
 	 * Unlike {@see run()}, this walks its own cursor from the start, so it
 	 * neither reads nor moves the scheduled sweep's stored one, and it does not
@@ -129,18 +130,36 @@ final class LinkGarbageCollector {
 	 * @param int|null $grace_seconds Retention override in seconds (0 deletes
 	 *                                every dead link immediately), or null for
 	 *                                the configured grace period.
-	 * @return int Links deleted.
+	 * @param int|null $max_batches   Stop after this many batches, for callers
+	 *                                inside a web request; null sweeps the lot.
+	 * @return array{pruned: int, pending: bool} Links deleted, and whether the
+	 *                                           budget ran out with posts left
+	 *                                           unchecked. Those are left to the
+	 *                                           scheduled sweep rather than resumed.
 	 */
-	public function sweep_all( ?int $grace_seconds = null ): int {
+	public function sweep_all( ?int $grace_seconds = null, ?int $max_batches = null ): array {
 		$grace   = null === $grace_seconds ? $this->grace_period() : max( 0, $grace_seconds );
 		$deleted = 0;
 		$cursor  = 0;
+		$batches = 0;
 
 		while ( true ) {
 			$post_ids = $this->service->post_ids_with_links( $cursor, self::BATCH_SIZE );
 
 			if ( [] === $post_ids ) {
-				return $deleted;
+				return [
+					'pruned'  => $deleted,
+					'pending' => false,
+				];
+			}
+
+			// Checked after the fetch, so a sweep that ends exactly on the
+			// budget still reports that nothing is left.
+			if ( null !== $max_batches && $batches++ >= $max_batches ) {
+				return [
+					'pruned'  => $deleted,
+					'pending' => true,
+				];
 			}
 
 			foreach ( $post_ids as $post_id ) {

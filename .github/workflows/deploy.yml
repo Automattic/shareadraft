@@ -72,7 +72,20 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: refs/tags/${{ steps.gate.outputs.version }}
+          # Full history, so the next step can see main.
+          fetch-depth: 0
           persist-credentials: false
+
+      # CI runs on main, not on tags, and an SVN push cannot be undone. A
+      # release tag on any other commit (a typo'd SHA, a release branch) has
+      # had no CI on what is about to ship, so refuse it.
+      - name: Check the tag is on main
+        if: steps.gate.outputs.ship == 'true'
+        run: |
+          if ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::$(git rev-parse --short HEAD) is not on main; only tags on main ship to WordPress.org."
+            exit 1
+          fi
 
       - name: Check the plugin version and Stable tag match the tag
         if: steps.gate.outputs.ship == 'true'

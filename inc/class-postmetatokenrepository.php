@@ -330,12 +330,14 @@ final class PostMetaTokenRepository implements TokenRepository {
 		global $wpdb;
 
 		/**
-		 * Indexed on `meta_key` and never run on a page request — only from the
-		 * garbage-collection cron, in bounded batches, walking a `post_id` cursor.
+		 * Indexed on `meta_key` and always in bounded batches, walking a
+		 * `post_id` cursor: from the garbage-collection and bulk-revoke crons,
+		 * the CLI, and the prune ability, which caps how many batches one web
+		 * request may walk.
 		 * Caching the result would be pointless (it changes as we delete) and
 		 * harmful (it is a large, single-use list).
 		 */
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Batched cron sweep over an indexed meta_key; see above.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Batched sweep over an indexed meta_key; see above.
 		$ids = $wpdb->get_col(
 			$wpdb->prepare(
 				'SELECT DISTINCT post_id FROM %i WHERE meta_key = %s AND post_id > %d ORDER BY post_id ASC LIMIT %d',

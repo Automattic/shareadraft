@@ -49,7 +49,7 @@ Bulk revoking works through links in batches. On a site with a very large number
 
 ## When someone leaves
 
-When a user account is deleted, every link that person created is revoked automatically.
+When a user account is deleted, every link that person created is revoked automatically. On a multisite network, deleting the account from the network revokes their links on every site they belong to. A super admin's links on sites they are not a member of are not revoked this way, so revoke those on each site before deleting the account.
 
 Changing someone's role deliberately does not revoke their links: moving an editor to author should not necessarily cut off reviews already under way. If your process should revoke links on other events, such as a role change or a user being removed from a site on a multisite network, a few lines of code can [revoke a person's links on other events](customizing.md#revoke-a-persons-links-on-other-events). Another hook lets you [record when a person's links are revoked](customizing.md#record-when-a-persons-links-are-revoked), for example in an audit log.
 

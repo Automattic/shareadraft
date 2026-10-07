@@ -103,6 +103,53 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Deleting a user from the network revokes their links on every site they
+	 * belong to, not just the one the deletion started from, and sweeps each
+	 * site once. Relies on the plugin's own registration, which is what runs in
+	 * production; registering here as well would double every sweep.
+	 */
+	public function test_deleting_a_user_from_the_network_revokes_their_links_on_every_site(): void {
+		$this->skipWithoutMultisite();
+
+		require_once ABSPATH . 'wp-admin/includes/ms.php';
+
+		$creator = self::factory()->user->create( [ 'role' => 'editor' ] );
+		$other   = self::factory()->blog->create();
+		static::assertIsInt( $other );
+		add_user_to_blog( $other, $creator, 'editor' );
+
+		$here = $this->draft();
+		$this->service->mint( $here, HOUR_IN_SECONDS, null, $creator );
+
+		switch_to_blog( $other );
+		$there = $this->draft();
+		$this->service->mint( $there, HOUR_IN_SECONDS, null, $creator );
+		$this->service->mint( $there, HOUR_IN_SECONDS, null, 7 );
+		restore_current_blog();
+
+		$sweeps = 0;
+		add_action(
+			BulkLinkRevoker::REVOKED_USER_ACTION,
+			static function () use ( &$sweeps ): void {
+				++$sweeps;
+			}
+		);
+
+		wpmu_delete_user( $creator );
+
+		static::assertTrue( $this->repository->all_for_post( $here )[0]->is_revoked() );
+		static::assertSame( 2, $sweeps );
+
+		switch_to_blog( $other );
+		$links = $this->repository->all_for_post( $there );
+		restore_current_blog();
+
+		foreach ( $links as $link ) {
+			static::assertSame( $creator === $link->created_by(), $link->is_revoked() );
+		}
+	}
+
+	/**
 	 * The documented extension point: customers wire their own hooks (role
 	 * change, multisite removal) to this action.
 	 */

@@ -40,16 +40,4 @@ final class PreviewLinkPresenter {
 
 		return $presented;
 	}
-
-	/**
-	 * The site's date and time formats joined, as the admin screens show them.
-	 * Lives here rather than on {@see PreviewLinksListTable} so callers outside
-	 * wp-admin (the personal data exporter) need not load `WP_List_Table`.
-	 */
-	public static function datetime_format(): string {
-		$date = get_option( 'date_format' );
-		$time = get_option( 'time_format' );
-
-		return ( is_string( $date ) ? $date : '' ) . ' ' . ( is_string( $time ) ? $time : '' );
-	}
 }

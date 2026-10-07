@@ -270,7 +270,7 @@ final class PreviewLinksListTable extends WP_List_Table {
 
 	public function column_expiry( PreviewLink $item ): string {
 		$expires  = $item->expires_at();
-		$absolute = wp_date( PreviewLinkPresenter::datetime_format(), $expires );
+		$absolute = wp_date( PreviewLinksAdminPage::datetime_format(), $expires );
 
 		if ( $item->is_expired( $this->now ) ) {
 			/* translators: %s: human-readable duration, e.g. "2 hours" */

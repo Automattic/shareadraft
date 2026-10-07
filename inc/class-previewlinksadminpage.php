@@ -412,7 +412,7 @@ final class PreviewLinksAdminPage {
 			$who  = false !== $user ? $user->display_name : null;
 		}
 
-		$when = null !== $since ? wp_date( PreviewLinkPresenter::datetime_format(), $since ) : false;
+		$when = null !== $since ? wp_date( self::datetime_format(), $since ) : false;
 
 		if ( null !== $who && false !== $when ) {
 			/* translators: 1: user display name, 2: date and time */
@@ -736,6 +736,18 @@ final class PreviewLinksAdminPage {
 		}
 
 		return $sidebar;
+	}
+
+	/**
+	 * The site's date and time formats joined, as the admin screens show them.
+	 * Lives here rather than on {@see PreviewLinksListTable} so callers outside
+	 * wp-admin (the personal data exporter) need not load `WP_List_Table`.
+	 */
+	public static function datetime_format(): string {
+		$date = get_option( 'date_format' );
+		$time = get_option( 'time_format' );
+
+		return ( is_string( $date ) ? $date : '' ) . ' ' . ( is_string( $time ) ? $time : '' );
 	}
 
 	private function table(): PreviewLinksListTable {

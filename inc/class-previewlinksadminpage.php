@@ -412,7 +412,7 @@ final class PreviewLinksAdminPage {
 			$who  = false !== $user ? $user->display_name : null;
 		}
 
-		$when = null !== $since ? wp_date( PreviewLinksListTable::datetime_format(), $since ) : false;
+		$when = null !== $since ? wp_date( PreviewLinkPresenter::datetime_format(), $since ) : false;
 
 		if ( null !== $who && false !== $when ) {
 			/* translators: 1: user display name, 2: date and time */

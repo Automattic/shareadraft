@@ -119,6 +119,12 @@ final class PreviewLinksListTable extends WP_List_Table {
 	}
 
 	public function no_items(): void {
+		if ( null !== PreviewLinksAdminPage::requested_creator() ) {
+			esc_html_e( 'This user has not created any preview links.', 'shareadraft' );
+
+			return;
+		}
+
 		esc_html_e( 'No preview links have been created yet.', 'shareadraft' );
 	}
 
@@ -328,7 +334,7 @@ final class PreviewLinksListTable extends WP_List_Table {
 					'action' => 'revoke',
 					'post'   => $item->post_id(),
 					'token'  => $item->token_hash(),
-				],
+				] + PreviewLinksAdminPage::view_args(),
 				admin_url( 'admin.php' )
 			),
 			'shareadraft_revoke_' . $item->post_id() . '_' . $item->token_hash()

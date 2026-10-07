@@ -37,6 +37,7 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 			$_GET['shareadraft_pending'],
 			$_GET['_wpnonce'],
 			$_REQUEST['action'],
+			$_REQUEST['paged'],
 			$_REQUEST['_wpnonce'],
 			$_POST['action'],
 			$_POST['links'],
@@ -194,6 +195,55 @@ class PreviewLinksAdminPageTest extends WP_UnitTestCase {
 		$link = $this->repository->find_by_hash( $post_id, $hash );
 		static::assertNotNull( $link );
 		static::assertTrue( $link->is_revoked() );
+	}
+
+	/**
+	 * Revoking from page 3 of one creator's links must land back there, not
+	 * on page 1 of the whole site's list.
+	 */
+	public function test_the_view_args_carry_the_creator_filter_and_page(): void {
+		static::assertSame( [], PreviewLinksAdminPage::view_args() );
+
+		$_GET['creator']   = '7';
+		$_REQUEST['paged'] = '3';
+
+		static::assertSame(
+			[
+				'creator' => 7,
+				'paged'   => 3,
+			],
+			PreviewLinksAdminPage::view_args()
+		);
+
+		$_REQUEST['paged'] = '1';
+
+		static::assertSame( [ 'creator' => 7 ], PreviewLinksAdminPage::view_args() );
+	}
+
+	public function test_a_row_revoke_link_keeps_the_creator_filter(): void {
+		$creator = get_current_user_id();
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, $creator );
+
+		$_GET['creator'] = (string) $creator;
+
+		static::assertMatchesRegularExpression( '/action=revoke[^"]*creator=' . $creator . '/', $this->rendered( $this->page ) );
+	}
+
+	/**
+	 * A bookmarked filter for someone with no links must not claim the whole
+	 * site has none.
+	 */
+	public function test_an_empty_creator_filter_does_not_claim_the_site_has_no_links(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		$_GET['creator'] = '8';
+
+		$output = $this->rendered( $this->page );
+
+		static::assertStringContainsString( 'This user has not created any preview links.', $output );
+		static::assertStringNotContainsString( 'No preview links have been created yet.', $output );
 	}
 
 	public function test_a_bulk_action_revokes_every_selected_link(): void {

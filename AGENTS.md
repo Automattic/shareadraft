@@ -24,7 +24,7 @@ validate with `vip-integration validate` before shipping.
 | `inc/`                                            | Runtime code (autoloaded via `inc/autoload.php`). `class-config.php`, `class-telemetry.php`, REST handlers. |
 | `inc/cli/`                                        | WP-CLI commands (`wp shareadraft`), one class per subcommand. Loaded by explicit `require` under WP-CLI only — the flat autoloader does not map this directory. |
 | `features/`                                       | Behat feature tests, one `.feature` per WP-CLI command, run against wp-env (`composer behat`).              |
-| `src/`                                            | Block-editor JavaScript, compiled into `build/` by `npm run build`.                                        |
+| `src/`                                            | Editor JavaScript (block-editor panel, classic meta box), compiled into `build/` by `npm run build`.        |
 | `languages/`                                      | Translation catalogues. Regenerate the POT with `composer i18n` after changing any translatable string.    |
 | `fixtures/`                                       | Mock runtime configs for local dev and tests — see `fixtures/README.md`.                                   |
 | `tests/unit/`, `tests/integration/`, `tests/e2e/` | PHPUnit unit (pure PHP) and integration (boot WordPress) tests, plus Playwright e2e.                       |

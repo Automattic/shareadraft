@@ -15,7 +15,7 @@ Create a secure, time-limited link to a draft, so a reviewer without a WordPress
 
 Drafts in WordPress can only be seen by people who can edit them. When a client, a legal reviewer, or a colleague without an account needs to read a draft before it goes live, Share a Draft gives you a link for exactly that, and keeps you in control of it.
 
-Open a draft in the block editor, choose **Generate preview link** in the Share a Draft panel, and send the link to your reviewer. They see the draft exactly as it will look when published, without logging in.
+Open a draft, choose **Generate preview link** in the Share a Draft panel, and send the link to your reviewer. They see the draft exactly as it will look when published, without logging in.
 
 Every link is:
 
@@ -36,19 +36,23 @@ Share a Draft works on any host, with nothing to configure. On [WordPress VIP](h
 
 ### Upgrading from Share a Draft 1.x
 
-Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the block editor. Support for 1.x links will be removed in 2.1.0.
+Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the post editor. Support for 1.x links will be removed in 2.1.0.
 
 None of 2.0's controls apply to 1.x links. Pausing every link, trusted IP ranges, viewer limits, named reviewers, the Preview Links screen, bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a 1.x link keeps working even if its post is made private or trashed. Only the person who made a 1.x link can delete it, so if one leaks, ask them to delete it under **Posts → Share a Draft (Old)**.
 
 ## Installation
 
 1. Install and activate Share a Draft from **Plugins → Add New Plugin**.
-2. Open a draft in the block editor, and find the **Share a Draft** panel in the post sidebar.
+2. Open a draft, and find the **Share a Draft** panel in the post sidebar. It appears in the block editor and on the classic editing screen.
 3. Manage every link on the site under **Preview Links** in the admin menu.
 
 There are no settings to configure. If your site sits behind a page cache, a reverse proxy, or a host that cannot send email, check the [hosting requirements](https://github.com/Automattic/shareadraft/blob/main/docs/hosting.md) first.
 
 ## Frequently Asked Questions
+
+### Does it work with the Classic Editor?
+
+Yes. Where a post is edited on the classic screen, whether through the Classic Editor plugin or because its post type does not use the block editor, Share a Draft adds a **Share a Draft** box to the sidebar with the same **Generate preview link** and **Manage preview links** buttons.
 
 ### Does my reviewer need a WordPress account?
 

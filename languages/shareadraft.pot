@@ -9,13 +9,14 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-07T22:50:28+00:00\n"
+"POT-Creation-Date: 2026-10-09T00:07:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
 
 #. Plugin Name of the plugin
 #: shareadraft.php
+#: inc/class-classiceditormetabox.php:46
 #: inc/class-previewabilities.php:84
 #: build/index.js:10
 msgid "Share a Draft"
@@ -696,6 +697,7 @@ msgstr ""
 
 #: inc/class-previewlinkslisttable.php:114
 #: inc/class-previewlinkslisttable.php:347
+#: build/classic.js:10
 #: build/index.js:10
 msgid "Revoke"
 msgstr ""
@@ -869,57 +871,70 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "expired"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "no expiry"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "day"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "days"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "hour"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "hours"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "minute"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "minutes"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "second"
 msgstr ""
 
+#: build/classic.js:1
 #: build/index.js:1
 msgid "seconds"
 msgstr ""
 
 #. translators: 1: a number, 2: a unit of time such as "hours".
+#: build/classic.js:2
 #: build/index.js:2
 #, js-format
 msgid "expires in %1$d %2$s"
 msgstr ""
 
+#: build/classic.js:2
 #: build/index.js:2
 msgid "expires soon"
 msgstr ""
 
 #. translators: %d: number of times the link has been viewed.
+#: build/classic.js:3
 #: build/index.js:3
 #, js-format
 msgid "%d view · no limit"
@@ -928,149 +943,184 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: views so far, 2: maximum views.
+#: build/classic.js:4
 #: build/index.js:4
 #, js-format
 msgid "%1$d of %2$d views"
 msgstr ""
 
+#: build/classic.js:4
+#: build/classic.js:10
 #: build/index.js:4
 #: build/index.js:10
 msgid "Generate preview link"
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "Preview links are currently disabled site-wide. You can generate new links, but they will not work until an administrator re-enables preview links."
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "Only the listed reviewers will be able to open this link, after verifying their email address."
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "Anyone with this link will be able to preview the post."
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "Link expiration"
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "Maximum uses"
 msgstr ""
 
+#: build/classic.js:4
 #: build/index.js:4
 msgid "How many people can open this link. Opening it in another browser or device counts as a new person. Leave empty for unlimited."
 msgstr ""
 
 #. translators: %1$d: the most viewers a link may allow, e.g. 1000.
+#: build/classic.js:5
 #: build/index.js:5
 #, js-format
 msgid "How many people can open this link, up to %1$d. Opening it in another browser or device counts as a new person. Leave empty for %1$d."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Restrict to reviewers"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Comma-separated email addresses. Each reviewer must verify their address with an emailed code before viewing. Leave empty to let anyone with the link view."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Allowed IP ranges"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Comma-separated IPv4/IPv6 addresses or CIDR ranges. Every link already opens only from the ranges set in the VIP Dashboard; ranges added here let this link open from these places too. Leave empty to add none."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Comma-separated IPv4/IPv6 addresses or CIDR ranges, e.g. 203.0.113.0/24. The link then opens only from these ranges: this limits where it opens, not who opens it. Leave empty for no IP restriction."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Preview link"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Copied to clipboard."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Copy this link to share it."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Generate another link"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "The preview link could not be generated."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Copy link"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Generate link"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Could not load links."
 msgstr ""
 
+#: build/classic.js:5
+#: build/classic.js:10
 #: build/index.js:5
 #: build/index.js:10
 msgid "Manage preview links"
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Preview links are currently disabled site-wide. None of the links below work until an administrator re-enables preview links."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "Every link opens only from the IP ranges set in the VIP Dashboard, plus any ranges shown on the link itself."
 msgstr ""
 
+#: build/classic.js:5
 #: build/index.js:5
 msgid "No active preview links."
 msgstr ""
 
 #. translators: %s: date and time the link was created.
+#: build/classic.js:6
 #: build/index.js:6
 #, js-format
 msgid "Created %s"
 msgstr ""
 
 #. translators: %s: the last few characters of the link's token.
+#: build/classic.js:7
 #: build/index.js:7
 #, js-format
 msgid "ending %s"
 msgstr ""
 
 #. translators: %s: comma-separated email addresses.
+#: build/classic.js:8
 #: build/index.js:8
 #, js-format
 msgid "Reviewers: %s"
 msgstr ""
 
 #. translators: %s: comma-separated IP ranges.
+#: build/classic.js:9
 #: build/index.js:9
 #, js-format
 msgid "Restricted to %s"
 msgstr ""
 
+#: build/classic.js:9
 #: build/index.js:9
 msgid "Could not revoke the link."
 msgstr ""
 
 #. translators: %s: the last few characters of the link's token.
+#: build/classic.js:10
 #: build/index.js:10
 #, js-format
 msgid "Revoke link ending %s"
 msgstr ""
 
+#: build/classic.js:10
 #: build/index.js:10
 msgid "Available once this post has an active preview link."
 msgstr ""

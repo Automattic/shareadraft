@@ -73,6 +73,15 @@ jobs:
       - name: Update user password
         run: vip dev-env exec -- wp user update vipgo --user_pass=password
 
+      # The classic-screen journey needs the Classic Editor plugin. Keeping the
+      # block editor as the default, but letting users switch, means only the
+      # test that asks for ?classic-editor gets the classic screen.
+      - name: Install Classic Editor
+        run: |
+          vip dev-env exec -- wp plugin install classic-editor --activate
+          vip dev-env exec -- wp option update classic-editor-replace block
+          vip dev-env exec -- wp option update classic-editor-allow-users allow
+
       - name: Run E2E tests
         run: npm test
         env:

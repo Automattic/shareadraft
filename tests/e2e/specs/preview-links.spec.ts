@@ -2,9 +2,9 @@ import { type Browser, type Page, expect, test } from '@playwright/test';
 
 /**
  * Full-stack journey for the one thing only a browser can prove: an editor
- * mints a preview link from the block-editor sidebar, an anonymous visitor
- * loads that link and sees the draft, and once the editor revokes it the same
- * visitor is turned away with a friendly notice.
+ * mints a preview link from the block-editor sidebar (or the classic screen's
+ * meta box), an anonymous visitor loads that link and sees the draft, and once
+ * the editor revokes it the same visitor is turned away with a friendly notice.
  *
  * The narrow rules behind each step (token hashing, distinct-viewer caps,
  * revocation-beats-expiry, bot handling) are already covered by the PHP unit
@@ -194,6 +194,63 @@ test.describe( 'Preview links', () => {
 		await visitor.context().close();
 	} );
 
+	test( 'the classic edit screen mints and revokes a link from its meta box', async ( { page, browser } ) => {
+		test.setTimeout( 90000 );
+
+		// --- Draft a post on the classic screen -----------------------------
+		// CI installs the Classic Editor plugin set to "block editor by default,
+		// users may switch" (see .github/workflows/e2e.yml). These query args
+		// are its "switch to classic" link for a new post, so only this journey
+		// gets the classic screen.
+		await page.goto( './wp-admin/post-new.php?classic-editor&classic-editor__forget' );
+		await expect(
+			page.locator( '#title' ),
+			'The classic edit screen did not load: is the Classic Editor plugin active and set to let users switch?'
+		).toBeVisible();
+
+		await page.locator( '#title' ).fill( 'Classic preview E2E draft' );
+		await page.locator( '#content-html' ).click();
+		await page.locator( 'textarea#content' ).fill( BODY_MARKER );
+		await page.locator( '#save-post' ).click();
+		await page.waitForURL( /post\.php\?post=\d+/u );
+
+		// --- Generate a link from the meta box -------------------------------
+		const metaBox = page.locator( '#shareadraft' );
+		await metaBox.getByRole( 'button', { name: 'Generate preview link' } ).click();
+
+		const generateModal = page.getByRole( 'dialog', { name: 'Generate preview link' } );
+		await expect( generateModal ).toBeVisible();
+		// The block editor's styles are absent here; an overlay that is not
+		// fixed means the components stylesheet never loaded.
+		await expect( page.locator( '.components-modal__screen-overlay' ) ).toHaveCSS( 'position', 'fixed' );
+
+		await generateModal.getByRole( 'button', { name: 'Generate link' } ).click();
+		const linkField = generateModal.getByRole( 'textbox', { name: 'Preview link' } );
+		await expect( linkField ).toBeVisible();
+		const previewUrl = await linkField.inputValue();
+		await generateModal.getByRole( 'button', { name: 'Close' } ).click();
+
+		const visitor = await visitAsAnonymous( browser, previewUrl );
+		await expect( visitor.getByText( BODY_MARKER ) ).toBeVisible();
+
+		// --- Revoke it from the meta box -------------------------------------
+		await metaBox.getByRole( 'button', { name: 'Manage preview links' } ).click();
+		const manageModal = page.getByRole( 'dialog', { name: 'Manage preview links' } );
+		const revoked = page.waitForResponse(
+			( response ) =>
+				/\/shareadraft\/v1\/preview-links\/[a-f0-9]{64}/u.test( response.url() ) &&
+				[ 'DELETE', 'POST' ].includes( response.request().method() ) &&
+				response.ok()
+		);
+		await manageModal.getByRole( 'button', { name: 'Revoke' } ).click();
+		await revoked;
+
+		await visitor.goto( previewUrl );
+		await expect( visitor.getByText( 'This preview link has been revoked.' ) ).toBeVisible();
+
+		await visitor.context().close();
+	} );
+
 	test( 'a failed link load leaves Manage usable', async ( { page } ) => {
 		test.setTimeout( 90000 );
 
@@ -204,7 +261,13 @@ test.describe( 'Preview links', () => {
 
 		const created = await page.request.post( './wp-json/wp/v2/posts', {
 			headers,
-			data: { title: 'Failed load E2E draft', status: 'draft' },
+			// A block in the content keeps it in the block editor: the Classic
+			// Editor plugin CI installs opens block-less posts on the classic screen.
+			data: {
+				title: 'Failed load E2E draft',
+				status: 'draft',
+				content: '<!-- wp:paragraph --><p>Failed load body</p><!-- /wp:paragraph -->',
+			},
 		} );
 		expect( created.ok() ).toBeTruthy();
 		const { id } = ( await created.json() ) as { id: number };

@@ -26,7 +26,7 @@ If you expect a reviewer to switch devices, allow for it when you set the limit.
 
 A revoked link stops working immediately. There are two places to do it:
 
-- **In the block editor.** Choose **Manage preview links** in the draft's Share a Draft panel to see each of its links, with how often it has been used and when it expires, and revoke any of them.
+- **In the post editor.** Choose **Manage preview links** in the draft's Share a Draft panel (or, on the classic editing screen, the Share a Draft box) to see each of its links, with how often it has been used and when it expires, and revoke any of them.
 - **On the Preview Links screen.** Every link on the site is listed under **Preview Links** in the admin menu, with the post it belongs to, who created it, its usage, reviewers, IP restrictions, and expiry. Revoke a link from its row, or select several and use the **Revoke** bulk action.
 
 A reviewer who opens a revoked link is told it has been revoked, rather than seeing a bare "not found". Links are also discarded automatically when their draft is published, made private, or moved to the trash, and none can be made for a post in those states.

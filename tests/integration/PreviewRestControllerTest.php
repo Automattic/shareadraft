@@ -590,6 +590,41 @@ class PreviewRestControllerTest extends WP_Test_REST_TestCase {
 		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
 	}
 
+	public function test_a_chosen_cap_is_refused_while_the_feature_is_disabled(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		add_filter( 'shareadraft_max_uses_enabled', '__return_false' );
+
+		try {
+			$response = $this->create_link( $post_id, 8 * HOUR_IN_SECONDS, 5 );
+		} finally {
+			remove_filter( 'shareadraft_max_uses_enabled', '__return_false' );
+		}
+
+		static::assertSame( 400, $response->get_status() );
+		static::assertSame( [], ( new PostMetaTokenRepository() )->all_for_post( $post_id ) );
+	}
+
+	public function test_links_get_the_ceiling_while_the_cap_feature_is_disabled(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		add_filter( 'shareadraft_max_uses_enabled', '__return_false' );
+
+		try {
+			$response = $this->create_link( $post_id, 8 * HOUR_IN_SECONDS );
+		} finally {
+			remove_filter( 'shareadraft_max_uses_enabled', '__return_false' );
+		}
+
+		static::assertSame( 200, $response->get_status() );
+		static::assertSame(
+			PreviewRestController::MAX_USES_LIMIT,
+			( new PostMetaTokenRepository() )->all_for_post( $post_id )[0]->max_uses()
+		);
+	}
+
 	/**
 	 * The first link in a listing response.
 	 *

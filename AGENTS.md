@@ -143,9 +143,11 @@ event in the `telemetry` section of `vip-manifest.yaml`.
 
 ### Manifest
 
-`vip-manifest.yaml` must stay in sync with the code: the constant name, the
-plugin folder/entry file/namespace, every config `key` the plugin reads, and the
-telemetry events it records. The schema (`vip-manifest.schema.json`) rejects
+`vip-manifest.yaml` must stay in sync with the code: the plugin folder/entry
+file/namespace, every config `key` the plugin reads, and the telemetry events it
+records. The config constant is not a manifest field — VIP derives it from the
+slug as `VIP_<SLUG>_CONFIG`, so `Config::CONSTANT_NAME` must stay
+`VIP_SHAREADRAFT_CONFIG`. The schema (`vip-manifest.schema.json`) rejects
 unknown keys, so a typo fails validation — run `vip-integration validate` after
 editing it. See `docs/manifest.md` for the field-by-field guide.
 

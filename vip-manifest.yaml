@@ -9,7 +9,7 @@
 # See docs/manifest.md for a field-by-field guide, and vip-manifest.schema.json
 # for the full schema (fields, types, and constraints).
 
-manifest_version: 1
+manifest_version: 2
 manifest_kind: vip-integration-handoff
 
 integration:
@@ -36,7 +36,8 @@ runtime_config:
   # integration is enabled for the site, and the plugin works with nothing in it.
   # The schema requires at least one field to be declared, so the one below is
   # optional and read through Config — never declare a field nothing reads.
-  constant_name: VIP_SHAREADRAFT_CONFIG
+  # The constant itself isn't declared: VIP derives it from the slug as
+  # VIP_SHAREADRAFT_CONFIG.
   fields:
     - key: dead_link_grace_period
       label: Expired link retention

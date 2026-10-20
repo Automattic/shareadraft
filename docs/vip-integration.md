@@ -37,7 +37,8 @@ suite needs neither WordPress nor a database.
 
 ## Runtime Config
 
-Config constant: `VIP_SHAREADRAFT_CONFIG`
+Config constant: `VIP_SHAREADRAFT_CONFIG` — derived from the slug, not declared
+in the manifest.
 
 The VIP platform defines the constant (a plain PHP associative array) before the
 plugin loads. All reads go through `Automattic\ShareADraft\Config`.

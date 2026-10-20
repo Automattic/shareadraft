@@ -35,4 +35,4 @@ jobs:
 
       - name: Run conformance checker
         # Pinned, and Dependabot cannot see it, so bump it by hand.
-        run: npx --yes @automattic/vip-integration@0.1.2 validate
+        run: npx --yes @automattic/vip-integration@0.2.0 validate

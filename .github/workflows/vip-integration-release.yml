@@ -108,7 +108,7 @@ jobs:
       - name: Validate the package as shipped
         working-directory: dist/shareadraft
         # Pinned, and Dependabot cannot see it, so bump it by hand.
-        run: npx --yes @automattic/vip-integration@0.1.2 validate
+        run: npx --yes @automattic/vip-integration@0.2.0 validate
 
       - name: Zip the package
         run: |

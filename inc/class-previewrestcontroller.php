@@ -170,23 +170,26 @@ final class PreviewRestController {
 				'type'     => 'integer',
 				'enum'     => self::allowed_expirations(),
 			],
-			'max_uses'   => [
+		];
+
+		// A restriction the site has switched off is left out of the schema so
+		// it never shows in the endpoint's OPTIONS description; the minter also
+		// rejects a value smuggled past the schema.
+		if ( Features::max_uses_enabled() ) {
+			$create_args['max_uses'] = [
 				// Omitted (or null) means the site's ceiling, or unlimited
 				// when it has none. Left null here so the minter resolves it
 				// when the link is minted, and enforces the ceiling.
 				'type'    => [ 'integer', 'null' ],
 				'default' => null,
 				'minimum' => 1,
-			],
-		];
+			];
 
-		if ( null !== $max_uses_limit ) {
-			$create_args['max_uses']['maximum'] = $max_uses_limit;
+			if ( null !== $max_uses_limit ) {
+				$create_args['max_uses']['maximum'] = $max_uses_limit;
+			}
 		}
 
-		// A restriction the site has switched off is left out of the schema so
-		// it never shows in the endpoint's OPTIONS description; the minter also
-		// rejects a value smuggled past the schema.
 		if ( Features::ip_allowlist_enabled() ) {
 			$create_args['allowed_ips'] = [
 				// The schema only checks "array of strings"; whether each

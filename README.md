@@ -5,7 +5,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.2  
-**Stable tag:** 2.0.0  
+**Stable tag:** 2.0.1  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -112,6 +112,14 @@ On [GitHub](https://github.com/Automattic/shareadraft). See the [contributing gu
 
 The highlights of recent releases are below. Every change, including older releases, is listed in [CHANGELOG.md](https://github.com/Automattic/shareadraft/blob/main/CHANGELOG.md).
 
+### 2.0.1
+
+- **Changed:** The editor and the Preview Links help explain that people who can edit a post skip a link's limits.
+- **Fixed:** Create and manage preview links from the classic editing screen, for sites using the Classic Editor plugin and for post types without the block editor.
+- **Fixed:** Deleting a user from a multisite network revokes their preview links on every site they belong to.
+- **Fixed:** A named reviewer is told straight away when a link has reached its viewing limit, rather than being emailed a code first.
+- **Fixed:** Revoking a link on the Preview Links screen keeps the creator filter and page you were on.
+
 ### 2.0.0
 
 A rewrite. Requires WordPress 6.9 and PHP 8.2 or later.
@@ -138,6 +146,10 @@ A rewrite. Requires WordPress 6.9 and PHP 8.2 or later.
 - **Fixed:** PHP 8 deprecation notices, warnings from shares whose post was deleted, and a comparison that could make a valid link 404.
 
 ## Upgrade Notice
+
+### 2.0.1
+
+Brings preview links to the classic editing screen, revokes a deleted user's links across a multisite network, and fixes several smaller issues with the Preview Links screen and link cleanup.
 
 ### 2.0.0
 

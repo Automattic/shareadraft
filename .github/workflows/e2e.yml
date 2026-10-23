@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         env:
           fail-fast: 'true'
 
@@ -43,7 +43,7 @@ jobs:
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
   
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: lts/*
           cache: npm
@@ -61,7 +61,8 @@ jobs:
         run: sudo -E npx playwright install-deps chrome
 
       - name: Install VIP CLI
-        run: npm install -g @automattic/vip
+        # Pinned, and Dependabot cannot see it, so bump it by hand.
+        run: npm install -g @automattic/vip@4.1.5
 
       - name: Create development environment
         run: vip dev-env create --wordpress ${{ matrix.wordpress }} < /dev/null
@@ -72,13 +73,22 @@ jobs:
       - name: Update user password
         run: vip dev-env exec -- wp user update vipgo --user_pass=password
 
+      # The classic-screen journey needs the Classic Editor plugin. Keeping the
+      # block editor as the default, but letting users switch, means only the
+      # test that asks for ?classic-editor gets the classic screen.
+      - name: Install Classic Editor
+        run: |
+          vip dev-env exec -- wp plugin install classic-editor --activate
+          vip dev-env exec -- wp option update classic-editor-replace block
+          vip dev-env exec -- wp option update classic-editor-allow-users allow
+
       - name: Run E2E tests
         run: npm test
         env:
           E2E_URL: http://shareadraft.vipdev.lndo.site/
 
       - name: Archive test results
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: test-results

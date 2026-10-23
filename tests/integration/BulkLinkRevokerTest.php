@@ -13,8 +13,6 @@ use WP_UnitTestCase;
  * @covers \Automattic\ShareADraft\BulkLinkRevoker
  */
 class BulkLinkRevokerTest extends WP_UnitTestCase {
-	private const JOBS_OPTION = 'shareadraft_bulk_revoke_jobs';
-
 	private PostMetaTokenRepository $repository;
 	private PreviewLinkService $service;
 	private BulkLinkRevoker $revoker;
@@ -33,7 +31,7 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 
 	public function tear_down(): void {
 		BulkLinkRevoker::unschedule();
-		delete_option( self::JOBS_OPTION );
+		delete_option( BulkLinkRevoker::JOBS_OPTION );
 		remove_all_actions( BulkLinkRevoker::REVOKED_USER_ACTION );
 		parent::tear_down();
 	}
@@ -102,6 +100,53 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		$links = $this->repository->all_for_post( $post_id );
 		static::assertCount( 1, $links );
 		static::assertTrue( $links[0]->is_revoked() );
+	}
+
+	/**
+	 * Deleting a user from the network revokes their links on every site they
+	 * belong to, not just the one the deletion started from, and sweeps each
+	 * site once. Relies on the plugin's own registration, which is what runs in
+	 * production; registering here as well would double every sweep.
+	 */
+	public function test_deleting_a_user_from_the_network_revokes_their_links_on_every_site(): void {
+		$this->skipWithoutMultisite();
+
+		require_once ABSPATH . 'wp-admin/includes/ms.php';
+
+		$creator = self::factory()->user->create( [ 'role' => 'editor' ] );
+		$other   = self::factory()->blog->create();
+		static::assertIsInt( $other );
+		add_user_to_blog( $other, $creator, 'editor' );
+
+		$here = $this->draft();
+		$this->service->mint( $here, HOUR_IN_SECONDS, null, $creator );
+
+		switch_to_blog( $other );
+		$there = $this->draft();
+		$this->service->mint( $there, HOUR_IN_SECONDS, null, $creator );
+		$this->service->mint( $there, HOUR_IN_SECONDS, null, 7 );
+		restore_current_blog();
+
+		$sweeps = 0;
+		add_action(
+			BulkLinkRevoker::REVOKED_USER_ACTION,
+			static function () use ( &$sweeps ): void {
+				++$sweeps;
+			}
+		);
+
+		wpmu_delete_user( $creator );
+
+		static::assertTrue( $this->repository->all_for_post( $here )[0]->is_revoked() );
+		static::assertSame( 2, $sweeps );
+
+		switch_to_blog( $other );
+		$links = $this->repository->all_for_post( $there );
+		restore_current_blog();
+
+		foreach ( $links as $link ) {
+			static::assertSame( $creator === $link->created_by(), $link->is_revoked() );
+		}
 	}
 
 	/**
@@ -244,7 +289,7 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		$post_id = $this->draft();
 		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
 
-		update_option( self::JOBS_OPTION, [
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
 			[
 				'id'     => 'corrupt',
 				'cursor' => 0,
@@ -254,6 +299,47 @@ class BulkLinkRevokerTest extends WP_UnitTestCase {
 		static::assertFalse( $this->revoker->has_pending_work() );
 		static::assertSame( 0, $this->revoker->run() );
 		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+	}
+
+	/**
+	 * A sweep covers the links that existed when it started. One made while it
+	 * runs survives, even on a post the cursor has not yet reached.
+	 */
+	public function test_a_sweep_spares_links_created_after_it_started(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
+			[
+				'id'      => 'in-flight',
+				'creator' => null,
+				'cursor'  => 0,
+				'started' => time() - MINUTE_IN_SECONDS,
+			],
+		], false );
+
+		static::assertSame( 0, $this->revoker->run() );
+		static::assertFalse( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
+	}
+
+	/**
+	 * A sweep queued before `started` was recorded keeps its old reach rather
+	 * than sparing everything.
+	 */
+	public function test_a_sweep_queued_without_a_start_time_revokes_every_link(): void {
+		$post_id = $this->draft();
+		$this->service->mint( $post_id, HOUR_IN_SECONDS, null, 7 );
+
+		update_option( BulkLinkRevoker::JOBS_OPTION, [
+			[
+				'id'      => 'legacy',
+				'creator' => null,
+				'cursor'  => 0,
+			],
+		], false );
+
+		static::assertSame( 1, $this->revoker->run() );
+		static::assertTrue( $this->repository->all_for_post( $post_id )[0]->is_revoked() );
 	}
 
 	public function test_running_with_no_pending_work_is_a_no_op(): void {

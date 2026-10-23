@@ -5,7 +5,7 @@
 **Requires at least:** 6.9  
 **Tested up to:** 7.1  
 **Requires PHP:** 8.2  
-**Stable tag:** 2.0.0  
+**Stable tag:** 2.0.1  
 **License:** GPLv2 or later  
 **License URI:** https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,7 +15,7 @@ Create a secure, time-limited link to a draft, so a reviewer without a WordPress
 
 Drafts in WordPress can only be seen by people who can edit them. When a client, a legal reviewer, or a colleague without an account needs to read a draft before it goes live, Share a Draft gives you a link for exactly that, and keeps you in control of it.
 
-Open a draft in the block editor, choose **Generate preview link** in the Share a Draft panel, and send the link to your reviewer. They see the draft exactly as it will look when published, without logging in.
+Open a draft, choose **Generate preview link** in the Share a Draft panel, and send the link to your reviewer. They see the draft exactly as it will look when published, without logging in.
 
 Every link is:
 
@@ -28,7 +28,7 @@ Every link is:
 
 Links also tidy themselves up: they are discarded when a draft is published, made private, or trashed, and revoked when the person who created them is deleted.
 
-Administrators get a **Preview Links** screen listing every link on the site, with who created it, how often it has been used, and when it expires. From there they can revoke links in bulk (for example, everything one person made, when they leave), or pause every link at once while investigating a suspected leak, then switch them back on. See [managing links](https://github.com/Automattic/shareadraft/blob/main/docs/managing-links.md) for the details, including hooks for your own offboarding process.
+Editors and administrators get a **Preview Links** screen listing every link on the site, with who created it, how often it has been used, and when it expires. From there they can revoke links in bulk (for example, everything one person made, when they leave), and administrators can pause every link at once while investigating a suspected leak, then switch them back on. See [managing links](https://github.com/Automattic/shareadraft/blob/main/docs/managing-links.md) for the details, including hooks for your own offboarding process.
 
 Developers can do all of this from the shell with [WP-CLI](https://github.com/Automattic/shareadraft/blob/main/docs/wp-cli.md) (`wp shareadraft create`, `list`, `revoke`, `prune`, `disable` and `enable`), or let AI assistants and MCP clients do it through the WordPress [Abilities API](https://github.com/Automattic/shareadraft/blob/main/docs/abilities.md), under the same rules and permissions as the editor. They can also [customize](https://github.com/Automattic/shareadraft/blob/main/docs/customizing.md) how links behave, from the lifetimes on offer to what reviewers are told.
 
@@ -36,19 +36,23 @@ Share a Draft works on any host, with nothing to configure. On [WordPress VIP](h
 
 ### Upgrading from Share a Draft 1.x
 
-Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the block editor. Support for 1.x links will be removed in 2.1.0.
+Share a Draft 2.0 is a rewrite. Links made with 1.x keep working until they expire, and their owners can review and delete them under **Posts → Share a Draft (Old)**, which only appears while they have one. 1.x links cannot be extended; new links are made from the post editor. Support for 1.x links will be removed in 2.1.0.
 
 None of 2.0's controls apply to 1.x links. Pausing every link, trusted IP ranges, viewer limits, named reviewers, the Preview Links screen, bulk revoking, WP-CLI and the Abilities API all cover 2.0 links only, and a 1.x link keeps working even if its post is made private or trashed. Only the person who made a 1.x link can delete it, so if one leaks, ask them to delete it under **Posts → Share a Draft (Old)**.
 
 ## Installation
 
 1. Install and activate Share a Draft from **Plugins → Add New Plugin**.
-2. Open a draft in the block editor, and find the **Share a Draft** panel in the post sidebar.
+2. Open a draft, and find the **Share a Draft** panel in the post sidebar. It appears in the block editor and on the classic editing screen.
 3. Manage every link on the site under **Preview Links** in the admin menu.
 
 There are no settings to configure. If your site sits behind a page cache, a reverse proxy, or a host that cannot send email, check the [hosting requirements](https://github.com/Automattic/shareadraft/blob/main/docs/hosting.md) first.
 
 ## Frequently Asked Questions
+
+### Does it work with the Classic Editor?
+
+Yes. Where a post is edited on the classic screen, whether through the Classic Editor plugin or because its post type does not use the block editor, Share a Draft adds a **Share a Draft** box to the sidebar with the same **Generate preview link** and **Manage preview links** buttons.
 
 ### Does my reviewer need a WordPress account?
 
@@ -57,6 +61,10 @@ No. Anyone with the link can open the draft, unless you have bound the link to n
 ### What does the reviewer see?
 
 The draft, rendered by your theme exactly as it will look when published. If the link has expired, been revoked, or been used up, they see a short notice saying so instead.
+
+### Why can I still see a draft through a link that has expired or been used up?
+
+Because you can edit the post. Anyone who can edit it, such as its author, editors, and administrators, sees the draft through WordPress's own preview, so a link's expiry, viewing limit, and other restrictions don't apply to them, and their visits don't use up any of its views. Reviewers who cannot edit the post are held to every limit.
 
 ### Can I change a link after sharing it?
 
@@ -102,9 +110,46 @@ On [GitHub](https://github.com/Automattic/shareadraft). See the [contributing gu
 
 ## Changelog
 
-All of the detailed changes are listed in [CHANGELOG.md](https://github.com/Automattic/shareadraft/blob/main/CHANGELOG.md).
+The highlights of recent releases are below. Every change, including older releases, is listed in [CHANGELOG.md](https://github.com/Automattic/shareadraft/blob/main/CHANGELOG.md).
+
+### 2.0.1
+
+- **Changed:** The editor and the Preview Links help explain that people who can edit a post skip a link's limits.
+- **Fixed:** Create and manage preview links from the classic editing screen, for sites using the Classic Editor plugin and for post types without the block editor.
+- **Fixed:** Deleting a user from a multisite network revokes their preview links on every site they belong to.
+- **Fixed:** A named reviewer is told straight away when a link has reached its viewing limit, rather than being emailed a code first.
+- **Fixed:** Revoking a link on the Preview Links screen keeps the creator filter and page you were on.
+
+### 2.0.0
+
+A rewrite. Requires WordPress 6.9 and PHP 8.2 or later.
+
+- **New:** Generate preview links from the Share a Draft panel in the block editor or the classic editing screen, and choose how long each one lasts and how many people can open it.
+- **New:** Bind a link to named reviewers, who confirm their email address with a one-time code, or restrict it to trusted IP ranges.
+- **New:** A Preview Links screen listing every link on the site, with bulk revoking (for example, everything one person made) and an administrator switch to pause every link at once.
+- **New:** Reviewers who open an expired, revoked, or used-up link are told why it stopped working. Unknown links stay a plain "not found".
+- **New:** Manage links with WP-CLI (`wp shareadraft`) and the Abilities API, under the same rules and permissions as the editor.
+- **New:** Links are discarded when a draft is published, made private, or trashed, and revoked when the person who created them is deleted.
+- **New:** Support for the Export and Erase Personal Data tools, and a Site Health check for the cleanup schedule.
+- **Changed:** Links are created in the editor rather than under Posts → Share a Draft, which remains only for reviewing and deleting 1.x links, as Share a Draft (Old).
+- **Removed:** Extending a link's lifetime. Generate a new link instead.
+- **Security:** Only a hash of each link's token is stored, and every limit is enforced on the server.
+
+### 1.7
+
+- **New:** A button to copy a shared draft's link.
+- **Changed:** A redesigned Share a Draft screen.
+- **Fixed:** Previews breaking the header and other template parts on block themes.
+
+### 1.6
+
+- **Fixed:** PHP 8 deprecation notices, warnings from shares whose post was deleted, and a comparison that could make a valid link 404.
 
 ## Upgrade Notice
+
+### 2.0.1
+
+Brings preview links to the classic editing screen, revokes a deleted user's links across a multisite network, and fixes several smaller issues with the Preview Links screen and link cleanup.
 
 ### 2.0.0
 

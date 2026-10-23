@@ -56,7 +56,7 @@ Releases run from a pushed tag: `release.yml` publishes the GitHub Release and i
 | `vestigial.php` | Support for links made with Share a Draft 1.x. Self-contained, so it can be removed in 2.1.0 by deleting it and the two lines in `shareadraft.php` that load it. |
 | `inc/` | Runtime code, autoloaded by `inc/autoload.php`. |
 | `inc/cli/` | The `wp shareadraft` WP-CLI commands, one class per subcommand, loaded only under WP-CLI. |
-| `src/` | Block editor JavaScript, compiled into `build/` by `npm run build`. `build/` is not committed. |
+| `src/` | Editor JavaScript (the block-editor panel and the classic screen's meta box), compiled into `build/` by `npm run build`. `build/` is not committed. |
 | `languages/` | The translation template (POT). Regenerate it with `composer i18n`. |
 | `tests/unit/` | Fast PHPUnit tests: pure PHP, no WordPress. |
 | `tests/integration/` | PHPUnit tests that boot WordPress. |

@@ -67,7 +67,7 @@ class PreviewLinksAdminPageHelpTest extends WP_UnitTestCase {
 		$screen = get_current_screen();
 
 		static::assertInstanceOf( WP_Screen::class, $screen );
-		static::assertNotEmpty( $screen->get_help_tabs() );
+		static::assertNotSame( [], $screen->get_help_tabs() );
 	}
 
 	public function test_the_help_explains_the_pause_toggle_in_its_own_tab(): void {

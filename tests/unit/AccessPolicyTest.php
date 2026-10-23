@@ -269,6 +269,36 @@ final class AccessPolicyTest extends TestCase {
 		);
 	}
 
+	public function test_a_used_up_link_is_not_worth_verifying_for(): void {
+		$link = $this->link( [
+			'recipients' => [ 'legal@example.com', 'comms@example.com' ],
+			'max_uses'   => 1,
+			'uses'       => 1,
+		] );
+
+		// The other named reviewer took the only slot, so this one sees the
+		// viewing limit rather than being emailed a code that cannot help.
+		self::assertSame(
+			AccessDecision::REASON_EXHAUSTED,
+			$this->policy->decide( $link, self::NOW )->reason()
+		);
+	}
+
+	public function test_a_slot_holder_on_a_used_up_link_is_still_asked_to_verify(): void {
+		$link = $this->link( [
+			'recipients' => [ 'legal@example.com' ],
+			'max_uses'   => 1,
+			'uses'       => 1,
+		] );
+
+		// Their verification lapsed but their slot did not: re-verifying lets
+		// them back in, so the form is worth showing.
+		self::assertSame(
+			AccessDecision::REASON_EMAIL_UNVERIFIED,
+			$this->policy->decide( $link, self::NOW, true )->reason()
+		);
+	}
+
 	/**
 	 * @param array{expires_at?: int, max_uses?: int|null, uses?: int, revoked_at?: int|null, allowed_ips?: list<string>, recipients?: list<string>} $overrides
 	 */

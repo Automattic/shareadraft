@@ -547,6 +547,60 @@ class PreviewGateTest extends WP_UnitTestCase {
 		static::assertSame( $listed, str_replace( 'stranger@example.com', 'legal@example.com', $unlisted ) );
 	}
 
+	public function test_a_bad_nonce_shows_the_email_form_and_sends_no_mail(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$page = $this->post_verification( $post_id, $token, 'request-code', 'legal@example.com', '', 'forged' );
+		$this->finish_request();
+
+		// Back to step one: the email form, not the code form.
+		static::assertStringContainsString( 'type="email" name="shareadraft-email"', $page );
+		static::assertStringNotContainsString( 'name="shareadraft-code"', $page );
+		static::assertCount( 0, $this->sent_mail() );
+	}
+
+	public function test_an_unlisted_address_is_sent_no_code(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$this->post_verification( $post_id, $token, 'request-code', 'stranger@example.com' );
+		$this->finish_request();
+
+		static::assertCount( 0, $this->sent_mail() );
+	}
+
+	public function test_the_right_code_remembers_the_reviewer_and_redirects_back(): void {
+		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
+		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
+
+		$this->post_verification( $post_id, $token, 'request-code', 'legal@example.com' );
+		$this->finish_request();
+		static::assertSame( 1, preg_match( '/\b([0-9]{6})\b/', $this->sent_mail()[0], $matches ) );
+
+		$redirect = null;
+		$throw    = static function ( string $location, int $status ) use ( &$redirect ): never {
+			$redirect = [ $location, $status ];
+			throw new \RuntimeException( 'Redirected.' );
+		};
+		// @phpstan-ignore return.missing (Throwing is the point: it stops the request before the exit that follows the redirect.)
+		add_filter( 'wp_redirect', $throw, 10, 2 );
+
+		try {
+			$this->post_verification( $post_id, $token, 'verify-code', 'legal@example.com', $matches[1] );
+		} catch ( \RuntimeException $e ) {
+			// Expected: the redirect is where the request ends.
+			unset( $e );
+		} finally {
+			remove_filter( 'wp_redirect', $throw, 10 );
+		}
+
+		static::assertNotNull( $redirect, 'A correct code redirects.' );
+		static::assertSame( 303, $redirect[1] );
+		static::assertStringContainsString( $token->value(), $redirect[0] );
+		static::assertSame( 'legal@example.com', ( new RecipientVerifier() )->verified_email( $token ) );
+	}
+
 	public function test_a_new_code_is_not_sent_once_the_guesses_are_spent(): void {
 		$post_id = self::factory()->post->create( [ 'post_status' => 'draft' ] );
 		$token   = $this->service->mint( $post_id, HOUR_IN_SECONDS, null, 1, [], [ 'legal@example.com' ] );
@@ -752,6 +806,18 @@ class PreviewGateTest extends WP_UnitTestCase {
 	 * End the simulated request: run the deferred code send, then drop it so
 	 * the next simulated request does not send it again.
 	 */
+	/**
+	 * The bodies of the mail sent so far in this test.
+	 *
+	 * @return list<string>
+	 */
+	private function sent_mail(): array {
+		$mailer = tests_retrieve_phpmailer_instance();
+		static::assertInstanceOf( MockPHPMailer::class, $mailer );
+
+		return array_column( $mailer->mock_sent, 'body' );
+	}
+
 	private function finish_request(): void {
 		do_action( 'shutdown' );
 		remove_all_actions( 'shutdown' );
@@ -761,7 +827,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 	 * Post one step of the email-verification interstitial, as the visitor's
 	 * browser would, and return the page the gate renders in reply.
 	 */
-	private function post_verification( int $post_id, Token $token, string $action, string $email, string $code = '' ): string {
+	private function post_verification( int $post_id, Token $token, string $action, string $email, string $code = '', ?string $nonce = null ): string {
 		// Core's own shutdown work (flushing output buffers) has no place in
 		// a test; only the gate's deferred send should run in finish_request().
 		remove_all_actions( 'shutdown' );
@@ -769,7 +835,7 @@ class PreviewGateTest extends WP_UnitTestCase {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = add_query_arg( PreviewGate::TOKEN_QUERY_VAR, $token->value(), '/?p=' . $post_id );
 		$_POST                     = [
-			'_wpnonce'                  => wp_create_nonce( 'shareadraft_verify' ),
+			'_wpnonce'                  => $nonce ?? wp_create_nonce( 'shareadraft_verify' ),
 			'shareadraft-verify-action' => $action,
 			'shareadraft-email'         => $email,
 			'shareadraft-code'          => $code,

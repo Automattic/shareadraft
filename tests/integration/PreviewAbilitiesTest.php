@@ -515,7 +515,13 @@ class PreviewAbilitiesTest extends WP_UnitTestCase {
 		// revoked within the same second is not yet prunable — let it pass.
 		sleep( 1 );
 
-		static::assertSame( [ 'pruned' => 1 ], $prune->execute( [ 'grace' => 0 ] ) );
+		static::assertSame(
+			[
+				'pruned'  => 1,
+				'pending' => false,
+			],
+			$prune->execute( [ 'grace' => 0 ] )
+		);
 	}
 
 	public function test_pruning_is_denied_below_manage_options(): void {

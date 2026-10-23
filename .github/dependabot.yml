@@ -6,6 +6,11 @@ updates:
       interval: "weekly"
     labels:
       - "dependencies"
+    groups:
+      # init and analyze refuse to run at different versions, so bump them together.
+      codeql-action:
+        patterns:
+          - "github/codeql-action/*"
 
   - package-ecosystem: "composer"
     directory: "/"

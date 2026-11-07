@@ -109,6 +109,7 @@ final class EditorAssets {
 				'linksDisabled'      => $this->links_disabled,
 				'ipAllowlistEnabled' => Features::ip_allowlist_enabled(),
 				'recipientsEnabled'  => Features::recipients_enabled(),
+				'maxUsesEnabled'     => Features::max_uses_enabled(),
 			]
 		);
 

@@ -103,7 +103,13 @@ final class PreviewAbilities {
 				'default'     => PreviewRestController::default_expiration(),
 				'description' => __( 'How long the link stays valid, in seconds.', 'shareadraft' ),
 			],
-			'max_uses'   => [
+		];
+
+		// Mirror the REST schema: a restriction the site has switched off is
+		// not described to agents at all. The minter also rejects a value sent
+		// regardless, so both channels refuse identically.
+		if ( Features::max_uses_enabled() ) {
+			$create_properties['max_uses'] = [
 				'type'        => [ 'integer', 'null' ],
 				'default'     => null,
 				'minimum'     => 1,
@@ -114,17 +120,14 @@ final class PreviewAbilities {
 						__( 'How many people can open the link, up to %1$d. Omitted or null means %1$d. Each browser or device counts as a new person.', 'shareadraft' ),
 						$max_uses_limit
 					),
-			],
-		];
+			];
 
-		// Mirror the REST schema: the site's ceiling, when it has one.
-		if ( null !== $max_uses_limit ) {
-			$create_properties['max_uses']['maximum'] = $max_uses_limit;
+			// The site's ceiling, when it has one.
+			if ( null !== $max_uses_limit ) {
+				$create_properties['max_uses']['maximum'] = $max_uses_limit;
+			}
 		}
 
-		// Mirror the REST schema: a restriction the site has switched off is
-		// not described to agents at all. The minter also rejects a value sent
-		// regardless, so both channels refuse identically.
 		if ( Features::ip_allowlist_enabled() ) {
 			$create_properties['allowed_ips'] = [
 				'type'        => 'array',

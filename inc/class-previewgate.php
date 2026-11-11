@@ -120,7 +120,7 @@ final class PreviewGate {
 			$status = get_post_status_object( $post->post_status );
 
 			// Only unpublished posts need unlocking; public ones already render.
-			if ( null !== $status && $status->public ) {
+			if ( null !== $status && true === $status->public ) {
 				continue;
 			}
 

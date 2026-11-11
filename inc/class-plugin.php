@@ -103,7 +103,7 @@ final class Plugin {
 		// The `wp shareadraft` commands, sharing the same graph as every
 		// other surface. Loaded only under WP-CLI: the CLI classes are the one
 		// part of the plugin the flat first-party autoloader does not map.
-		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		if ( defined( 'WP_CLI' ) && true === WP_CLI ) {
 			require_once __DIR__ . '/cli/register-commands.php';
 			Cli\register_commands( $service, $minter, $collector, $toggle, $revoker );
 		}

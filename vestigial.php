@@ -167,7 +167,7 @@ function unlock_shared_draft( $posts, WP_Query $query ) {
 
 	$post   = $posts[0];
 	$status = get_post_status_object( $post->post_status );
-	if ( null !== $status && $status->public ) {
+	if ( null !== $status && true === $status->public ) {
 		return $posts;
 	}
 

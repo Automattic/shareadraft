@@ -44,14 +44,17 @@ add_filter( 'shareadraft_max_uses_limit', '__return_null' );
 
 The ceiling applies whether a link is created in the editor, with WP-CLI, or through the Abilities API. Anything other than null or a positive whole number is ignored, and the ceiling stays at 1,000. Changing it only affects new links: existing links keep the limit they were created with.
 
-## Turn off named reviewer or IP restriction features
+## Turn off named reviewer, IP restriction, or maximum uses features
 
-Binding a link to named reviewers, and restricting it to IP ranges, are both optional. If your site never wants one of them, switch it off: its fields disappear from the editor, the Preview Links screen, and the Abilities API, and WP-CLI refuses to use it.
+Binding a link to named reviewers, restricting it to IP ranges, and choosing how many people can open it are all optional. If your site never wants one of them, switch it off: its fields disappear from the editor, the Preview Links screen, and the Abilities API, and WP-CLI refuses to use it.
 
 ```php
 add_filter( 'shareadraft_recipients_enabled', '__return_false' );
 add_filter( 'shareadraft_ip_allowlist_enabled', '__return_false' );
+add_filter( 'shareadraft_max_uses_enabled', '__return_false' );
 ```
+
+With maximum uses switched off, every new link gets the ceiling from `shareadraft_max_uses_limit` (1,000 unless you change it, or unlimited if it returns null). The two combine: a ceiling of 1 with maximum uses switched off makes every link single-use, with no option for authors to change it. The Uses column still shows how many people have opened each link.
 
 Links that already use a restriction keep enforcing it. Switching a feature off only stops new links from using it.
 

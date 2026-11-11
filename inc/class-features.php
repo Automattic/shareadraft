@@ -5,8 +5,8 @@ namespace Automattic\ShareADraft;
 /**
  * Code-level switches for the optional restriction features.
  *
- * A site that never wants IP allowlists or recipient-bound links can turn the
- * feature off with one filter, and every input surface — the Generate modal,
+ * A site that never wants IP allowlists, recipient-bound links, or author-chosen
+ * viewer caps can turn the feature off with one filter, and every input surface — the Generate modal,
  * the Manage modal, the admin table, REST and ability schemas — hides it, so
  * authors are not offered controls the site has decided against.
  *
@@ -47,5 +47,24 @@ final class Features {
 		 * @param bool $enabled Whether the feature is available. Default true.
 		 */
 		return (bool) apply_filters( 'shareadraft_recipients_enabled', true );
+	}
+
+	/**
+	 * Whether authors can choose how many people may open a link. Switched
+	 * off, every new link gets the site's ceiling
+	 * ({@see PreviewRestController::max_uses_limit()}), or no cap when the site
+	 * has none, so the two filters compose: a ceiling of 1 with this off makes
+	 * every link single-use.
+	 */
+	public static function max_uses_enabled(): bool {
+		/**
+		 * Filters whether authors can set a link's maximum uses. Return false
+		 * to remove the option from every minting surface; new links then get
+		 * the `shareadraft_max_uses_limit` ceiling. Existing links keep the
+		 * cap they were created with.
+		 *
+		 * @param bool $enabled Whether the feature is available. Default true.
+		 */
+		return (bool) apply_filters( 'shareadraft_max_uses_enabled', true );
 	}
 }

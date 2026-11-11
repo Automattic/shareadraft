@@ -45,8 +45,8 @@ final class PreviewLinkMinter {
 	 *                                  front-end view, it is published, private,
 	 *                                  or trashed, the viewer cap is out of
 	 *                                  range, a range or address is invalid,
-	 *                                  the restriction is disabled on
-	 *                                  this site, or the link could not be saved.
+	 *                                  the restriction or viewer cap is
+	 *                                  disabled on this site, or the link could not be saved.
 	 */
 	public function mint( int $post_id, int $expiration, ?int $max_uses, string $channel, array $allowed_ips = [], array $recipients = [] ) {
 		$post = get_post( $post_id );
@@ -76,6 +76,16 @@ final class PreviewLinkMinter {
 			return new WP_Error(
 				'shareadraft_post_not_shareable',
 				__( 'Preview links are not available for published, private, or trashed content.', 'shareadraft' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// Checked before the ceiling fills in an omitted cap, so only a cap
+		// the caller chose is refused.
+		if ( null !== $max_uses && ! Features::max_uses_enabled() ) {
+			return new WP_Error(
+				'shareadraft_max_uses_disabled',
+				__( 'Choosing how many people can open a preview link is disabled on this site.', 'shareadraft' ),
 				[ 'status' => 400 ]
 			);
 		}

@@ -17,5 +17,8 @@
     "start": "wp-scripts start src/index.js src/classic.js src/admin.js",
     "test": "playwright test",
     "test:ui": "playwright test --ui"
+  },
+  "dependencies": {
+    "qrcode.react": "^4.2.0"
   }
 }

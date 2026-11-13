@@ -151,6 +151,10 @@ test.describe( 'Preview links', () => {
 		const previewUrl = await linkField.inputValue();
 		expect( previewUrl ).toContain( 'shareadraft-token=' );
 
+		// A QR code of the same link sits under it, for opening on a device, and
+		// the dialog scrolls so it is in view rather than below the fold.
+		await expect( generateModal.getByRole( 'img', { name: 'QR code for the preview link' } ) ).toBeInViewport();
+
 		// Copying again must reuse that link, not mint a second one.
 		await generateModal.getByRole( 'button', { name: 'Copy link' } ).click();
 		await expect( linkField ).toHaveValue( previewUrl );

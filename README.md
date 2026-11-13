@@ -62,6 +62,10 @@ No. Anyone with the link can open the draft, unless you have bound the link to n
 
 The draft, rendered by your theme exactly as it will look when published. If the link has expired, been revoked, or been used up, they see a short notice saying so instead.
 
+### Can I check a draft on my phone or tablet?
+
+Yes. When you generate a link, a QR code of it appears under the link: scan it with the device's camera to open the preview there. The QR code is drawn in your browser, so the link is never sent anywhere else. Unless you are logged in on that device as someone who can edit the post, opening the link there uses up one of its views, and a link restricted to IP ranges only opens if the device is on one of them (on mobile data it usually is not). Like the link itself, the QR code is shown only when the link is created.
+
 ### Why can I still see a draft through a link that has expired or been used up?
 
 Because you can edit the post. Anyone who can edit it, such as its author, editors, and administrators, sees the draft through WordPress's own preview, so a link's expiry, viewing limit, and other restrictions don't apply to them, and their visits don't use up any of its views. Reviewers who cannot edit the post are held to every limit.

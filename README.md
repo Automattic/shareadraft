@@ -64,7 +64,7 @@ The draft, rendered by your theme exactly as it will look when published. If the
 
 ### Can I check a draft on my phone or tablet?
 
-Yes. When you generate a link, a QR code of it appears under the link: scan it with the device's camera to open the preview there. The QR code is drawn in your browser, so the link is never sent anywhere else. Unless you are logged in on that device as someone who can edit the post, opening the link there uses up one of its views, and a link restricted to IP ranges only opens if the device is on one of them (on mobile data it usually is not). Like the link itself, the QR code is shown only when the link is created.
+Yes. When you generate a link, choose **Show QR code** and scan the code with the device's camera to open the preview there. The QR code is drawn in your browser, so the link is never sent anywhere else. Unless you are logged in on that device as someone who can edit the post, opening the link there uses up one of its views, and a link restricted to IP ranges only opens if the device is on one of them (on mobile data it usually is not). Like the link itself, the QR code is shown only when the link is created.
 
 ### Why can I still see a draft through a link that has expired or been used up?
 

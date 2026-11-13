@@ -117,15 +117,18 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 	const [ isBusy, setBusy ] = useState( false );
 	const [ error, setError ] = useState( '' );
 	const [ copied, setCopied ] = useState( false );
+	// Hidden until asked for: it is clutter for most links, and on a shared
+	// screen anyone watching can scan it far more easily than copy a URL.
+	const [ showQr, setShowQr ] = useState( false );
 	const actionsRef = useRef();
 
-	// The new link field and QR code grow the dialog above its buttons, pushing
-	// them out of view; bring them back so the QR code is seen without scrolling.
+	// The link field and QR code grow the dialog above its buttons, pushing
+	// them out of view; bring them back so what just appeared is seen too.
 	useEffect( () => {
 		if ( url ) {
 			actionsRef.current?.scrollIntoView( { block: 'nearest' } );
 		}
-	}, [ url ] );
+	}, [ url, showQr ] );
 
 	const splitList = ( value ) =>
 		value
@@ -333,7 +336,7 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 					/>
 				) }
 
-				{ url && (
+				{ url && showQr && (
 					// Drawn in the browser: the URL carries the secret token, so it
 					// must never go to a third-party QR service.
 					<figure style={ { margin: 0 } }>
@@ -356,6 +359,21 @@ function GenerateModal( { postId, onCreated, onClose } ) {
 				) }
 
 				<Flex justify="flex-end" gap={ 2 } ref={ actionsRef }>
+					{ url && (
+						<Button
+							variant="tertiary"
+							onClick={ () => setShowQr( ! showQr ) }
+							aria-expanded={ showQr }
+							// Sit apart from the link actions, at the start of the row.
+							style={ { marginRight: 'auto' } }
+							__next40pxDefaultSize
+						>
+							{ showQr
+								? __( 'Hide QR code', 'shareadraft' )
+								: __( 'Show QR code', 'shareadraft' ) }
+						</Button>
+					) }
+
 					{ url && (
 						// Unlock the fields, keeping their values, so a further
 						// link (say, for another reviewer) needs only a tweak.

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-23T13:56:28+00:00\n"
+"POT-Creation-Date: 2026-11-13T18:33:23+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: shareadraft\n"
@@ -1035,6 +1035,26 @@ msgstr ""
 #: build/classic.js:5
 #: build/index.js:5
 msgid "Copy this link to share it."
+msgstr ""
+
+#: build/classic.js:5
+#: build/index.js:5
+msgid "QR code for the preview link"
+msgstr ""
+
+#: build/classic.js:5
+#: build/index.js:5
+msgid "Scan to open the preview on a phone or tablet."
+msgstr ""
+
+#: build/classic.js:5
+#: build/index.js:5
+msgid "Hide QR code"
+msgstr ""
+
+#: build/classic.js:5
+#: build/index.js:5
+msgid "Show QR code"
 msgstr ""
 
 #: build/classic.js:5

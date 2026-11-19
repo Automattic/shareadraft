@@ -26,8 +26,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        wordpress: ['6.9', '7.1']
-    name: E2E Tests on WordPress ${{ matrix.wordpress }}
+        include:
+          # The lowest supported WordPress.
+          - wordpress: '6.9'
+          # The WordPress version in the readme's "Tested up to".
+          - wordpress: '7.1'
+          # The next WordPress version (VIP's image of WordPress/WordPress
+          # master), with the latest PHP.
+          - wordpress: trunk
+            php: '8.5'
+    name: E2E Tests on WordPress ${{ matrix.wordpress }}${{ matrix.php && format(' on PHP {0}', matrix.php) || '' }}
     steps:
       - name: Check out repository code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,8 +72,12 @@ jobs:
         # Pinned, and Dependabot cannot see it, so bump it by hand.
         run: npm install -g @automattic/vip@4.1.5
 
+      # Rows without a php value use the VIP CLI's default PHP.
       - name: Create development environment
-        run: vip dev-env create --wordpress ${{ matrix.wordpress }} < /dev/null
+        run: vip dev-env create --wordpress "$WP_VERSION" ${PHP_VERSION:+--php "$PHP_VERSION"} < /dev/null
+        env:
+          WP_VERSION: ${{ matrix.wordpress }}
+          PHP_VERSION: ${{ matrix.php }}
 
       - name: Start development environment
         run: vip dev-env start --slug shareadraft --skip-wp-versions-check
@@ -91,6 +103,6 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: test-results
+          name: test-results-${{ matrix.wordpress }}
           path: .playwright
           retention-days: 7

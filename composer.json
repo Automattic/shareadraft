@@ -57,7 +57,7 @@
     "phpcbf": "phpcbf",
     "phpcs": "phpcs",
     "phpstan": "phpstan analyse --memory-limit=2G",
-    "prepare-behat-tests": "wp-env start",
+    "prepare-behat-tests": "npx --no wp-env start",
     "test": [
       "@test:unit",
       "@test:integration",

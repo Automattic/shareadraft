@@ -12,6 +12,8 @@ on:
       - 'behat.yml'
       - 'composer.json'
       - '.wp-env.json'
+      - 'package.json'
+      - 'package-lock.json'
   pull_request:
     paths:
       - '.github/workflows/behat.yml'
@@ -20,6 +22,8 @@ on:
       - 'behat.yml'
       - 'composer.json'
       - '.wp-env.json'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
@@ -40,9 +44,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install wp-env
-        # Pinned, and Dependabot cannot see it, so bump it by hand.
-        run: npm install -g @wordpress/env@11.17.0
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Node dependencies
+        run: npm ci
 
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
@@ -54,7 +63,7 @@ jobs:
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
       - name: Start wp-env
-        run: wp-env start
+        run: npx --no wp-env start
 
       - name: Run Behat tests
         run: composer behat

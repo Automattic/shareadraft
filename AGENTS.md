@@ -159,7 +159,7 @@ Details live in `docs/vip-integration.md`.
 
 ```sh
 composer install        # PHP dependencies
-npm ci                  # Node dependencies (Playwright)
+npm ci                  # Node dependencies (Playwright, wp-env)
 ```
 
 ### Local environment

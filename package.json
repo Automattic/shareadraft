@@ -9,6 +9,7 @@
   "devDependencies": {
     "@playwright/test": "^1.45.3",
     "@types/node": "^26.1.2",
+    "@wordpress/env": "^12.2.0",
     "@wordpress/scripts": "^37.0.0"
   },
   "scripts": {

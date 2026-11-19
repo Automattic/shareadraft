@@ -35,6 +35,18 @@ final class FeatureContext extends WpEnvFeatureContext {
 	}
 
 	/**
+	 * Run the wp-env pinned in package.json.
+	 *
+	 * Behat runs under Composer, which doesn't put node_modules/.bin on PATH,
+	 * so the parent's bare `wp-env` would only find a global install. `--no`
+	 * stops npx from downloading the unrelated `wp-env` package from npm when
+	 * `npm ci` hasn't been run.
+	 */
+	protected function get_wp_env_command(): string {
+		return 'npx --no wp-env';
+	}
+
+	/**
 	 * The site-wide disable switch is an option, and the generic reset only
 	 * clears posts, users, transients and caches — so a scenario that flips
 	 * links off must not leak that into the next one.

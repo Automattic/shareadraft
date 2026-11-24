@@ -47,8 +47,8 @@ jobs:
           - { wp: latest,  ms: 'no',  php: '8.5' }
           - { wp: latest,  ms: 'yes', php: '8.5' }
 
-          - { wp: nightly, ms: 'no',  php: '8.5' }
-          - { wp: nightly, ms: 'yes', php: '8.5' }
+          - { wp: nightly, ms: 'no',  php: '8.6' }
+          - { wp: nightly, ms: 'yes', php: '8.6' }
     services:
       mysql:
         image: mariadb:lts@sha256:759869cb6f003234a95c6384cdee245b4bce7de26913fe607a8110362c0c007d

@@ -26,8 +26,8 @@ jobs:
       fail-fast: false
       matrix:
         # Pure-PHP domain suite: no WordPress, no database. Fast to run across
-        # the full VIP platform PHP baseline (8.2-8.5).
-        php: ['8.2', '8.3', '8.4', '8.5']
+        # the full VIP platform PHP baseline (8.2-8.5), and PHP 8.6.
+        php: ['8.2', '8.3', '8.4', '8.5', '8.6']
     steps:
       - name: Check out source code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
